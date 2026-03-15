@@ -74,26 +74,3 @@ SAOGEN aims to establish a new model for coordinating large-scale technological 
 
 The long-term objective is to develop an ecosystem where innovation evolves through distributed intelligence, enabling the creation of complex technologies and research initiatives that extend beyond the capabilities of traditional organizational structures.
 
-```mermaid
-graph TD;
-    Q0GE-->SAOGEN;
-    SAOGEN-->SAS;
-   
-```
-                     SAOGEN
-        Symbiotic Autonomous Organization (SAO)
-      Hyper-Optimization • IP Governance • Coordination
-                         │
-                         │
-        ┌────────────────┼────────────────┐
-        │                │                │
-     STELASER         STARLIFT        Future SAS
-        SAS              SAS             SAS
-        |                |                |
-    Space Energy &    Large Scale      Emerging
-    Propulsion      Energy Systems   Technologies
-        │                                 │
-        │                                 │
-    Decentralized R&D                Photonic Computing  
-    Infrastructure                   Stellar Energy
-                                     Advanced Systems
