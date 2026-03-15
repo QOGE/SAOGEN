@@ -70,7 +70,7 @@ The long-term objective is to develop an ecosystem where innovation evolves thro
 
 ```mermaid
 graph TD;
-    RETAIL-->QOGE;
+    PUBLIC-->QOGE;
     Q0GE-->SAOGEN;
     SAOGEN-->SAS;
     SAS-->PUBLIC;
