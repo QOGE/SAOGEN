@@ -73,8 +73,6 @@ graph TD;
     PUBLIC-->QOGE;
     Q0GE-->SAOGEN;
     SAOGEN-->SAS;
-    SAS-->PUBLIC;
-   PUBLIC-->PUBLIC;
    
 ```
                      SAOGEN
