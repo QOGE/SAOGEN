@@ -1,5 +1,5 @@
 
-![description](/saog6.jpg)
+![description](/saogen-black.jpg)
 
 ## About SAOGEN
 
