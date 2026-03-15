@@ -72,7 +72,7 @@ The long-term objective is to develop an ecosystem where innovation evolves thro
 graph TD;
     SAOGEN-->QOGE;
     SAOGEN-->STELASER;
-    QOGE-->SAOGEN;
+    STELASER-->SAOGEN;
     QOGE-->D;
     C-->D;
 ```
