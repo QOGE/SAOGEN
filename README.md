@@ -35,7 +35,7 @@ SAOGEN introduces several structural innovations that distinguish it from tradit
 
 - Symbiotic Autonomous Organization (SAO)
   
-A governance architecture designed to coordinate human intelligence and AI-assisted analysis within a decentralized decision-making framework.
+<ins> A governance architecture designed to coordinate human intelligence and AI-assisted analysis within a decentralized decision-making framework.</ins>
 
 - Hyper-Optimization of Innovation
   
