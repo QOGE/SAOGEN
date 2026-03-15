@@ -68,6 +68,13 @@ SAOGEN aims to establish a new model for coordinating large-scale technological 
 
 The long-term objective is to develop an ecosystem where innovation evolves through distributed intelligence, enabling the creation of complex technologies and research initiatives that extend beyond the capabilities of traditional organizational structures.
 
+```mermaid
+graph TD;
+    A-->B;
+    A-->C;
+    B-->D;
+    C-->D;
+```
                      SAOGEN
         Symbiotic Autonomous Organization (SAO)
       Hyper-Optimization • IP Governance • Coordination
