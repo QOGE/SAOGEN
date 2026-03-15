@@ -34,6 +34,7 @@ SAOGEN is designed to function as an innovation infrastructure layer, supporting
 SAOGEN introduces several structural innovations that distinguish it from traditional blockchain projects:
 
 - Symbiotic Autonomous Organization (SAO)
+
   A governance architecture designed to coordinate human intelligence and AI-assisted analysis within a decentralized decision-making framework.
 
 - Hyper-Optimization of Innovation
