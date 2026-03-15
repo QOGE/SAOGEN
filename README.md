@@ -75,7 +75,7 @@ graph TD;
     SAOGEN-->SAS;
     SAS-->SAOGEN;
     QOGE-->RETAIL;
-    RETAL-->SAOGEN;
+    RETAIL-->SAOGEN;
 ```
                      SAOGEN
         Symbiotic Autonomous Organization (SAO)
