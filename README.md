@@ -10,11 +10,11 @@
         │                │                │
      STELASER         STARLIFT        Future SAS
         SAS              SAS             SAS
-        
-   Space Energy &    Large-Scale      Emerging
+        |                |                |
+    Space Energy &    Large Scale      Emerging
     Propulsion      Energy Systems   Technologies
-        │                                │
-        │                                │
-   Decentralized R&D                Photonic Computing
-   Infrastructure                   Stellar Energy
-                                    Advanced Systems
+        │                                 │
+        │                                 │
+    Decentralized R&D                Photonic Computing  
+    Infrastructure                   Stellar Energy
+                                     Advanced Systems
