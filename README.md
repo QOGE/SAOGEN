@@ -1,5 +1,5 @@
 
-![description](files/images/saog(2)jpg)
+![description](files/images/saog(2)png)
 ##
 ## About SAOGEN
 
