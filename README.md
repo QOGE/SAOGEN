@@ -1,5 +1,5 @@
-<p align="center">
-![description](files/images/saogen-250x250.png)
+
+![description]<p align="center">(files/images/saogen-250x250.png)
   </p>
 ##
 ## About SAOGEN
