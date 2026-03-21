@@ -1,7 +1,5 @@
 
-![description]  (<p align="center"> files/images/saogen-250x250.png </p>)  
-
-![description]  <p align="center"> https://github.com/QOGE/SAOGEN/blob/main/files/images/saogen-250x250.png </p> 
+![description]  (<p align="center">files/images/saogen-250x250.png</p>)
 
 ##
 ## About SAOGEN
