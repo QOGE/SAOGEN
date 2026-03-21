@@ -24,7 +24,9 @@ SAOGEN is designed to function as an innovation infrastructure layer, supporting
 ##
 ![description](files/images/saogen-250x250.png)
 ## What Makes SAOGEN Unique?
-Traditional research and development structures often isolate intellectual property and limit collaborative optimization. SAOGEN introduces a model where inventions and technological concepts can be collectively developed, governed, and refined through a decentralized framework.
+Traditional research and development structures often isolate intellectual property and limit collaborative optimization. 
+
+<!--SAOGEN introduces a model where inventions and technological concepts can be collectively developed, governed, and refined through a decentralized framework.-->
 
 SAOGEN introduces several structural innovations that distinguish it from traditional blockchain projects:
 
