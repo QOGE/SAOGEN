@@ -1,6 +1,6 @@
 # SAOGEN
 
-**Experimental Symbiotic Autonomous Organization on the QOGE ecosystem**
+**Experimental Symbiotic Autonomous Organization (SAO) on the QOGE ecosystem**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
