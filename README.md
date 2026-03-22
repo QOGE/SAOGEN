@@ -59,7 +59,7 @@ To test whether decentralized networks augmented by AI can coordinate long-term,
 
 ## Contributing
 
-Contributions are welcome in the form of ideas, code experiments, documentation, or governance proposals — always within the experimental scope. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions are welcome in the form of ideas, code experiments, documentation, or governance proposals — always within the experimental scope. See [CONTRIBUTING.md](CONTRIBUTING.md) file.
 
 ## License
 
