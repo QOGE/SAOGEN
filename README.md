@@ -15,7 +15,7 @@ It combines human insight with AI-assisted analysis and optimization within a de
 
 SAOGEN is an **experimental research and coordination framework**.  
 Participation involves **no guaranteed returns, revenue, profits, or economic benefits**.  
-The SAOGE token is designed solely for **governance participation** in an experimental ecosystem. Any potential future benefits (including revenue participation) are **highly speculative, entirely contingent on future decentralized community decisions**, and **not assured in any way**.
+The SAOGEN token is designed solely for **governance participation** in an experimental ecosystem. Any potential future benefits (including revenue participation) are **highly speculative, entirely contingent on future decentralized community decisions**, and **not assured in any way**.
 
 This project is **not**:
 - An investment opportunity
@@ -34,10 +34,10 @@ SAOGEN experiments with:
 
 All development remains abstract and experimental — no production systems, no deployed products, no promised timelines or milestones.
 
-## SAOGE Token (Experimental Governance Token)
+## SAOGEN Token (Experimental Governance Token)
 ![description](files/images/saogen_logo250x250.png)
 
-The SAOGE token is an experimental utility/governance token minted on Solana, with each token conceptually tied to 10 PoW-mined QOGE coins for computational backing.
+The SAOGEN token is an experimental utility/governance token minted on Solana, with each token conceptually tied to 10 PoW-mined QOGE coins for computational backing.
 
 Token holders **may** participate in:
 - Decentralized governance decisions (voting on proposals within the experimental framework)
