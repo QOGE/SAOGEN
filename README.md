@@ -1,4 +1,3 @@
-![description](files/images/saoge_logo250x250.png)
 # SAOGEN
 
 **Experimental Symbiotic Autonomous Organization on the QOGE ecosystem**
@@ -33,6 +32,7 @@ SAOGEN experiments with:
 All development remains abstract and experimental — no production systems, no deployed products, no promised timelines or milestones.
 
 ## SAOGEN Token (Experimental Governance Token)
+![description](files/images/saoge_logo250x250.png)
 
 The SAOGEN token is an experimental utility/governance token minted on Solana, with each token conceptually tied to 10 PoW-mined QOGE coins for computational backing.
 
