@@ -8,7 +8,8 @@
 **SAOGEN** is an **experimental** framework exploring a new **Post-DAO** category of decentralized organization: 
 the **Symbiotic Autonomous Organization (SAO)**. 
 
-It combines human insight with AI-assisted analysis and optimization within a decentralized, on-chain governance structure built on the [QOGE](https://github.com/qogecoin/qogecoin) blockchain with [SOLANA](https://github.com/qogecoin/qogecoin) ecosystem integrations for speed and composability.
+It combines human insight with AI-assisted analysis and optimization within a decentralized, on-chain governance structure built on the [QOGE](https://github.com/qogecoin/qogecoin) blockchain 
+with [SOLANA](https://github.com/qogecoin/qogecoin) ecosystem integrations for speed and composability.
 
 **This is strictly an experimental project** — focused on testing concepts in decentralized coordination, AI-augmented innovation, and shared intellectual property stewardship. No specific real-world applications, commercial outcomes, or guaranteed results are promised or implied.
 
