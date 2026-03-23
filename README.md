@@ -33,7 +33,7 @@ SAOGEN experiments with:
 - **Shared intellectual property coordination**: Transparent, on-chain mechanisms for collective management, licensing, and evolution of inventions (experimental only).
 - **Post-DAO organizational models**: Testing structures beyond traditional DAOs, where AI plays an active role in optimization and analysis.
 
-All development remains abstract and experimental — no production systems, no deployed products, no promised timelines or milestones.
+All development remains abstract and experimental — no guaranteed production systems, no guaranteed deployed products, no promised timelines or milestones.
 
 ## SAOGEN Token (Experimental Governance Token)
 <!-- ![description](files/images/saogen_logo250x250.png) -->
