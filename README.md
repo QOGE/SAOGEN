@@ -1,3 +1,4 @@
+![description](files/images/saogen_logo250x250.png)
 # SAOGEN
 
 **Symbiotic Autonomous Organization (SAO) on the [QOGE](https://github.com/qogecoin/qogecoin) ecosystem**
