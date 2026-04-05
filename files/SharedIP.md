@@ -7,7 +7,7 @@ Within the Symbiotic Autonomous Organization, generated inventions and optimizat
 
  The economic value derived from these inventions (through licensing, infrastructure usage fees, R&D repayment, or ecosystem services) is shared internally among participants according to governance rules.
 
------
+---
 
  Technical implementations and detailed specifications remain strictly within the SAOGEN development environment. 
 
