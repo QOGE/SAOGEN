@@ -14,3 +14,4 @@ Public materials provide only high-level, superficial descriptions to protect co
 ---
 
 SAOGEN does not pursue traditional patent filings for most concepts at this stage, nor does it have any obligation to disclose core technology externally.
+---
