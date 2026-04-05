@@ -5,7 +5,7 @@ Shared IP within SAOGEN
 
 
 
-> The economic value derived from these inventions (through licensing, infrastructure usage fees, R&D repayment, or ecosystem services) is shared internally among participants according to governance rules.
+ The economic value derived from these inventions (through licensing, infrastructure usage fees, R&D repayment, or ecosystem services) is shared internally among participants according to governance rules.
 
 
 
@@ -13,7 +13,7 @@ Shared IP within SAOGEN
 
 
 
-> Public materials provide only high-level, superficial descriptions to protect competitive advantage. 
+ Public materials provide only high-level, superficial descriptions to protect competitive advantage. 
 
 
 
