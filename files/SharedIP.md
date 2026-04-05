@@ -1,4 +1,4 @@
-** Shared IP within SAOGEN
+Shared IP within SAOGEN
 ---
 
 > Within the Symbiotic Autonomous Organization, generated inventions and optimizations are treated as collectively valued intellectual assets.
