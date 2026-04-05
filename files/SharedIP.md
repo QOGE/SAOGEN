@@ -7,9 +7,7 @@ The economic value derived from these inventions (through licensing, infrastruct
 
 
 > Technical implementations and detailed specifications remain strictly within the SAOGEN development environment. 
-
-
-> Public materials provide only high-level, superficial descriptions to protect competitive advantage. 
+Public materials provide only high-level, superficial descriptions to protect competitive advantage. 
 SAOGEN does not pursue traditional patent filings for most concepts at this stage, nor does it have any obligation to disclose core technology externally.
 
 
