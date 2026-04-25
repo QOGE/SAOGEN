@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-[![License: MIT](files/images/sipicon.png)](https://github.com/QOGE/SAOGEN/blob/main/files/SharedIP.md)
+[![License: MIT](files/images/sipiconb.png)](https://github.com/QOGE/SAOGEN/blob/main/files/SharedIP.md)
 
 **SAOGEN** is an **experimental** framework exploring a new **Post-DAO** category of decentralized organization: 
 the **Symbiotic Autonomous Organization (SAO)**. 
