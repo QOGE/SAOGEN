@@ -13,7 +13,7 @@ It combines human insight with AI-assisted analysis and optimization within a de
 
 **This is strictly an experimental project** — focused on testing concepts in decentralized coordination, AI-augmented innovation, and **[shared intellectual property](https://github.com/QOGE/SAOGEN/blob/main/files/SharedIP.md)** stewardship. 
 
-[![License: MIT](files/images/sipiconb.png)](https://github.com/QOGE/SAOGEN/blob/main/files/SharedIP.md)
+[![License: MIT](files/images/sipiconc.png)](https://github.com/QOGE/SAOGEN/blob/main/files/SharedIP.md)
 
 No specific real-world applications, commercial outcomes, or guaranteed results are promised or implied.
 
