@@ -1,4 +1,4 @@
-[![License: SIP](https://github.com/QOGE/SAOGEN/blob/main/files/SharedIP.md)](https://github.com/QOGE/SAOGEN/blob/main/files/SharedIP.md)
+![description](https://github.com/QOGE/SAOGEN/blob/main/files/images/sipiconc.png)
 
 Shared IP within SAOGEN
 ---
