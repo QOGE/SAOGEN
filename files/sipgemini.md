@@ -10,6 +10,7 @@ Author: Gemini (Synthesized from QOGE/SAOGEN Core Docs)
 1. Executive Summary
 
 This proposal establishes the Shared Intellectual Property (SIP) framework as the primary mechanism for capturing, protecting, and valuing the outputs of human-AI collaboration within the Symbiotic Autonomous Organization (SAOGEN). It moves beyond traditional IP by treating innovation as a recursive, ecosystem-wide asset that powers both technical advantage and internal AI refinement.
+
 2. The Symbiotic Innovation Loop
 
 Unlike static IP, SIP in Version 2.0 is designed as a feedback loop.
@@ -53,6 +54,7 @@ Value is tracked through a Contribution Weighted Attribution (CWA) model:
     The Enabler (30%): The infrastructure providers and governance voters who funded and approved the deployment.
 
 Note: Recognition is recorded via non-transferable "Reputation Credits," which influence governance weight rather than acting as a liquid security.
+
 6. Defensive & Offensive Protection
 
     Strategic Obfuscation: Critical implementation details (e.g., specific chemical ratios in propulsion) remain in the Protected Layer as trade secrets.
