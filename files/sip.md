@@ -4,7 +4,9 @@ Shared Intellectual Property (SIP) Framework for SAOGEN
 ---
 
 Version 1.0 — Proposed for SAOGEN Governance Review
+
 Date: April 2026
+
 Status: Draft for community and governance discussion
 
 
