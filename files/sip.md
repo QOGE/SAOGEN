@@ -100,9 +100,11 @@ Future enhancements: Dynamic reputation systems, soulbound-style tokens for cont
 SAOGEN embraces human-AI symbiosis as a core strength.
 
 AI can accelerate exploration, simulation, optimization, flaw detection, and iteration.
+
 Policy:
 
 Raw AI outputs are not automatically SIP.
+
 Value arises from human/AI-team curation, refinement, validation, integration, and deployment through SAOGEN processes.
 Governance may designate “AI logical nodes” or subsystems as contributors with defined recognition weights.
 Human oversight and accountability remain essential for quality, safety, and legal compliance.
