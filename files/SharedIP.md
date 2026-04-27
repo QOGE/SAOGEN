@@ -35,7 +35,7 @@ Not every idea automatically becomes monetizable SIP. Governance may classify co
 
 ## Public knowledge vs protected knowledge
 
-SAOGEN separates Shared IP into two layers:
+SAOGEN separates SIP into two layers:
 
 ### Public layer
 
@@ -49,7 +49,7 @@ Technical implementations and detailed specifications remain strictly within the
 
 ## Value generation
 
-Shared IP may generate value through multiple channels, including:
+SIP may generate value through multiple channels, including:
 
 - licensing agreements;
 - infrastructure usage fees;
@@ -129,6 +129,6 @@ Internal documents may contain deeper information, but access should be limited 
 
 ## Summary
 
-Shared IP is the SAOGEN mechanism for transforming collective human-AI invention into durable ecosystem value. It allows SAOGEN to document its direction publicly, protect its most important technical details privately, and create future governance pathways for licensing, deployment, contributor recognition, and ecosystem-level value sharing.
+SIP is the SAOGEN mechanism for transforming collective human-AI invention into durable ecosystem value. It allows SAOGEN to document its direction publicly, protect its most important technical details privately, and create future governance pathways for licensing, deployment, contributor recognition, and ecosystem-level value sharing.
 
 SIP is therefore not only an intellectual property policy. It is a strategic memory layer for the Symbiotic Autonomous Organization: a way to preserve inventions, coordinate contributors, and convert optimized knowledge into long-term technological advantage.
