@@ -16,7 +16,7 @@ This proposal establishes the Shared Intellectual Property (SIP) framework as th
 
 2. The Symbiotic Innovation Loop
 
-Unlike static IP, SIP in Version 2.0 is designed as a feedback loop.
+SIP in Version 2.0 is designed as a feedback loop.
 
     Generation: Human-guided AI agents explore design spaces (propulsion, energy, code).
 
