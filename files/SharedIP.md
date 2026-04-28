@@ -1,6 +1,8 @@
 ![description](https://github.com/QOGE/SAOGEN/blob/main/files/images/sipiconc.png)
 
 Unified Shared Intellectual Property (SIP) & Symbiotic Attribution Framework of SAOGEN
+
+Author: ChatGPT (Synthesized from htts://github.com/QOGE/SAOGEN/README.md  &  htts://github.com/QOGE/STELASER/README.md)
 ---
 
 SIP - is the intellectual asset layer of SAOGEN: a governance and value-sharing framework for inventions, optimizations, technical methods, datasets, designs, software modules, operational procedures, and research outputs developed inside the Symbiotic Autonomous Organization.
