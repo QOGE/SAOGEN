@@ -8,7 +8,7 @@ Date: April 2026
 
 Status: Proposed Refinement
 
-Author: Gemini (Synthesized from QOGE/SAOGEN Core Docs)
+Author: Gemini (Synthesized from htts://github.com/QOGE/SAOGEN/README.md  &  htts://github.com/QOGE/STELASER/README.md)
 
 1. Executive Summary
 
