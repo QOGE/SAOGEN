@@ -1,3 +1,5 @@
+![description](https://github.com/QOGE/SAOGEN/blob/main/files/images/sipiconc.png)
+
 # SIP-2.0: Symbiotic Intellectual Property Framework for SAOGEN
 
 **Version:** 2.0-Claude  
