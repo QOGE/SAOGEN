@@ -81,7 +81,7 @@ Validated SIP assets feed back into the SAOGEN intelligence layer — as trainin
 SAOGEN's internal ecosystem is the primary jurisdiction for SIP governance. External legal environments — patents, copyright, corporate IP law — are interfaces to be navigated as needed, not frameworks that define SAOGEN's internal ceiling. Where external law conflicts with internal governance, SAOGEN adapts its external interface while preserving internal integrity.
 
 **2.5 Autonomy as Earned Capability**
-Full autonomy — particularly at the SAS layer — is a destination reached by building trustworthy systems, not a starting assumption. The governance structures, attribution records, and validation protocols of SIP-C are the trust infrastructure that makes expanding autonomy defensible. Autonomy is earned by ecosystems, not granted to technologies.
+Full autonomy — particularly at the SAS layer — is a destination reached by building trustworthy systems, not a starting assumption. The governance structures, attribution records, and validation protocols of SIP-2.0 are the trust infrastructure that makes expanding autonomy defensible. Autonomy is earned by ecosystems, not granted to technologies.
 
 **2.6 Minimum Viable Disclosure**
 Every public disclosure is a deliberate governance act. SAOGEN reveals the minimum necessary to achieve a legitimate purpose — attracting contributors, establishing prior art, building community trust — and no more.
@@ -338,7 +338,7 @@ SAOGEN's internal ecosystem is primary. Where external legal environments create
 
 **Jurisdiction-aware deployment.** SAS physical production in any geographic jurisdiction must comply with local manufacturing, safety, and regulatory requirements. This is an operational constraint on SAS deployment scope, not a constraint on internal IP governance.
 
-**Legal counsel at the boundary.** As SAOGEN engages external partners, licensing arrangements, or physical production at scale, qualified legal counsel should review all external-facing IP decisions. SIP-C is not legal advice.
+**Legal counsel at the boundary.** As SAOGEN engages external partners, licensing arrangements, or physical production at scale, qualified legal counsel should review all external-facing IP decisions. SIP-2.0 is not legal advice.
 
 **Aspire forward.** Existing law does not yet accommodate fully autonomous production, multi-body IP attribution, or ecosystem-level ownership. SAOGEN operates within current law while actively supporting the development of legal frameworks adequate to the symbiotic future.
 
