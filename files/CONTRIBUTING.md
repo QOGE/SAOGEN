@@ -83,7 +83,7 @@ You can contribute to SAOGEN in several ways:
 
 ### Step 1: Discuss the Idea
 
-Before starting major work, open a GitHub Issue or discuss the proposal in the official SAOGEN community channel.
+Before starting major work, discuss the proposal in the official SAOGEN community channel.
 
 For small fixes, such as typos or minor layout improvements, you may open a pull request directly.
 
