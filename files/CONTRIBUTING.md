@@ -91,6 +91,8 @@ For small fixes, such as typos or minor layout improvements, you may open a pull
 
 Fork the repository to your own GitHub account and create a new branch:
 
+EXAMPLE: 🔽
+
 ```bash
 git checkout -b feature/your-feature-name
 ```
