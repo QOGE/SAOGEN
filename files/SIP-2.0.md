@@ -75,21 +75,27 @@ The compounding loop — humans directing AI Nodes, AI Nodes generating and refi
 The quality of creative direction matters as much as the contribution itself. A human who carefully architects a problem space, guides multiple iteration cycles, and makes deliberate selection decisions has exercised meaningful creative judgment — even when the output is AI-generated. Attribution is sensitive to the depth of human creative direction, not merely its presence. The same principle extends to AI Nodes: a Node that produces a novel synthesis from a rich, structured prompt has contributed more than one that produces a generic response to a vague one.
 
 **2.2 Lifecycle Governance**
+
 Every SIP asset passes through defined lifecycle stages. Governance operates on assets at the right stage — not on undifferentiated outputs. Most raw outputs never become SIP. The lifecycle is a filter, not a pipeline.
 
 **2.3 Recursive Value**
+
 Validated SIP assets feed back into the SAOGEN intelligence layer — as training data for AI Nodes, as reference libraries for SAS execution, and as governance precedents for future decisions. This recursion is not incidental. It is the mechanism by which SAOGEN compounds its own intelligence over time and creates a self-improving moat that no external actor can easily replicate.
 
 **2.4 Internal Primacy**
+
 SAOGEN's internal ecosystem is the primary jurisdiction for SIP governance. External legal environments — patents, copyright, corporate IP law — are interfaces to be navigated as needed, not frameworks that define SAOGEN's internal ceiling. Where external law conflicts with internal governance, SAOGEN adapts its external interface while preserving internal integrity.
 
 **2.5 Autonomy as Earned Capability**
+
 Full autonomy — particularly at the SAS layer — is a destination reached by building trustworthy systems, not a starting assumption. The governance structures, attribution records, and validation protocols of SIP-2.0 are the trust infrastructure that makes expanding autonomy defensible. Autonomy is earned by ecosystems, not granted to technologies.
 
 **2.6 Minimum Viable Disclosure**
+
 Every public disclosure is a deliberate governance act. SAOGEN reveals the minimum necessary to achieve a legitimate purpose — attracting contributors, establishing prior art, building community trust — and no more.
 
 **2.7 Honest Uncertainty**
+
 SIP-C does not pretend that AI authorship, SAS accountability, or multi-body value distribution are legally settled. Where the law is unclear, governance creates internal rules that are fair, consistent, and capable of adapting to legal developments.
 
 ---
