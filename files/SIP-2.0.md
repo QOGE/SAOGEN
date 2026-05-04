@@ -64,7 +64,9 @@ The three bodies are not equal in the same way — they are complementary:
 - AI Nodes provide **cognitive scale and synthesis**
 - SAS provide **execution velocity and replication**
 
-The compounding loop — humans directing AI Nodes, AI Nodes generating and refining SIP assets, SAS executing those assets, SAS performance data feeding back into AI Node refinement — is the core value engine of SAOGEN. SIP-2.0 exists to protect, record, and accelerate this loop.
+The compounding loop — humans directing AI Nodes, AI Nodes generating and refining SIP assets, SAS executing those assets, SAS performance data feeding back into AI Node refinement — is the core value engine of SAOGEN. 
+
+SIP-2.0 exists to protect, record, and accelerate this loop.
 
 ---
 
