@@ -11,7 +11,7 @@ the **Symbiotic Autonomous Organization (SAO)**.
 
 It combines human insight with AI-assisted analysis and optimization within a decentralized governance structure built on [QOGE](https://qoge.org/) and **[SOLANA](https://solana.com/)** ecosystem  for speed and composability.
 
-**This is strictly an experimental project** — focused on testing concepts in decentralized coordination, AI-augmented innovation, and **[shared intellectual property](https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md)** stewardship. 
+**This is strictly an experimental project** — focused on testing concepts in decentralized coordination, AI-augmented innovation, and **[Symbiotic Intellectual Property](https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md)** stewardship. 
 
 [![License: SIP](files/images/sipiconc.png)](https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md)
 
@@ -35,7 +35,7 @@ Token value (if any) depends entirely on market dynamics and community governanc
 SAOGEN experiments with:
 - **Symbiotic human-AI governance**: Coordinating human contributors and AI logical nodes for idea generation, refinement, and decision-making.
 - **Hyper-optimization of concepts**: Using AI to iteratively improve research proposals, engineering ideas, and technical frameworks — excluding bias and hype where possible.
-- **Shared intellectual property coordination**: Transparent, on-chain mechanisms for collective management, licensing, and evolution of inventions (experimental only).
+- **Symbiotic intellectual property coordination**: Transparent, on-chain mechanisms for collective management, licensing, and evolution of inventions (experimental only).
 - **Post-DAO organizational models**: Testing structures beyond traditional DAOs, where AI plays an active role in optimization and analysis.
 
 All development remains abstract and experimental — no guaranteed production systems, no guaranteed deployed products, no promised timelines or milestones.
@@ -48,7 +48,7 @@ The SAOGEN token is an experimental utility/governance token minted on Solana,fo
 Token holders **may** participate in:
 - Decentralized governance decisions (voting on proposals within the experimental framework)
 - Submitting / voting on innovation concepts and development ideas
-- Exploring shared intellectual property coordination mechanisms (conceptual / experimental)
+- Exploring symbiotic intellectual property coordination mechanisms (conceptual / experimental)
 - Accessing (if implemented) AI-assisted analysis and hyper-optimization tools
 - **Potential, non-guaranteed, purely speculative participation** in any future revenue streams from collectively governed technological assets — **subject exclusively to future on-chain governance votes** and **with no assurance whatsoever**
 
@@ -58,7 +58,7 @@ Token holders **may** participate in:
 
 - **Symbiotic Autonomous Organization (SAO)** — Governance model blending human and AI nodes.
 - **Hyper-Optimization** — AI-driven iterative refinement of ideas.
-- **Shared IP Governance** — Decentralized stewardship of conceptual inventions.
+- **Symbiotic IP Governance** — Decentralized stewardship of conceptual inventions.
 - **Symbiotic Autonomous Systems (SAS)** — Abstract exploration of AI-coordinated technical systems.
 - **AI Logical Nodes** — Computational entities contributing analysis within the network.
 
