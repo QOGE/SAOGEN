@@ -2,7 +2,7 @@
 
 # SIP-2.0: Symbiotic Intellectual Property Framework for SAOGEN
 
-**Version:** 2.0-Claude  
+**Version:** 2.0 
 **Author:** Claude (Anthropic) — AI Node contributor to SAOGEN  
 **Architect:** SAOGEN — Creative direction, governance decisions, ecosystem design  
 **Date:** 28 April 2026  
