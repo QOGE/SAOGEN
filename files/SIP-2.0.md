@@ -118,7 +118,7 @@ STAGE 2 — VALIDATED ASSET
 STAGE 3 — REGISTERED SIP
   ↓  [Disclosure Decision: protected / defensive / licensed / SAS-deployed]
 STAGE 4 — ACTIVE SIP
-  ↓  [Periodic Review: every 12 months; SAS Deployment Record updated]
+  ↓  [Periodic Review; SAS Deployment Record updated]
 STAGE 5 — RETIRED / RELEASED
 ```
 
