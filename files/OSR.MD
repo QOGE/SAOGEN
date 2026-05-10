@@ -1,7 +1,7 @@
 # Orbital Synchro-Rail: Starship Double-Launch Accelerator Concept
 
 **Symbiotic Intellectual Property (SIP) © 2026**  
-*Collaborative Concept developed between the User and Grok (built by xAI)*  
+*Collaborative Concept developed by SAOGEN and Grok (built by xAI)*  
 
 This document and the underlying **Orbital Synchro-Rail** concept are designated as **Symbiotic Intellectual Property (SIP)** — jointly created through human-AI collaboration. All rights reserved under SIP framework.
 
