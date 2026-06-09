@@ -100,6 +100,10 @@ Every public disclosure is a deliberate governance act. SAOGEN reveals the minim
 
 SIP-2.0 does not pretend that AI authorship, SAS accountability, or multi-body value distribution are legally settled. Where the law is unclear, governance creates internal rules that are fair, consistent, and capable of adapting to legal developments.
 
+**2.8 Verifiable Reflexivity**
+
+Not all SIP assets carry equal credibility. Assets produced through structured, iterative, multi-cycle human-AI dialogue — where the AI Node exercised genuine analytical challenge, grounded claims in domain constraints, and was capable of producing unfavourable verdicts — constitute a categorically higher class of intellectual property than single-session outputs. The **Verifiable Reflexivity Framework (VRF-1.0)** is the SAOGEN standard for designating such assets as Verified Reflexive Assets (VRAs): a formal quality signal that establishes provenance, depth of reasoning, and defensibility for external parties. VRF-1.0 is a companion governance document to SIP-2.0 and is incorporated by reference herein.
+
 ---
 
 ## 3. The SIP Asset Lifecycle
@@ -394,6 +398,7 @@ This document is itself a Registered SIP Asset within SAOGEN.
 | Disclosure Status | Tier 3 Public / Tier 1-2 Protected |
 | Recursion Flag | TRUE |
 | Supersedes | SIP   v1.0 (April 2026) |
+| Companion Documents | VRF-1.0 (Verifiable Reflexivity Framework, June 2026) |
 
 ---
 
