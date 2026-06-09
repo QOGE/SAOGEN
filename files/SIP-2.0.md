@@ -102,7 +102,7 @@ SIP-2.0 does not pretend that AI authorship, SAS accountability, or multi-body v
 
 **2.8 Verifiable Reflexivity**
 
-Not all SIP assets carry equal credibility. Assets produced through structured, iterative, multi-cycle human-AI dialogue — where the AI Node exercised genuine analytical challenge, grounded claims in domain constraints, and was capable of producing unfavourable verdicts — constitute a categorically higher class of intellectual property than single-session outputs. The **Verifiable Reflexivity Framework (VRF-1.0)** is the SAOGEN standard for designating such assets as Verified Reflexive Assets (VRAs): a formal quality signal that establishes provenance, depth of reasoning, and defensibility for external parties. VRF-1.0 is a companion governance document to SIP-2.0 and is incorporated by reference herein.
+Not all SIP assets carry equal credibility. Assets produced through structured, iterative, multi-cycle human-AI dialogue — where the AI Node exercised genuine analytical challenge, grounded claims in domain constraints, and was capable of producing unfavourable verdicts — constitute a categorically higher class of intellectual property than single-session outputs. The **Verifiable Reflexivity Framework (VRF-1.0)** is the SAOGEN standard for designating such assets as Verified Reflexive Assets (VRAs): a formal quality signal that establishes provenance, depth of reasoning, and defensibility for external parties. [VRF-1.0](https://github.com/QOGE/SAOGEN/blob/main/files/VRF-1.0_Verifiable_Reflexivity_Framework.docx) is a companion governance document to SIP-2.0 and is incorporated by reference herein.
 
 ---
 
