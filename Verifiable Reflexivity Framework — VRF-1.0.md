@@ -1,6 +1,6 @@
 # Verifiable Reflexivity Framework — VRF-1.0
 
-**Governance Reference:** SIP-C v2.0 / Origin Layer A  
+**Governance Reference:** SIP v2.0 / Origin Layer A  
 **Issued:** June 2026  
 **Status:** Active — Living Document  
 **Architect & Founder:** SAOGEN  
@@ -85,7 +85,7 @@ The path from initial SIP to Verified Reflexive Asset follows four stages.
 
 3. **Maturity Assessment** — SAOGEN, with AI node assistance, evaluates the SIP against the five criteria in Section 3. Assessment is documented and stored with the SIP record. Multi-node review (more than one AI node contributing critique) strengthens the assessment.
 
-4. **VRA Registration** — SIPs satisfying all maturity criteria are registered as Verified Reflexive Assets under SIP-C v2.0 governance. The registration record includes: SIP ID, title, domain, contributing node(s), assessment date, primary physics or engineering basis, and a brief summary of the most significant challenge-response cycle.
+4. **VRA Registration** — SIPs satisfying all maturity criteria are registered as Verified Reflexive Assets under SIP v2.0 governance. The registration record includes: SIP ID, title, domain, contributing node(s), assessment date, primary physics or engineering basis, and a brief summary of the most significant challenge-response cycle.
 
 VRA status is reviewable. If subsequent analysis reveals a fatal flaw in a designated VRA, the SIP is reclassified as **Suspended VRA** with the disqualifying finding documented. This maintains framework integrity and, paradoxically, strengthens the credibility of remaining active VRAs.
 
@@ -101,7 +101,7 @@ Status designations: **Active VRA**, **Candidate** (criteria partially met), **S
 | SIP-SPACE-C07 | UMMOLA — Unified Multi-Mission Orbital Laser Architecture | Space Ops | ✅ Active VRA | Claude |
 | SIP-SPACE-C08 | ODEF — Orbital Debris Evaporation Field | Space Ops | ✅ Active VRA | Claude |
 | SIP-SPACE-1.1 | Space Operations Annex | Governance | ✅ Active VRA | Claude |
-| SIP-C v2.0 | SAOGEN Governance Framework | Governance | ✅ Active VRA | Claude |
+| SIP v2.0 | SAOGEN Governance Framework | Governance | ✅ Active VRA | Claude |
 | SIP-CHE-RR-45 | Ceramic Heat-Exchange Assisted Retrograde-Reduced Reentry | Propulsion | 🚫 Suspended VRA | Claude |
 | SIP-SPACE-05 | Asymmetric Delta-v Operations & Water Ballast System | Space Ops | 🔶 Candidate | Grok |
 | SIP-SPACE-06 | HRX Glider Family (Cargo Glider / Nano Glider) | Space Ops | 🔶 Candidate | Grok |
@@ -161,7 +161,7 @@ This document is VRF-1.0. It supersedes informal references to "Verifiable Refle
 | Field | Value |
 |---|---|
 | Document ID | VRF-1.0 |
-| Governance Reference | SIP-C v2.0 / Origin Layer A |
+| Governance Reference | SIP v2.0 / Origin Layer A |
 | Architect | SAOGEN |
 | Contributing AI Nodes | Claude (Anthropic, claude-sonnet-4-6), Grok (xAI), ChatGPT (OpnAI), Gemini (Google) |
 | Issued | June 2026 |
