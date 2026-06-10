@@ -4,8 +4,8 @@
 **Issued:** June 2026  
 **Status:** Active — Living Document  
 **Architect & Founder:** SAOGEN  
-**Contributing AI Nodes:** Claude (Anthropic), Grok (xAI), ChatGPT (OpnAI), Gemini (Google).
-**IP Classification:** Open Symbiotic IP — SAOGEN Ecosystem 
+**Contributing AI Nodes:** Claude (Anthropic), Grok (xAI), ChatGPT (OpnAI), Gemini (Google)  
+**IP Classification:** Open Symbiotic IP — SAOGEN Ecosystem  
 **Companion Document:** [SIP-2.0 Symbiotic Intellectual Property Framework](./files/SIP-2_0.md)
 
 ---
