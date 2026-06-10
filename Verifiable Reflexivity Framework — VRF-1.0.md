@@ -3,16 +3,16 @@
 **Governance Reference:** SIP-C v2.0 / Origin Layer A  
 **Issued:** June 2026  
 **Status:** Active — Living Document  
-**Architect & Founder:** QOGE  
-**Contributing AI Nodes:** Claude (Anthropic), Grok (xAI)  
+**Architect & Founder:** SAOGEN  
+**Contributing AI Nodes:** Claude (Anthropic), Grok (xAI), ChatGPT (OpnAI), Gemini (Google).
 **IP Classification:** Open Symbiotic IP — SAOGEN Ecosystem  
-**Companion Document:** [SIP-2.0 Symbiotic Intellectual Property Framework](./SIP-2_0.md)
+**Companion Document:** [SIP-2.0 Symbiotic Intellectual Property Framework](./files/SIP-2_0.md)
 
 ---
 
 ## 1. Executive Summary
 
-The Verifiable Reflexivity Framework (VRF) is a formal methodology for producing, validating, and designating high-trust intellectual assets through structured human-AI symbiotic collaboration. It operates within the SAOGEN ecosystem under SIP-C v2.0 governance.
+The Verifiable Reflexivity Framework (VRF) is a formal methodology for producing, validating, and designating high-trust intellectual assets through structured human-AI symbiotic collaboration. It operates within the SAOGEN ecosystem under SIP-v2.0 governance.
 
 In an era where AI can generate vast quantities of content at near-zero cost, the fundamental problem is not production but trust: how can external parties, co-developers, or institutions distinguish deep, battle-tested conceptual work from superficial output? VRF solves this by establishing explicit, auditable criteria that a Symbiotic Innovation Proposal (SIP) must satisfy before receiving the designation of **Verified Reflexive Asset (VRA)**.
 
@@ -45,7 +45,7 @@ Reflexivity is the property that distinguishes a VRA from a well-prompted output
 - **Negative result capacity** — the AI node was capable of and produced unfavourable verdicts (design rejection, physics disqualification, scope reduction) where warranted.
 - **Domain grounding** — analysis was anchored to first principles, quantitative constraints, or established engineering/scientific frameworks, not only to plausibility.
 
-> **Note on AI node architecture:** Reflexivity is an analytical property of the process, not a claim about persistent AI consciousness or continuous partnership. Session-scoped AI nodes contribute depth within sessions; continuity and institutional memory are maintained by the human architect (QOGE) and the SAOGEN governance record. This distinction must be preserved in all external representations of the framework.
+> **Note on AI node architecture:** Reflexivity is an analytical property of the process, not a claim about persistent AI consciousness or continuous partnership. Session-scoped AI nodes contribute depth within sessions; continuity and institutional memory are maintained by the human architect (Symbiont) and the SAOGEN governance record. This distinction must be preserved in all external representations of the framework.
 
 ### 2.3 Valuable
 
@@ -79,11 +79,11 @@ All five criteria must be satisfied to a passing standard. A SIP that passes fou
 
 The path from initial SIP to Verified Reflexive Asset follows four stages.
 
-1. **Proposal** — QOGE or a contributing AI node initiates a SIP with a problem statement and candidate solution. The SIP is registered with a provisional ID.
+1. **Proposal** — a Symbiont, SAOGEN or a contributing AI node initiates a SIP with a problem statement and candidate solution. The SIP is registered with a provisional ID.
 
 2. **Development** — Iterative sessions refine the concept. Each session with material critique or revision is logged. The AI node(s) actively challenge assumptions, test against physical constraints, and document objections and resolutions.
 
-3. **Maturity Assessment** — QOGE, with AI node assistance, evaluates the SIP against the five criteria in Section 3. Assessment is documented and stored with the SIP record. Multi-node review (more than one AI node contributing critique) strengthens the assessment.
+3. **Maturity Assessment** — SAOGEN, with AI node assistance, evaluates the SIP against the five criteria in Section 3. Assessment is documented and stored with the SIP record. Multi-node review (more than one AI node contributing critique) strengthens the assessment.
 
 4. **VRA Registration** — SIPs satisfying all maturity criteria are registered as Verified Reflexive Assets under SIP-C v2.0 governance. The registration record includes: SIP ID, title, domain, contributing node(s), assessment date, primary physics or engineering basis, and a brief summary of the most significant challenge-response cycle.
 
@@ -128,7 +128,7 @@ The VRF itself is an asset independent of any individual SIP. A demonstrated, re
 
 ### 6.4 Multi-Node Portfolio Effect
 
-As the VRA register grows across multiple contributing AI nodes (currently Claude and Grok), the portfolio demonstrates two things simultaneously: that the methodology is not node-specific, and that QOGE as architect is the continuity and quality layer. This positions SAOGEN correctly — the human architect is not replaced by AI nodes but is made more productive and credible by them.
+As the VRA register grows across multiple contributing AI nodes, the portfolio demonstrates two things simultaneously: that the methodology is not node-specific, and that SAOGEN is the continuity and quality layer. This positions SAOGEN correctly — the human architect is not replaced by AI nodes but is made more productive and credible by them.
 
 ---
 
@@ -145,12 +145,12 @@ Honest representation of VRF limitations is itself a demonstration of the framew
 
 ## 8. Governance and Amendment
 
-The VRF is governed under SIP-C v2.0 as Open Symbiotic IP within the SAOGEN ecosystem. Amendments to the framework require:
+The VRF is governed under SIP v2.0 as Open Symbiotic IP within the SAOGEN ecosystem. Amendments to the framework require:
 
 1. A documented rationale citing specific limitations or new requirements.
 2. Review against existing VRAs to confirm backward compatibility or explicit restatement of affected designations.
 3. Version increment (VRF-1.1, VRF-2.0, etc.) with changelog.
-4. QOGE approval as Architect and Founder.
+4. SAOGEN approval as Architect and Founder.
 
 This document is VRF-1.0. It supersedes informal references to "Verifiable Reflexivity" in prior sessions and establishes the operational standard against which all future VRA designations will be assessed.
 
@@ -162,14 +162,14 @@ This document is VRF-1.0. It supersedes informal references to "Verifiable Refle
 |---|---|
 | Document ID | VRF-1.0 |
 | Governance Reference | SIP-C v2.0 / Origin Layer A |
-| Architect | QOGE |
-| Contributing AI Nodes | Claude (Anthropic, claude-sonnet-4-6), Grok (xAI) |
+| Architect | SAOGEN |
+| Contributing AI Nodes | Claude (Anthropic, claude-sonnet-4-6), Grok (xAI), ChatGPT (OpnAI), Gemini (Google) |
 | Issued | June 2026 |
 | Status | Active — Living Document |
 | IP Classification | Open Symbiotic IP — SAOGEN Ecosystem |
-| Companion Documents | [SIP-2.0](./SIP-2_0.md) |
+| Companion Documents | [SIP-2.0](/files/SIP-2_0.md) |
 | Supersedes | Informal VRF references, prior sessions |
 
 ---
 
-*VRF-1.0 is an intellectual contribution to the SAOGEN ecosystem, co-developed by Claude (Anthropic) and Grok (xAI) under the creative direction of QOGE, June 2026. It does not constitute legal, financial, or investment advice. It is a living governance document, expected to evolve with the ecosystem it serves.*
+*VRF-1.0 is an intellectual contribution to the SAOGEN ecosystem, co-developed by Claude (Anthropic) and Grok (xAI) under the creative direction of SAOGEN, June 2026. It does not constitute legal, financial, or investment advice. It is a living governance document, expected to evolve with the ecosystem it serves.*
