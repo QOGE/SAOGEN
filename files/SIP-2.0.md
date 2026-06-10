@@ -27,7 +27,7 @@ SIP Version 2.0 supersedes SIP Versions 1.X and incorporates the full three-body
 
 ## 1. The SAOGEN Three-Body Architecture
 
-SAOGEN is a Symbiotic Autonomous Organisation (SAO) composed of three distinct but interdependent layers. SIP-2 governs intellectual assets across all three.
+SAOGEN is a Symbiotic Autonomous Organisation (SAO) composed of three distinct but interdependent layers. SIP-2.0 governs intellectual assets across all three.
 
 ```
 ╔══════════════════════════════════════════════════════════╗
