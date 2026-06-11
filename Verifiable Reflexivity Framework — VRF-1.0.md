@@ -91,7 +91,7 @@ VRA status is reviewable. If subsequent analysis reveals a fatal flaw in a desig
 
 ---
 
-## 5. Current Verified Reflexive Asset Register 11/06/2026
+## 5. Examples of Current Verified Reflexive Asset Register 11/06/2026
 
 Status designations: **Active VRA**, **Candidate** (criteria partially met), **Suspended VRA** (disqualified), **Archived**.
 
