@@ -91,22 +91,21 @@ VRA status is reviewable. If subsequent analysis reveals a fatal flaw in a desig
 
 ---
 
-## 5. Current Verified Reflexive Asset Register
+## 5. Current Verified Reflexive Asset Register 11/06/2026
 
 Status designations: **Active VRA**, **Candidate** (criteria partially met), **Suspended VRA** (disqualified), **Archived**.
 
-| SIP ID | Title | Domain | Status | AI Node(s) |
+| SIP ID | Title | Domain | Status | AI Architect Node(s) |
 |---|---|---|---|---|
-| SIP-SPACE-01 | Helion Rail / STELASER Architecture | Space Ops | ✅ Active VRA | Claude |
-| SIP-SPACE-02 | Hydrogen Reverse eXchabge (HRX) engine / STELASER Architecture | Propulsion | ✅ Active VRA | Claude |
-| SIP-SPACE-03 | Orbital Synchrorail / STELASER Architecture | Space Ops | ✅ Active VRA | Claude |
-| SIP-SPACE-C07 | UMMOLA — Unified Multi-Mission Orbital Laser Architecture | Space Ops | ✅ Active VRA | Claude |
-| SIP-SPACE-C08 | ODEF — Orbital Debris Evaporation Field | Space Ops | ✅ Active VRA | Claude |
-| SIP-SPACE-1.1 | Space Operations Annex | Governance | ✅ Active VRA | Claude |
-| SIP v2.0 | SAOGEN Governance Framework | Governance | ✅ Active VRA | Claude |
-| SIP-CHE-RR-45 | Ceramic Heat-Exchange Assisted Retrograde-Reduced Reentry | Propulsion | 🚫 Suspended VRA | Claude |
-| SIP-SPACE-05 | Asymmetric Delta-v Operations & Water Ballast System | Space Ops | 🔶 Candidate | Grok |
-| SIP-SPACE-06 | HRX Glider Family (Cargo Glider / Nano Glider) | Space Ops | 🔶 Candidate | Grok |
+| SIP-SPACE-01 | Helion Rail / STELASER Architecture | Space Ops | ✅ Active VRA | SAOGEN,OpenAI |
+| SIP-SPACE-02 | Hydrogen Reverse eXchange (HRX) engine / STELASER Architecture | Propulsion | ✅ Active VRA | SAOGEN,OpenAI |
+| SIP-SPACE-03 | Orbital Synchrorail / STELASER Architecture | Space Ops | ✅ Active VRA | SAOGEN,XAI |
+| SIP-SPACE-05 | Asymmetric Delta-v Operations & Ballast System | Space Ops | 🔶 Candidate | SAOGEN,XAI |
+| SIP-SPACE-06 | HRX Glider Family (Cargo Glider / Nano Glider) | Space Ops | 🔶 Candidate | SAOGEN,XAI |
+| SIP-SPACE-C07 | UMMOLA — Unified Multi-Mission Orbital Laser Architecture | Space Ops | ✅ Active VRA | SAOGEN,Anthropic |
+| SIP-SPACE-C08 | ODEF — Orbital Debris Evaporation Field | Space Ops | ✅ Active VRA | Anthropic |
+| SIP-CHE-RR-45 | Ceramic Heat-Exchange Assisted Retrograde-Reduced Reentry | Propulsion | 🚫 Suspended VRA | Anthropic |
+
 
 > *Note on Candidate entries:* SIP-SPACE-05 and SIP-SPACE-06 are registered as Candidates pending physics validation depth assessment against Section 3 criteria. Their inclusion does not imply VRA status. Grok-attributed SIPs require equivalent validation depth to Claude-attributed SIPs — the standard is uniform regardless of contributing node.
 
