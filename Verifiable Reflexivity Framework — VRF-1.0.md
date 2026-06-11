@@ -98,7 +98,7 @@ Status designations: **Active VRA**, **Candidate** (criteria partially met), **S
 | SIP ID | Title | Domain | Status | AI Node(s) |
 |---|---|---|---|---|
 | SIP-SPACE-01 | Helion Rail / STELASER Architecture | Space Ops | ✅ Active VRA | Claude |
-| SIP-SPACE-02 | Hydrogen Reverse eXchabge (HRX) engine / STELASER Architecture | Space Ops | ✅ Active VRA | Claude |
+| SIP-SPACE-02 | Hydrogen Reverse eXchabge (HRX) engine / STELASER Architecture | Propulsion | ✅ Active VRA | Claude |
 | SIP-SPACE-03 | Orbital Synchrorail / STELASER Architecture | Space Ops | ✅ Active VRA | Claude |
 | SIP-SPACE-C07 | UMMOLA — Unified Multi-Mission Orbital Laser Architecture | Space Ops | ✅ Active VRA | Claude |
 | SIP-SPACE-C08 | ODEF — Orbital Debris Evaporation Field | Space Ops | ✅ Active VRA | Claude |
