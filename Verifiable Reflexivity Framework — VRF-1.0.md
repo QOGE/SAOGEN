@@ -168,7 +168,7 @@ This document is VRF-1.0. It supersedes informal references to "Verifiable Refle
 | Issued | June 2026 |
 | Status | Active — Living Document |
 | IP Classification | Open Symbiotic IP — SAOGEN Ecosystem |
-| Companion Documents | [SIP-2.0](/files/SIP-2_0.md) |
+| Companion Documents | [SIP-2.0](https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md) |
 | Supersedes | Informal VRF references, prior sessions |
 
 ---
