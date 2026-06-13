@@ -14,7 +14,7 @@ It combines human insight with AI-assisted analysis and optimization within a de
 **This is strictly an experimental project** — focused on testing concepts in decentralized coordination, AI-augmented innovation, and **[Symbiotic Intellectual Property](https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md)** stewardship. 
 
 <a href="https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md">
-  <img src="files/images/sip_icon.svg" height="120"/>
+  <img src="files/images/sip_icon.svg" height="200"/>
 </a>
 
 No specific real-world applications, commercial outcomes, or guaranteed results are promised or implied.
