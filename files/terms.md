@@ -13,7 +13,7 @@ These Terms of Use ("Terms") govern access to and use of **qoge.org** and any as
 
 By accessing or using the Platform, you confirm that you have read, understood, and agree to these Terms. If you do not agree, do not use the Platform.
 
-These Terms apply to general visitors and do not supersede or replace **SIP-C v2.0**, which governs all contributor relationships, intellectual asset registration, and internal SAOGEN ecosystem operations. In any conflict between these Terms and SIP-C v2.0 for contributor matters, SIP-C v2.0 prevails.
+These Terms apply to general visitors and do not supersede or replace **SIP v2.0**, which governs all contributor relationships, intellectual asset registration, and internal SAOGEN ecosystem operations. In any conflict between these Terms and SIP v2.0 for contributor matters, SIP v2.0 prevails.
 
 ### 1.1 Organisational Architecture
 
@@ -23,7 +23,7 @@ QOGE operates as an open, decentralised community frontier under MIT licence, pr
 
 ## 2. Platform Purpose
 
-The Platform provides public information about SAOGEN — the Symbiotic Autonomous Organisation — its three-body architecture (Humans, AI Nodes, Symbiotic Autonomous Systems), its intellectual property governance framework (SIP-C v2.0), and its community channels. The Platform is not a marketplace, financial product, or investment vehicle.
+The Platform provides public information about SAOGEN — the Symbiotic Autonomous Organisation — its three-body architecture (Humans, AI Nodes, Symbiotic Autonomous Systems), its intellectual property governance framework (SIP v2.0), and its community channels. The Platform is not a marketplace, financial product, or investment vehicle.
 
 ---
 
@@ -31,13 +31,13 @@ The Platform provides public information about SAOGEN — the Symbiotic Autonomo
 
 ### 3.1 SAOGEN IP
 
-All content on the Platform — including text, structure, documentation, graphics, and governance documents — is the intellectual property of QOGE / SAOGEN or its attributed contributors (human or AI Node), governed by SIP-C v2.0. No content may be reproduced, adapted, distributed, or used for any commercial purpose without explicit written permission from QOGE.
+All content on the Platform — including text, structure, documentation, graphics, and governance documents — is the intellectual property of QOGE / SAOGEN or its attributed contributors (human or AI Node), governed by SIP v2.0. No content may be reproduced, adapted, distributed, or used for any commercial purpose without explicit written permission from QOGE.
 
 Attribution records for SAOGEN IP assets are maintained in the SAOGEN Intellectual Asset Registry (IAR) as defined in Section 6 of SIP v2.0.
 
 ### 3.2 Contributor IP
 
-Contributions submitted to SAOGEN through any channel are subject to the attribution, lifecycle, and governance terms defined in SIP-C v2.0. Contributors retain the attribution rights recorded in the IAR. Submission of a contribution constitutes acceptance of SIP-C v2.0 governance.
+Contributions submitted to SAOGEN through any channel are subject to the attribution, lifecycle, and governance terms defined in SIP v2.0. Contributors retain the attribution rights recorded in the IAR. Submission of a contribution constitutes acceptance of SIP v2.0 governance.
 
 ### 3.3 AI Node Attribution
 
@@ -96,7 +96,7 @@ The Platform links to third-party platforms including GitHub, Discord, X/Twitter
 
 SAOGEN reserves the right to modify these Terms at any time. Material changes will be announced on the Platform with reasonable notice before they take effect. Continued use of the Platform after the effective date of revised Terms constitutes acceptance.
 
-SIP v2.0 itself is version-controlled and subject to governance revision as defined in Section 10 of that document. The Terms of Use will be updated to reflect any material changes to SIP-C v2.0 that affect Platform users.
+SIP v2.0 itself is version-controlled and subject to governance revision as defined in Section 10 of that document. The Terms of Use will be updated to reflect any material changes to SIP v2.0 that affect Platform users.
 
 ---
 
