@@ -1,5 +1,5 @@
 <a href="https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md">
-  <img src="/images/sip_iconc.png" height="50"/>
+  <img src="images/sip_iconc.png" height="50"/>
 </a>
 
 # SIP-2.0: Symbiotic Intellectual Property Framework for SAOGEN
