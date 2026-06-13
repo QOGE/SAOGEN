@@ -9,7 +9,7 @@
 
 ## 1. Scope
 
-This Privacy Policy applies to all visitors and users of **qoge.org** and any associated SAOGEN public-facing interfaces (collectively, "the Platform"). It does not govern internal SAOGEN contributor relationships, which are governed by [SIP-C v2.0](https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md).
+This Privacy Policy applies to all visitors and users of **qoge.org** and any associated SAOGEN public-facing interfaces (collectively, "the Platform"). It does not govern internal SAOGEN contributor relationships, which are governed by [SIP v2.0](https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md).
 
 ### 1.1 Organisational Architecture
 
@@ -89,7 +89,7 @@ SAOGEN does not sell personal data. Data may be shared only:
 - Where required by applicable law, court order, or regulatory authority
 - With your explicit prior consent
 
-All contributors operating within SAOGEN's internal ecosystem are subject to SIP-C v2.0, which imposes strict data minimisation and confidentiality obligations aligned with Section 14 (Security Boundaries) of that document.
+All contributors operating within SAOGEN's internal ecosystem are subject to SIP v2.0, which imposes strict data minimisation and confidentiality obligations aligned with Section 14 (Security Boundaries) of that document.
 
 ---
 
@@ -126,7 +126,7 @@ You also have the right to lodge a complaint with your national data protection 
 
 ## 10. Security
 
-SAOGEN implements technical and organisational measures to protect personal data against unauthorised access, loss, or destruction, consistent with the protection infrastructure defined in Section 9 of SIP-C v2.0. No method of transmission over the internet is completely secure; SAOGEN cannot guarantee absolute security but maintains reasonable and current best practices.
+SAOGEN implements technical and organisational measures to protect personal data against unauthorised access, loss, or destruction, consistent with the protection infrastructure defined in Section 9 of SIP v2.0. No method of transmission over the internet is completely secure; SAOGEN cannot guarantee absolute security but maintains reasonable and current best practices.
 
 ---
 
@@ -138,7 +138,7 @@ SAOGEN may update this Privacy Policy as the Platform evolves. Material changes 
 
 ## 12. Governing Framework Reference
 
-For contributors, AI Nodes, and ecosystem participants, the full data governance architecture — including asset classification, access control, cryptographic provenance, and security boundaries — is defined in **SIP-C v2.0**, available at:
+For contributors, AI Nodes, and ecosystem participants, the full data governance architecture — including asset classification, access control, cryptographic provenance, and security boundaries — is defined in **SIP v2.0**, available at:
 
 [https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md](https://github.com/QOGE/SAOGEN/blob/main/files/SIP-2.0.md)
 
