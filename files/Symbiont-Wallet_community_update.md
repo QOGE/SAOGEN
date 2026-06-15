@@ -45,7 +45,7 @@ loudly when that changes.
 
 ## What's next
 
-The wallet-side work (SIP-QOGE-PQC-01, and Phase A of SIP-QOGE-PQC-02) is
+The wallet-side work (SIP-QOGE-PQC-01, and Phase C of SIP-QOGE-PQC-02) is
 done. What's ahead is the consensus side — teaching Qogecoin Core itself
 to recognize and verify these signatures. That's a bigger, slower-moving
 piece of work by nature: it touches the rules every node on the network
