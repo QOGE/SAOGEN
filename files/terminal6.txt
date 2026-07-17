@@ -1043,3 +1043,38 @@ root@vmi3403633:~/zny-nomp# qogecoin-cli -conf=/home/qoge/.qogecoin/qogecoin.con
   }
 ]
 root@vmi3403633:~/zny-nomp#
+root@vmi3403633:~# cd zny-nomp
+root@vmi3403633:~/zny-nomp# grep -n "totalOwed\|performPayment\|tBalance" ~/zny-nomp/libs/paymentProcessor.js
+251:    function getBalance(callback) {
+305:            [validateAddress, validateTAddress, validateZAddress, getBalance],
+309:        async.parallel([validateAddress, getBalance], asyncComplete);
+333:                var tBalance = parseFloat(0);
+347:                            tBalance += parseFloat(
+352:                    tBalance = coinsRound(tBalance);
+358:                        addr + ' balance of ' + tBalance
+361:                callback(null, coinsToSatoshies(tBalance), minConf);
+402:    function sendTToZ(callback, tBalance, minConf) {
+404:        if (tBalance === NaN) {
+408:                'tBalance === NaN for sendTToZ'
+412:        if (tBalance - txFee <= 0) return;
+424:        var amount = satoshisToCoins(tBalance - txFee);
+1418:                                    var performPayment = false;
+1427:                                    var totalOwed = parseInt(0);
+1431:                                            totalOwed =
+1432:                                                totalOwed +
+1442:                                        totalOwed =
+1443:                                            totalOwed + (worker.balance || 0);
+1451:                                        function (error, tBalance) {
+1459:                                            } else if (tBalance < totalOwed) {
+1465:                                                            tBalance
+1469:                                                            totalOwed
+1473:                                                performPayment = false;
+1474:                                            } else if (tBalance > totalOwed) {
+1475:                                                performPayment = true;
+1478:                                            if (totalOwed <= 0) {
+1479:                                                performPayment = false;
+1482:                                            if (performPayment === false) {
+1681:                                                        //console.log('performPayment: '+performPayment);
+1880:                                                        //console.log('performPayment: '+performPayment);
+root@vmi3403633:~/zny-nomp#
+
