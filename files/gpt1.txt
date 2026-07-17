@@ -1,0 +1,552 @@
+I checked the current `main` code against the older `v1.2.11` code path. The important conclusion is:
+
+**The block-confirmation mechanism has not fundamentally changed. Current ZNY-NOMP still uses wallet RPC `gettransaction` and trusts the transaction-detail `category` field.** It does not independently declare a block mature merely because `confirmations >= minConf`.
+
+Your daemon returning:
+
+```json
+{
+  "confirmations": 110,
+  "details": [
+    {
+      "category": "generate"
+    }
+  ]
+}
+```
+
+should therefore be enough for NOMP to classify that round as payable. The fact that it does not strongly suggests a response-mapping or later funds-check problem inside NOMP, not coinbase maturity.
+
+## `BTCover17: true` is correct
+
+In both the old and current versions, `BTCover17` only changes this startup ownership check:
+
+```js
+var cmd = 'validateaddress';
+if (poolOptions.BTCover17) cmd = 'getaddressinfo';
+```
+
+It does **not** alter `gettransaction`, confirmation counting, `listunspent`, or payments.
+
+Bitcoin Core moved wallet-related fields such as `ismine` from `validateaddress` to `getaddressinfo` in the 0.17–0.18 transition, so `true` is the correct value for a Core-v24-derived Qogecoin daemon. ([Bitcoin Core][1])
+
+Therefore, this is not the cause:
+
+```json
+"BTCover17": true
+```
+
+## Shielding is not involved
+
+The code enables shielded handling only when:
+
+```js
+poolOptions.coin.requireShielding === true
+```
+
+Your log says:
+
+```text
+qogecoin requireShielding: false
+```
+
+so setup runs only:
+
+```js
+validateAddress
+getBalance
+```
+
+The `z_validateaddress`, `z_getbalance`, `z_sendmany`, T-to-Z and Z-to-T paths are bypassed. `maxUnshieldAmount: 100` is merely a default value that gets logged even when shielding is disabled.
+
+Descriptor SQLite wallets are also supported by Core v24 wallet RPCs; the wallet database format is not relevant to how NOMP interprets `gettransaction`. ([Bitcoin Core][2])
+
+# Exact current payment path
+
+The current processor does this every 120 seconds.
+
+### 1. Read pending rounds from Redis
+
+It reads:
+
+```text
+qogecoin:balances
+qogecoin:blocksPending
+```
+
+and parses every pending entry as:
+
+```text
+blockHash:txHash:height:worker:timestamp
+```
+
+### 2. Request every coinbase transaction
+
+For each pending round it creates:
+
+```js
+['gettransaction', [r.txHash]]
+```
+
+It then appends this obsolete RPC:
+
+```js
+['getaccount', [poolOptions.address]]
+```
+
+and sends everything as one JSON-RPC batch.
+
+### 3. Read category from `details[]`
+
+It sets:
+
+```js
+round.confirmations = tx.result.confirmations;
+round.category = generationTx.category;
+round.reward = generationTx.amount;
+```
+
+The relevant categories are:
+
+```text
+immature
+generate
+orphan
+kicked
+```
+
+### 4. Limit generated rounds
+
+Only the first `maxBlocksPerPayment` generated rounds are processed in that interval. With:
+
+```json
+"maxBlocksPerPayment": 3
+```
+
+the first three stay `generate`; later mature blocks are temporarily relabelled `immature` until the next interval. Therefore, this setting could slow a 68-block backlog, but it cannot explain why **zero** blocks are ever confirmed.
+
+### 5. Check spendable wallet balance
+
+It calls:
+
+```text
+listunspent 10 99999999
+```
+
+because your `minConf` is 10. It compares the spendable balance with the amount owed. If NOMP decides there are insufficient spendable funds, it changes generated rounds back to `immature`, leaving them in `blocksPending`.
+
+### 6. Move successful rounds
+
+Only rounds still classified as `generate` in the final step are moved:
+
+```text
+qogecoin:blocksPending
+            ↓
+qogecoin:blocksConfirmed
+```
+
+# Strongest root-cause candidate: broken batch-response correlation
+
+This is a real defect in the current architecture.
+
+The payment processor assumes that batch responses come back in exactly the same array order as requests:
+
+```js
+txDetails.forEach(function (tx, i) {
+    var round = rounds[i];
+});
+```
+
+It also assumes that the final response belongs to `getaccount` and unconditionally ignores it.
+
+But `node-stratum-pool/lib/daemon.js` generates request IDs, submits the JSON batch, and returns the daemon's raw response array without sorting or matching responses by ID.
+
+JSON-RPC explicitly permits batch responses to be returned in any order. Clients are required to correlate requests and responses using their `id`, not their array position. ([json-rpc.org][3])
+
+This becomes especially suspicious because NOMP appends:
+
+```text
+getaccount
+```
+
+which Bitcoin Core removed in version 0.18. ([Bitcoin Core][1])
+
+A possible response order is therefore:
+
+```text
+response[0] = getaccount error
+response[1] = gettransaction for block A
+response[2] = gettransaction for block B
+...
+```
+
+NOMP then interprets the `getaccount` error as block A's transaction response, interprets block A as block B, and discards the actual last transaction response because it assumes that final item is `getaccount`.
+
+That can produce exactly your symptom:
+
+```text
+gettransaction works manually
+block remains in blocksPending
+blocksPendingConfirms not updated correctly
+no payment
+no obvious top-level batch error
+```
+
+The same latent positional assumption existed in the old version too, but modern daemon behavior, larger batches, and the obsolete `getaccount` response can expose it more reliably. The old and current daemon implementations both return the raw batch array without ordering it by ID.
+
+## Why the interval log looks successful
+
+The final `async.waterfall` callback ignores its error argument:
+
+```js
+function () {
+    ...
+    logger.debug(... 'Finished interval ...');
+}
+```
+
+So an aborted waterfall can still print:
+
+```text
+Finished interval - time spent: ...
+```
+
+That line means the interval ended, not that block classification or payment succeeded.
+
+# Prove the failing stage first
+
+Take the oldest pending record:
+
+```bash
+REC=$(redis-cli --raw SMEMBERS qogecoin:blocksPending \
+  | sort -t: -k3,3n \
+  | head -n 1)
+
+printf '%s\n' "$REC"
+
+IFS=: read -r BLOCK TX HEIGHT WORKER FOUND <<< "$REC"
+
+printf 'block:  %s\n' "$BLOCK"
+printf 'tx:     %s\n' "$TX"
+printf 'height: %s\n' "$HEIGHT"
+```
+
+Confirm that Redis stored the correct coinbase transaction ID:
+
+```bash
+qogecoin-cli -testnet getblock "$BLOCK" 1 | jq -r '.tx[0]'
+
+printf 'Redis txHash: %s\n' "$TX"
+```
+
+The two values must be identical.
+
+Then query the exact Redis-stored transaction:
+
+```bash
+qogecoin-cli \
+  -testnet \
+  -rpcwallet=poolwallet \
+  gettransaction "$TX" \
+  | jq '{txid, confirmations, details}'
+```
+
+Check what NOMP itself recorded:
+
+```bash
+redis-cli HGET qogecoin:blocksPendingConfirms "$BLOCK"
+```
+
+Interpret the result:
+
+| Redis result                  | Meaning                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Empty/null                    | Round is disappearing before Step 5, probably batch mapping/error/category failure                     |
+| `0` or wrong value            | NOMP is associating the wrong RPC response with this round                                             |
+| `110`                         | `gettransaction` classification worked, but Step 3 later demoted it because of the wallet-balance gate |
+| Rising normally then stopping | Classification works; investigate `listunspent` and owed-balance accounting                            |
+
+## Add temporary batch-correlation logging
+
+In `libs/paymentProcessor.js`, immediately after the `txDetails` callback begins, add:
+
+```js
+logger.warning(
+    logSystem,
+    logComponent,
+    'PAYMENT BATCH MAP ' +
+        JSON.stringify(
+            txDetails.map(function (tx, i) {
+                return {
+                    index: i,
+                    responseId: tx && tx.id,
+                    expectedTx:
+                        i < rounds.length
+                            ? rounds[i].txHash
+                            : 'getaccount',
+                    actualTx:
+                        tx && tx.result
+                            ? tx.result.txid || null
+                            : null,
+                    confirmations:
+                        tx && tx.result
+                            ? tx.result.confirmations
+                            : null,
+                    error: tx ? tx.error : 'missing response'
+                };
+            })
+        )
+);
+```
+
+Restart:
+
+```bash
+sudo systemctl restart zny-nomp
+sudo journalctl -u zny-nomp -f | grep 'PAYMENT BATCH MAP'
+```
+
+A broken mapping will be immediately visible:
+
+```json
+{
+  "expectedTx": "aaa...",
+  "actualTx": "bbb..."
+}
+```
+
+or:
+
+```json
+{
+  "expectedTx": "aaa...",
+  "actualTx": null,
+  "error": {
+    "code": -32601,
+    "message": "Method not found"
+  }
+}
+```
+
+# Correct root fix: reorder batch responses by ID
+
+Temporarily patch:
+
+```text
+node_modules/stratum-pool/lib/daemon.js
+```
+
+Replace `batchCmd` with an ID-correlating implementation:
+
+```js
+function batchCmd(cmdArray, callback) {
+    const requestJson = cmdArray.map(function (cmd, i) {
+        return {
+            method: cmd[0],
+            params: cmd[1],
+            id: i
+        };
+    });
+
+    const serializedRequest = JSON.stringify(requestJson);
+
+    performHttpRequest(
+        instances[0],
+        serializedRequest,
+        function (error, result) {
+            if (error || !Array.isArray(result)) {
+                callback(error, result);
+                return;
+            }
+
+            const responsesById = new Map(
+                result.map(function (response) {
+                    return [Number(response.id), response];
+                })
+            );
+
+            const orderedResults = requestJson.map(function (request) {
+                return (
+                    responsesById.get(request.id) || {
+                        id: request.id,
+                        result: null,
+                        error: {
+                            code: -32603,
+                            message:
+                                'Missing JSON-RPC batch response for request ID ' +
+                                request.id
+                        }
+                    }
+                );
+            });
+
+            callback(null, orderedResults);
+        }
+    );
+}
+```
+
+Then restart:
+
+```bash
+sudo systemctl restart zny-nomp
+```
+
+This makes the existing payment processor's positional logic deterministic.
+
+A direct edit under `node_modules` will be overwritten by `npm install`. Once confirmed, this fix belongs in the `node-stratum-pool` source/fork and should be pinned by commit.
+
+## Remove the obsolete `getaccount` call afterward
+
+This code is dead:
+
+```js
+batchRPCcommand.push(['getaccount', [poolOptions.address]]);
+```
+
+`addressAccount` is not meaningfully used for the modern payout. The eventual payment command hardcodes the account parameter as an empty string:
+
+```js
+sendmany ['', addressAmounts, minConfPayout]
+```
+
+Remove:
+
+```js
+batchRPCcommand.push(['getaccount', [poolOptions.address]]);
+```
+
+and remove this special-case block:
+
+```js
+if (i === txDetails.length - 1) {
+    ...
+    return;
+}
+```
+
+After that, process every response as a real `gettransaction` response.
+
+# Two secondary code problems
+
+## 1. Exact-balance comparison bug
+
+Current code enables payment only when:
+
+```js
+tBalance > totalOwed
+```
+
+not when:
+
+```js
+tBalance === totalOwed
+```
+
+If they are exactly equal, `performPayment` stays false without entering the insufficient-funds branch, and every `generate` round is silently changed back to `immature`.
+
+Patch:
+
+```diff
+- } else if (tBalance > totalOwed) {
++ } else if (tBalance >= totalOwed) {
+    performPayment = true;
+}
+```
+
+Check the actual spendable amount:
+
+```bash
+qogecoin-cli \
+  -testnet \
+  -rpcwallet=poolwallet \
+  listunspent 10 99999999 \
+  | jq '[.[].amount] | add'
+```
+
+## 2. Pool output and fee output use the same address
+
+Your coinbase has two outputs to:
+
+```text
+TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW
+```
+
+with values:
+
+```text
+99 QOGE
+1 QOGE
+```
+
+The processor filters transaction details by address and then selects only the first match:
+
+```js
+var generationTx = tx.result.details.filter(
+    tx => tx.address === poolOptions.address
+)[0];
+```
+
+That does not cause the permanent pending state because the selected output should still have category `generate`, but it makes the reward interpretation dependent on output order. Use a separate testnet address for the 1% `rewardRecipients` output. That gives NOMP an unambiguous 99-QOGE pool output and 1-QOGE fee output.
+
+# Also verify the wallet endpoint
+
+The current daemon interface sends RPC requests to the root `/` endpoint; it does not configure a `/wallet/poolwallet/` path.
+
+Bitcoin Core permits wallet RPC through `/` only when exactly one wallet is loaded. With two or more wallets, `/wallet/<walletname>/` must be used. ([GitHub][4])
+
+Check:
+
+```bash
+qogecoin-cli -testnet listwallets
+```
+
+The safe result for the current NOMP interface is:
+
+```json
+[
+  "poolwallet"
+]
+```
+
+Your direct test using:
+
+```text
+-rpcwallet=poolwallet
+```
+
+does not necessarily test the same RPC endpoint that NOMP uses. This distinction matters only if more than one wallet is loaded.
+
+# My diagnosis
+
+The evidence rules out:
+
+```text
+coinbase maturity
+BTCover17
+descriptor-wallet format
+shielding logic
+paymentInterval
+maxBlocksPerPayment as the sole cause
+```
+
+The first defect I would test and patch is **unordered JSON-RPC batch-response handling combined with the removed `getaccount` RPC**. It is an objective protocol bug in the current code, and it closely matches the silent “valid manual gettransaction, but nothing progresses in Redis” symptom.
+
+After that, patch:
+
+```text
+tBalance > totalOwed
+```
+
+to:
+
+```text
+tBalance >= totalOwed
+```
+
+and use a separate pool-fee address. These changes remove the remaining silent-demotion and ambiguous-reward paths.
+
+[1]: https://bitcoincore.org/en/releases/0.18.0/?utm_source=chatgpt.com "Bitcoin Core :: Bitcoin Core 0.18.0"
+[2]: https://bitcoincore.org/en/doc/24.0.0/rpc/wallet/createwallet/?utm_source=chatgpt.com "Bitcoin Core :: createwallet (24.0.0 RPC)"
+[3]: https://json-rpc.org/specification?utm_source=chatgpt.com "JSON-RPC 2.0 Specification"
+[4]: https://github.com/bitcoin/bitcoin/blob/master/doc/JSON-RPC-interface.md?utm_source=chatgpt.com "bitcoin/doc/JSON-RPC-interface.md at master · bitcoin/bitcoin · GitHub"
