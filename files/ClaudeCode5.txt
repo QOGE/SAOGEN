@@ -1,0 +1,147 @@
+  
+● Now let's begin mining batches. I'll mine 10 tracked blocks + 5 maturity-padding blocks per cycle, 8 cycles total (80 tracked blocks), with a final maturity pass at the end. Starting batch 1.
+
+  Ran 1 shell command 
+
+● Batch 1 done (heights 231-240 tracked). Let's continue with batches 2-8, mining in sequence.
+
+  Ran 1 shell command 
+
+● All 80 tracked blocks seeded. Let's check actual height ranges and confirmation depths per batch before letting it drain.
+     
+  Ran 1 shell command 
+
+● All batches minted but only batch 1-2 are past real coinbase maturity so far. Let's mine 100 more padding blocks now so all 8 batches (up through height 345) cross the 100-confirmation maturity threshold, matching the "100+ confirmations, category generate" production symptom for the whole backlog.
+
+  Searched for 1 pattern, ran 4 shell commands 
+
+● Draining correctly so far — 9/80 blocks confirmed (heights 231-239, in exact ascending order) across 3 intervals, 150 QOGE/interval (halved subsidy at this height, expected — not a bug). No errors, no stalls despite the 340-UTXO wallet. Let's let it run through many more intervals and monitor.
+
+  Ran 1 shell command 
+
+● Waiting for the monitoring loop to accumulate data across several intervals before checking in.
+
+✻ Worked for 5m 46s · 1 shell still running
+
+✻ Claude resuming /loop wakeup (Jul 18 1:56am)
+
+  Searched for 1 pattern 
+
+● Draining continues perfectly — 36/80 confirmed after 12 consecutive intervals, exactly 3 blocks and ~150 QOGE every single interval, RPC times staying tiny (4-14ms) even with 340+ UTXOs in the wallet. No errors. Let me verify the confirmed heights are still strictly sequential (no skips) and check where the subsidy halving boundary falls.
+
+  Ran 1 shell command 
+
+● Those "gaps" are exactly the untracked 5-block padding groups between batches (241-245, 256-260, etc.) — expected, not bugs. Let me redo the check using only our actual tracked heights.
+
+  Ran 1 shell command 
+
+● Confirmed: strict FIFO — the confirmed set is exactly the first 42 tracked heights in ascending order, no skips, no out-of-order confirmations. Let's let it continue draining fully.
+
+  Ran 1 shell command 
+
+● Waiting for the backlog to fully drain — will check back once the monitoring loop completes.
+
+✻ Crunched for 43s · 2 shells still running
+
+● Background command "for i in $(seq 1 20); do
+  sleep 30
+  ts=$(date +%H:%M:%S)
+  pending=$(redis-cli scard qogecoin:blocksPending)
+  confirmed=$(redis-cli scard qogecoin:blocksConfirmed)
+  echo "$ts pending=$pending confirmed=$confirmed" &gt;&gt; ~/zny-nomp-debug/scale_monitor.log
+  if [ "$pending" = "0" ]; then
+    echo "$ts DRAINED COMPLETELY" &gt;&gt; ~/zny-nomp-debug/scale_monitor.log
+    break
+  fi
+done
+echo "monitor loop finished"
+cat ~/zny-nomp-debug/scale_monitor.log" completed (exit code 0)
+
+  Ran 1 shell command 
+
+● Progress continues smoothly — 69/80 confirmed now, no errors. Waiting for the second monitoring loop / scheduled wakeup to check full completion.
+
+✻ Cogitated for 6s · 1 shell still running
+
+● Background command "for i in $(seq 1 25); do
+  sleep 30
+  ts=$(date +%H:%M:%S)
+  pending=$(redis-cli scard qogecoin:blocksPending)
+  confirmed=$(redis-cli scard qogecoin:blocksConfirmed)
+  echo "$ts pending=$pending confirmed=$confirmed" &gt;&gt; ~/zny-nomp-debug/scale_monitor.log
+  if [ "$pending" -le "2" ]; then
+    echo "$ts NEAR-FULLY DRAINED (only untracked leftover or 0)" &gt;&gt; ~/zny-nomp-debug/scale_monitor.log
+    break
+  fi
+done
+echo "monitor loop 2 finished"
+tail -30 ~/zny-nomp-debug/scale_monitor.log" completed (exit code 0)
+
+● The second monitoring loop finished — let's check the final state.
+
+  Ran 1 shell command 
+
+● 78/80 confirmed — only heights 344, 345 (the very last two) remain, will clear next interval. Let's wait for that final interval.
+
+  Ran 1 shell command 
+
+  Read 1 file 
+
+● Not yet ready — waiting for the scheduled wakeup.
+
+✻ Cogitated for 20s · 1 shell still running
+
+● Background command "sleep 35
+redis-cli scard qogecoin:blocksPending
+redis-cli scard qogecoin:blocksConfirmed
+tail -6 /home/ion/zny-nomp-debug/scale_test.log" completed (exit code 0)
+
+  Read 1 file 
+
+● Backlog fully drained: 80/80 confirmed, 0 pending. Let's do the full error/anomaly sweep across the entire test log before writing the final report.
+
+  Ran 2 shell commands 
+
+● Scale-reproduction results: UTXO-set size and sustained backlog do NOT reproduce the stuck-payment bug
+
+  Full drain achieved. All 80 tracked blocks (mined incrementally in 8 staggered batches, heights 231-345, real 100+ coinbase-maturity confirmations, against a pool wallet that grew to 325-340 individual UTXOs at the single legacy address — comparable to or exceeding your stated production scale) were correctly promoted from blocksPending to blocksConfirmed. Verified exactly: tracked heights == confirmed heights, no more, no less, no duplicates, no losses.
+
+  FIFO/oldest-block behavior: confirmed rigorously, not just assumed. At every checkpoint, the confirmed set was exactly the first N tracked heights in ascending order — the oldest blocks (heights 231-240, mined first) were the first ones paid, not stuck while newer blocks cycled through. The throttle drained strictly 3 blocks/interval, oldest-first, for all 27 payment intervals it took to clear the backlog, with zero exceptions.
+
+  No degradation at scale:
+  - listunspent/sendmany never errored, timed out, or behaved differently as the UTXO count grew from 121 → 340. Interval processing time stayed flat (196-376ms total, 2-14ms of actual RPC time) — if anything it got faster toward the end, not slower.
+  - 27 separate sendmany calls executed cleanly, 3224.992... QOGE paid out total, wallet UTXO count settled at 325 afterward (net decrease from coin selection consuming inputs — normal).
+  - Zero errors, warnings, crashes, or process respawns across the entire ~14-minute run (grep -iE "error|warn|fail|exception|timeout" came back empty, excluding the known-benign rewardRecipients startup warning unrelated to this coin config).
+
+  What this test did NOT exercise — flagging honestly rather than overclaiming: no duplicate-height rounds, no orphaned/kicked blocks, and no reorg were introduced in this run, so canDeleteShares, the duplicate-round getblock recheck path, and orphan-merge handling were not stress-tested at scale here. If you want that specifically covered, it'd need a deliberately-crafted follow-up (e.g., seed two blocksPending entries at the same height, or invalidate a block after it's tracked to force an orphan) — happy to run that next if useful.
+
+  Bottom line for your investigation: UTXO-set size is ruled out as a differentiator, joining the other four ruled-out theories. The mechanism is sound at both small and large scale, sustained across many intervals, under real backlog pressure. This pushes the remaining live leads back toward what you flagged as untested: something specific to the production daemon's exact config/version, Redis state that predates today's fixes, or the .gpu1 worker-suffix username format — that last one is worth a dedicated regtest pass since none of today's tests used a worker-suffixed username (we used a bare address
+  throughout), and getProperAddress's w.split('.')[0] handling of that format has not been exercised yet.
+
+✻ Baked for 50s
+
+✻ Claude resuming /loop wakeup (Jul 18 2:04am)
+
+● This was already completed and reported in my previous message — let me just do a quick fresh state check to confirm nothing has changed since then.
+
+  Ran 1 shell command 
+
+● Confirmed, state unchanged from my last report: 0 pending / 80 confirmed, zero errors or warnings anywhere in scale_test.log, node init.js still running cleanly (no crashes/respawns).
+
+  Full findings already reported in my previous message — summary:
+
+  - Fully drained: exactly the 80 tracked heights (231-345) reached blocksConfirmed, no more, no less, no losses.
+  - Strict FIFO confirmed: oldest blocks paid first at every checkpoint, 3/interval, 27 intervals straight, zero out-of-order confirmations.
+  - No scale-related anomaly: listunspent/sendmany stayed error-free and fast (RPC time 2-14ms) as the wallet's UTXO count grew from 121 → 340, with interval processing time flat-to-improving, not degrading.
+  - Not exercised by this test: canDeleteShares, duplicate-round detection, and orphan/kicked handling — no duplicate heights, orphans, or reorgs were introduced in this run, so those specific code paths remain untested at scale. That's a gap, not a finding either way.
+
+  Conclusion: UTXO-set size and sustained multi-interval backlog pressure are ruled out as the differentiator — the mechanism holds at production-comparable scale. That leaves the .gpu1 worker-suffix format (untested so far — everything today used a bare address) and production-specific daemon/config/stale-Redis-state as the remaining live leads, per my prior report.
+
+✻ Sautéed for 14s
+
+※ recap: We're debugging why ZNY-NOMP payments get stuck on production; four causes are ruled out and the large-UTXO scale test also came back clean. Next: test the .gpu1 worker-suffix username format on regtest, since that's still untested. (disable recaps in /config)
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Test the .gpu1 worker-suffix format next
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
