@@ -1,0 +1,45 @@
+root@vmi3403633:~/zny-nomp# journalctl -u zny-nomp --since "2 minutes ago" -f
+Jul 18 03:47:02 vmi3403633 npm[8964]: 2026/07/18 03:47:02 [Pool]        [qogecoin] (Thread 3) Submitted Block using submitblock successfully to daemon instance(s)
+Jul 18 03:47:02 vmi3403633 npm[8964]: 2026/07/18 03:47:02 [Pool]        [qogecoin] (Thread 3) Block found: 761f902415c0bfc383d418ffc9bf3b50ce88bec02cadbcafdb08568c37e8a6d4 by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1
+Jul 18 03:47:02 vmi3403633 npm[8964]: 2026/07/18 03:47:02 [Pool]        [qogecoin] (Thread 3) Share accepted at diff 0.19518543/3.16220246 by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1 [::ffff:85.242.102.149]
+Jul 18 03:47:02 vmi3403633 npm[8964]: 2026/07/18 03:47:02 [Pool]        [qogecoin] (Thread 3) Block notification via RPC after block submission
+Jul 18 03:47:14 vmi3403633 npm[10378]: 2026/07/18 03:47:14 [Pool]        [qogecoin] (Thread 1) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:47:19 vmi3403633 npm[8953]: 2026/07/18 03:47:19 [Pool]        [qogecoin] (Thread 2) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:47:21 vmi3403633 npm[8997]: 2026/07/18 03:47:21 [Pool]        [qogecoin] (Thread 6) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:47:28 vmi3403633 npm[8920]: 2026/07/18 03:47:28 [Payments]        [qogecoin] sendmany "" {"TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW":296.9997}
+Jul 18 03:47:28 vmi3403633 npm[8920]: 2026/07/18 03:47:28 [Payments]        [qogecoin] Error sending payments {"code":-6,"message":"Fee estimation failed. Fallbackfee is disabled. Wait a few blocks or enable -fallbackfee."}
+Jul 18 03:47:28 vmi3403633 npm[8920]: 2026/07/18 03:47:28 [Payments]        [qogecoin] Finished interval - time spent: 390ms total, 16ms redis, 59ms daemon RPC
+Jul 18 03:47:41 vmi3403633 npm[16050]: 2026/07/18 03:47:41 [Pool]        [qogecoin] (Thread 5) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:47:52 vmi3403633 npm[8964]: 2026/07/18 03:47:52 [Pool]        [qogecoin] (Thread 3) Submitted Block using submitblock successfully to daemon instance(s)
+Jul 18 03:47:52 vmi3403633 npm[8964]: 2026/07/18 03:47:52 [Pool]        [qogecoin] (Thread 3) Block found: f1f8b8a3628a73c923b4d3ec087fc07a58b8d3f1d711ad1b6afaf805f6073a6d by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1
+Jul 18 03:47:52 vmi3403633 npm[8964]: 2026/07/18 03:47:52 [Pool]        [qogecoin] (Thread 3) Share accepted at diff 0.19518543/3.36800019 by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1 [::ffff:85.242.102.149]
+Jul 18 03:47:52 vmi3403633 npm[8964]: 2026/07/18 03:47:52 [Pool]        [qogecoin] (Thread 3) Block notification via RPC after block submission
+Jul 18 03:47:52 vmi3403633 npm[13710]: 2026/07/18 03:47:52 [Pool]        [qogecoin] (Thread 4) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:48:09 vmi3403633 npm[10378]: 2026/07/18 03:48:09 [Pool]        [qogecoin] (Thread 1) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:48:14 vmi3403633 npm[8953]: 2026/07/18 03:48:14 [Pool]        [qogecoin] (Thread 2) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:48:16 vmi3403633 npm[8997]: 2026/07/18 03:48:16 [Pool]        [qogecoin] (Thread 6) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:48:36 vmi3403633 npm[16050]: 2026/07/18 03:48:36 [Pool]        [qogecoin] (Thread 5) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:48:47 vmi3403633 npm[8964]: 2026/07/18 03:48:47 [Pool]        [qogecoin] (Thread 3) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:48:47 vmi3403633 npm[13710]: 2026/07/18 03:48:47 [Pool]        [qogecoin] (Thread 4) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:48:50 vmi3403633 npm[8964]: 2026/07/18 03:48:50 [Pool]        [qogecoin] (Thread 3) Submitted Block using submitblock successfully to daemon instance(s)
+Jul 18 03:48:50 vmi3403633 npm[8964]: 2026/07/18 03:48:50 [Pool]        [qogecoin] (Thread 3) Block found: 747438d2c813adafaffba753cdf04cca16bd147de9c42c7c1b171270aadc141a by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1
+Jul 18 03:48:50 vmi3403633 npm[8964]: 2026/07/18 03:48:50 [Pool]        [qogecoin] (Thread 3) Share accepted at diff 0.19518543/3.00298113 by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1 [::ffff:85.242.102.149]
+Jul 18 03:48:50 vmi3403633 npm[8964]: 2026/07/18 03:48:50 [Pool]        [qogecoin] (Thread 3) Block notification via RPC after block submission
+Jul 18 03:49:00 vmi3403633 npm[8964]: 2026/07/18 03:49:00 [Pool]        [qogecoin] (Thread 3) Share accepted at diff 0.19518543/0.23102578 by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1 [::ffff:85.242.102.149]
+Jul 18 03:49:00 vmi3403633 npm[8909]: 2026/07/18 03:49:00 [PPLNT]        [qogecoin] (Thread 3) TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW joined.
+Jul 18 03:49:04 vmi3403633 npm[10378]: 2026/07/18 03:49:04 [Pool]        [qogecoin] (Thread 1) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:49:09 vmi3403633 npm[8964]: 2026/07/18 03:49:09 [Pool]        [qogecoin] (Thread 3) Share accepted at diff 0.19518543/0.43895665 by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1 [::ffff:85.242.102.149]
+Jul 18 03:49:09 vmi3403633 npm[8964]: 2026/07/18 03:49:09 [Pool]        [qogecoin] (Thread 3) Submitted Block using submitblock successfully to daemon instance(s)
+Jul 18 03:49:09 vmi3403633 npm[8964]: 2026/07/18 03:49:09 [Pool]        [qogecoin] (Thread 3) Block found: 8094225532523ee652f15913ed71d3dddfc42116850fd478327791f9ff5c913d by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1
+Jul 18 03:49:09 vmi3403633 npm[8964]: 2026/07/18 03:49:09 [Pool]        [qogecoin] (Thread 3) Share accepted at diff 0.19518543/1.35984559 by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1 [::ffff:85.242.102.149]
+Jul 18 03:49:09 vmi3403633 npm[8964]: 2026/07/18 03:49:09 [Pool]        [qogecoin] (Thread 3) Block notification via RPC after block submission
+Jul 18 03:49:09 vmi3403633 npm[8953]: 2026/07/18 03:49:09 [Pool]        [qogecoin] (Thread 2) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:49:11 vmi3403633 npm[8997]: 2026/07/18 03:49:11 [Pool]        [qogecoin] (Thread 6) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:49:22 vmi3403633 npm[8964]: 2026/07/18 03:49:22 [Pool]        [qogecoin] (Thread 3) Share accepted at diff 0.19518543/0.24221181 by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1 [::ffff:85.242.102.149]
+Jul 18 03:49:22 vmi3403633 npm[8909]: 2026/07/18 03:49:22 [PPLNT]        [qogecoin] (Thread 3) TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW joined.
+Jul 18 03:49:26 vmi3403633 npm[8964]: 2026/07/18 03:49:26 [Pool]        [qogecoin] (Thread 3) Share accepted at diff 0.19518543/0.31293693 by TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW.gpu1 [::ffff:85.242.102.149]
+Jul 18 03:49:28 vmi3403633 npm[8920]: 2026/07/18 03:49:28 [Payments]        [qogecoin] sendmany "" {"TLRhJQw1VQfL94gwHxd8t5bBnEZuHoKZaW":296.9997}
+Jul 18 03:49:28 vmi3403633 npm[8920]: 2026/07/18 03:49:28 [Payments]        [qogecoin] Error sending payments {"code":-6,"message":"Fee estimation failed. Fallbackfee is disabled. Wait a few blocks or enable -fallbackfee."}
+Jul 18 03:49:28 vmi3403633 npm[8920]: 2026/07/18 03:49:28 [Payments]        [qogecoin] Finished interval - time spent: 194ms total, 10ms redis, 49ms daemon RPC
+Jul 18 03:49:31 vmi3403633 npm[16050]: 2026/07/18 03:49:31 [Pool]        [qogecoin] (Thread 5) No new blocks for 55 seconds - updating transactions & rebroadcasting work
+Jul 18 03:49:42 vmi3403633 npm[13710]: 2026/07/18 03:49:42 [Pool]        [qogecoin] (Thread 4) No new blocks for 55 seconds - updating transactions & rebroadcasting work
