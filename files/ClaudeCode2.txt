@@ -1,0 +1,48 @@
+● Pausing the scale-reproduction work — no more mining or interval waiting. Switching to check git history for a v1.2.11 tag.
+ 
+  Ran 1 shell command 
+
+● Found it — v1.2.11 exists as a tag. Let's get details on it.
+
+  Ran 2 shell commands 
+
+● Notable finding: v1.2.11 is a lightweight tag pointing to a commit whose own package.json says version "1.2.10" and whose commit message is "Bump...to 1.2.10" — the tag name and the actual code content disagree. Let me check if there's a separate, untagged "real" 1.2.11 commit nearby.
+ 
+  Ran 2 shell commands 
+
+● The real "bump to 1.2.11" commit is 7c74bae (which is reachable from main/v1.3.1/v1.4.0), but the v1.2.11 tag itself points one commit too early — at 1c9030e, still internally version 1.2.10. Let me check if 7c74bae is literally the very next commit, and what else it changed (especially the init.js
+  error-handling refactor it mentions).
+  
+  Ran 1 shell command 
+
+● One more relevant detail — among the 10 commits between the mistagged v1.2.11 and the actual 1.2.11 bump, there's a dependency/import-cleanup commit. Let me check what it touched before reporting.
+
+  Ran 1 shell command 
+
+● v1.2.11 tag investigation — findings
+  
+  The tag exists, but it's mistagged:
+
+  v1.2.10 -> 1c9030e (2024-12-15 15:23:44 +0900)  package.json version: "1.2.10"
+  v1.2.11 -> 1c9030e (2024-12-15 15:23:44 +0900)  package.json version: "1.2.10"   ← same commit as v1.2.10
+
+  v1.2.11 is a lightweight tag pointing to the exact same commit as v1.2.10 — whose own package.json still says "1.2.10" and whose commit message is "Bump...to 1.2.10." There is no commit where the tag v1.2.11 actually corresponds to code that calls itself version 1.2.11.
+
+  The real "bump to 1.2.11" commit does exist, just untagged: 7c74bae ("chore: Update configuration, dependencies, and website features", 2024-12-15 16:42:25, ~80 min after the mistagged commit). It is on the mainline (reachable from main, v1.3.1, v1.4.0), so it's not an abandoned branch — it's just missing
+  its own tag. Its diff bumps package.json to 1.2.11 and touches init.js (removes a try/catch around the config.json-exists check, changes an early return to process.exit(0) when no pool configs are enabled) — nothing touching paymentProcessor.js or daemon.js.
+
+  Between the mistagged v1.2.11 and the real 1.2.11 commit, 10 commits are "invisible" to anyone checking out the v1.2.11 tag — 8 are CI/workflow-only changes (.circleci/config.yml, .github/workflows/node.js.yml, ci_script.sh), one (6d9491b) is a dependency/import cleanup that I checked in detail — it touches
+  libs/api.js, apiCoinWarz.js, logUtil.js, mposCompatibility.js, profitSwitch.js, shareProcessor.js (1-line unused-import removal), stats.js, workerapi.js, and several website pages, plus package.json/package-lock.json (just a scripts block reshuffle, no dependency version bumps) — none of it touches 
+  paymentProcessor.js or daemon.js. The last (bf40e4d) is a duplicate-looking "package version to 1.2.7 + stratum-pool dependency URL" commit.
+
+  Bottom line: if production was deployed by checking out the v1.2.11 tag specifically (rather than a commit hash or main), it is silently running what is actually 1.2.10's code, missing the init.js and CI/import changes above — but based on what I've read, none of the missing commits touch the payment
+  pipeline (paymentProcessor.js, daemon.js, shareProcessor.js's only change is a 1-line unused import). So this specific tag mismatch doesn't look like a lead for the stuck-payment bug itself, but it's a real discrepancy worth flagging on its own.
+
+  Waiting for your direction on where to go next.
+
+✻ Churned for 1m 21s
+                        
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Check if production deploys from a tag, commit hash, or main
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
