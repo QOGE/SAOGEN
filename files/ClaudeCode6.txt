@@ -1,0 +1,131 @@
+
+  Searched for 1 pattern 
+
+● Notably, there's no round.worker or r.worker field anywhere — the round object (built in Step 1) uses minedby, not worker. The actual worker/address split happens elsewhere. Let me read Step 3 in full to trace this precisely, plus check Step 1's round construction and the two split('.') call sites.
+
+  Searched for 1 pattern, read 1 file 
+
+● Key finding already visible: line 1622's for (var workerAddress in workerShares) builds workers[workerAddress] keyed by the full "address.gpu1" string — the .split('.')[0] at line 1649 only fires inside the pplntEnabled === true branch (dead code here, since QOGE uses paymentMode: "prop"). The actual suffix-stripping happens later, in Step 4. Let me read that aggregation logic in full to check it's correct when multiple worker-suffixed keys share the same base address.
+
+  Read 1 file 
+
+● Let me check one more critical spot — Step 5's Redis persistence, to confirm it writes balances/payouts back using the same key format it read them with (a mismatch here would silently corrupt balance tracking for suffixed workers specifically).
+
+  Searched for 1 pattern, read 1 file 
+
+● Step 3 findings — no round.worker/r.worker field exists
+
+  The round object (built in Step 1, line 1010-1018) has fields blockHash, txHash, height, minedby, time, duplicate, serialized — no .worker field at all. minedby is set once (line 1017 from the serialized entry's 4th field) and never read anywhere else in the file (confirmed via grep — single hit, write-only). So the worker-suffix concern isn't about the round object; it's about the separate shares hash (qoge:shares:round<height>), whose field names are the worker identifier strings.
+
+  Tracing every .split('.') on a worker string:
+
+  1. Line 1649 (inside case 'immature':) and line 1803 (inside case 'generate':) — both workerAddress.split('.')[0], but only inside the pplntEnabled === true branch. Since your config uses paymentMode: "prop", pplntEnabled is false and this code never executes. Dead code for our scenario.
+  2. Lines 1622, 1708, 1759, 1907 — for (var workerAddress in workerShares) — builds workers[workerAddress] keyed by the full, unsplit string (e.g. "TT5K....gpu1"). This is correct: it gives per-rig granularity for share/reward bucketing.
+  3. Lines 2016, 2038 (Step 4, payout generation) — getProperAddress(w.split('.')[0]) — this is where the suffix actually gets stripped, to compute the real payout destination. Both the totals loop (2004-2026) and the send loop (2028-...) use the same split, consistently.
+  4. Lines 2048-2057 — addressAmounts[address] accumulates (+=), not overwrites — confirmed multiple worker-suffixed keys sharing a base address correctly sum into one combined sendmany entry, gated by the aggregated minerTotals[address] >= minPaymentSatoshis (line 2041), not each suffix's own total. Correct pooling.
+  5. Step 5 persistence (lines 2332-2368) writes qoge:balances/qoge:payouts/qoge:immature back keyed by the full w (unsplit) — matching Step 1's read format exactly. No read/write key-format mismatch.
+
+  Verdict: the code looks structurally correct on inspection. Split happens exactly where it should (payout destination), and nowhere it shouldn't (internal bookkeeping). No obvious bug jumped out. Per your instructions, running the smaller confirmation test now rather than assuming.
+
+  Ran 3 shell commands 
+
+● Now let's mine 5 blocks, mature them, and seed with a .gpu1-suffixed worker string.
+
+  Ran 1 shell command 
+
+● 5 blocks seeded with the .gpu1-suffixed worker key. Now let's start the pool and watch a payment interval.
+
+  Ran 2 shell commands 
+
+● Good, started cleanly. Payment interval is 30s — let's wait for it to fire.
+
+  Ran 1 shell command 
+
+  Read 1 file 
+
+● Not ready yet — waiting for the scheduled wakeup.
+
+✻ Brewed for 2m 30s · 1 shell still running
+
+● Background command "sleep 35
+tail -20 /home/ion/zny-nomp-debug/suffix_test.log" completed (exit code 0)
+
+  Read 1 file 
+
+● First interval processed 3/5 blocks (37.5 QOGE = 3 blocks × 12.5 subsidy at this height, consistent with maxBlocksPerPayment: 3). Let's verify the payout destination address and Redis key formats.
+
+  Ran 1 shell command 
+
+● The sendmany destination (amounts in the payment log) correctly used the bare address, while qogecoin:payouts correctly kept the full suffixed key for per-rig bookkeeping — exactly matching what the code read predicted. Let's verify the on-chain transaction actually paid the bare address (not a broken/invalid suffixed string), and wait for the final interval to confirm full drain.
+
+  Ran 1 shell command 
+
+● On-chain confirmation: the transaction paid the correct bare address — no broken/invalid-address error, confirming the split works in practice, not just on paper. Let's wait for the second interval to drain the remaining 2 blocks.
+
+  Ran 1 shell command 
+
+● Waiting for the wakeup to confirm full drain.
+
+✻ Cogitated for 33s · 1 shell still running
+
+● Background command "sleep 35
+redis-cli scard qogecoin:blocksConfirmed
+redis-cli scard qogecoin:blocksPending
+tail -8 /home/ion/zny-nomp-debug/suffix_test.log" completed (exit code 0)
+
+  Read 1 file 
+
+● Fully drained: 5/5 confirmed, 0 pending. Let's do a final error-sweep and state confirmation before the verdict.
+
+  Ran 1 shell command 
+
+● Final verdict: worker-suffix format is handled correctly — ruled out
+
+  Code inspection (Step 3, libs/paymentProcessor.js): the two .split('.') calls in Step 3 (lines 1649, 1803) are dead code under paymentMode: "prop" — they only fire in the unused pplntEnabled branch. The actual suffix-stripping happens in Step 4 (lines 2016, 2038: getProperAddress(w.split('.')[0])), applied consistently to both the aggregation pass and the send pass, with addressAmounts[address] correctly summing (not overwriting) contributions from multiple worker-suffixed keys sharing a base address. Step 1/Step 3/Step 5 all consistently key internal bookkeeping (workers, qoge:balances, qoge:payouts,
+  qoge:immature) by the full worker string — no read/write key-format mismatch anywhere.
+
+  Empirical confirmation: seeded 5 blocks under worker key TT5K....gpu1, ran the pool through 2 payment intervals:
+  - All 5 blocks correctly reached blocksConfirmed (3 then 2, matching maxBlocksPerPayment: 3).
+  - qogecoin:payouts correctly kept the full suffixed key (...gpu1) for per-rig stats.
+  - The real sendmany RPC and on-chain gettransaction both confirm the payout went to the bare address — no invalid-address error, no silently-dropped payment.
+  - Zero errors/warnings across the entire run.
+
+  This joins the other five ruled-out theories (coinbase maturity, insufficient balance, BTCover17 startup gate, RPC batch reordering, UTXO-set scale). The .gpu1 worker-suffix format is not the differentiator either — the payment pipeline handles it correctly at every stage checked.
+
+  Where this leaves the investigation: every mechanism-level hypothesis testable in a faithful regtest reproduction has now been checked and cleared. The remaining candidates are specific to the production environment itself and can't be resolved further from regtest — they need direct inspection of the VPS: the exact daemon version/build in production (not just "Bitcoin-Core-derived"), the production pool_configs/qoge.json diffed line-by-line against what we've been testing, and whether Redis on the VPS carries stale/malformed state from before any of today's fixes existed (e.g., a blocksPending entry format from
+  an older pool version, or a qoge:shares:round<height> hash that's empty/missing for the stuck heights specifically — which would hit the same canDeleteShares/"no worker shares" removal path we flagged as untested earlier). That's a production-log/Redis-inspection task, not a further regtest mining task.
+
+✻ Churned for 54s
+
+✻ Claude resuming /loop wakeup (Jul 18 2:23am)
+
+● This is the same confirmation I just delivered in my previous message (the scheduled-wakeup prompt firing again) — state hasn't changed since then. Quick re-verification:
+
+  Ran 1 shell command 
+
+● Confirmed unchanged: 0 pending / 5 confirmed — full drain.
+
+  Final verdict: worker-suffix format is NOT mishandled anywhere in the payment pipeline
+
+  From code inspection (Step 3, libs/paymentProcessor.js):
+  - No round.worker/r.worker field exists — the round object uses minedby, which is write-only and never read downstream.
+  - The two workerAddress.split('.') calls in Step 3 (lines 1649, 1803) only execute inside the pplntEnabled branch — dead code under this pool's paymentMode: "prop".
+  - The actual suffix-stripping happens in Step 4 (w.split('.')[0] at lines 2016, 2038), applied identically in both the totals pass and the send pass.
+  - addressAmounts[address] sums across worker-suffixed keys sharing a base address (lines 2048-2057) rather than overwriting — correct pooling.
+  - Step 1 (read), Step 3 (accumulate), and Step 5 (write-back to qoge:balances/payouts/immature) all consistently key by the full worker string — no read/write mismatch.
+
+  From the empirical test (5 blocks seeded under TT5K....gpu1, run through 2 real payment intervals):
+  - All 5 blocks reached blocksConfirmed (3 then 2, exactly matching maxBlocksPerPayment: 3).
+  - qogecoin:payouts correctly retained the full suffixed key for per-rig bookkeeping.
+  - The real sendmany RPC and on-chain gettransaction both confirm payment went to the bare address — no invalid-address error, no silently dropped funds.
+  - Zero errors or warnings across the entire run.
+
+  Both lines of evidence agree: the .gpu1 suffix is handled correctly at every stage. This rules out the last remaining regtest-testable hypothesis. Combined with the five previously ruled-out theories (coinbase maturity, insufficient balance, BTCover17 startup gate, RPC batch reordering, UTXO-set scale), every mechanism-level explanation reachable from a faithful regtest reproduction has now been exhausted. What's left is production-specific — the exact daemon build, a line-by-line diff of the real pool_configs/qoge.json against what we've tested here, and whether production Redis carries stale state (e.g., an
+  empty/missing qoge:shares:round<height> for the specific stuck heights, which would hit the "no worker shares" removal path) predating today's investigation. That requires direct inspection of the VPS, not further regtest work.
+
+✻ Cogitated for 14s
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Check the production Redis for empty shares:round hashes on the stuck heights
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
