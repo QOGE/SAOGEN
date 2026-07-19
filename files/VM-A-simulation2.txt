@@ -1,0 +1,92 @@
+● Now rebuilding.
+
+  Ran 2 shell commands 
+
+● Build succeeded — both binaries fresh. Now starting the daemon and checking genesis hash.
+
+  Read 1 file, ran 2 shell commands 
+
+● No existing mainnet data or conf — clean start. Launching the daemon on mainnet.
+
+  Ran 1 shell command 
+
+● Chain is main, at block 0. Getting the genesis hash for independent comparison.
+
+  Ran 1 shell command 
+
+● Genesis hash: 78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc — matches the hardcoded assert in chainparams.cpp source. Now checking deployment info.
+
+  Ran 1 shell command 
+
+● All confirmed as expected: p2qpk status "defined", start_time: 1784433063, min_activation_height: 0, active: false. Segwit shows active via the buried-deployment path (unaffected by our SegwitHeight=0 change, which only prevents the unexpected-witness failure). Moving to wallet setup.
+
+  Ran 2 shell commands 
+
+● Legacy address generated: qNX7ex9211t1PzZz5xUk93nF7C637enmyV. Now stopping the daemon to persist the wallet config before any mining.
+
+  Read 1 file, ran 2 shell commands 
+
+● Config doesn't exist yet — creating it with all four persistent settings.
+
+● Write(~/.qogecoin/qogecoin.conf)
+  ⎿  Wrote 4 lines to ../.qogecoin/qogecoin.conf
+      1 fallbackfee=0.0001
+      2 paytxfee=0.0001
+      3 mintxfee=0.00001
+      4 wallet=simwallet2
+
+  Ran 1 shell command 
+
+● simwallet2 auto-loaded from config with no manual loadwallet call, and default RPC wallet resolves correctly (getbalance worked without -rpcwallet). Now setting up hourly logging.
+
+● Write(~/deployment-watch.sh)
+  ⎿  Wrote 7 lines to ../deployment-watch.sh
+      1 #!/bin/bash
+      2 while true; do
+      3   echo "=== $(date -u) ===" >> ~/deployment-log.txt
+      4   ~/qogecoin/src/qogecoin-cli getdeploymentinfo >> ~/deployment-log.txt 2>&1
+      5   ~/qogecoin/src/qogecoin-cli getblockcount >> ~/deployment-log.txt 2>&1
+      6   sleep 3600
+      7 done
+
+  Ran 1 shell command 
+
+● Logging loop confirmed running as PID 6758. It already wrote its first entry (loop body runs before the first sleep 3600).
+
+  Read 1 file 
+
+● Everything is confirmed working end-to-end.
+
+● Summary
+
+  Repo state (before changes): DEPLOYMENT_P2QPK in CMainParams was NEVER_ACTIVE as expected. Branch stable, 37 commits ahead of origin/stable, working tree otherwise clean (only untracked build artifacts).
+
+  Scope finding: nMinerConfirmationWindow/nRuleChangeActivationThreshold are shared consensus-wide fields (not per-deployment). Verified in versionbits.cpp that ALWAYS_ACTIVE/NEVER_ACTIVE deployments (DEPLOYMENT_TAPROOT, DEPLOYMENT_TESTDUMMY) bypass the window/threshold state machine entirely, so changing these globally on CMainParams only affects P2QPK in practice — no side effects on the other deployments.
+
+  Changes made to src/chainparams.cpp (CMainParams only, all commented "TEMP SIMULATION #2 — real mainnet parameters, do not push"):
+  - nMinerConfirmationWindow: 8064 → 2016
+  - nRuleChangeActivationThreshold: 6048 → 1512 (75%)
+  - nStartTime: NEVER_ACTIVE → 1784433063
+  - nTimeout: unchanged (NO_TIMEOUT), bit unchanged (3)
+  - SegwitHeight: 400000 → 0 (CMainParams only; testnet/signet/regtest untouched)
+
+  Build: succeeded cleanly, qogecoind and qogecoin-cli rebuilt.
+
+  Verification:
+  - Genesis hash: 78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc — ready for you to independently diff against the real Windows node.
+  - getdeploymentinfo: p2qpk → status: "defined", active: false, start_time: 1784433063, min_activation_height: 0 — all as expected.
+  - Wallet simwallet2 created, config (fallbackfee/paytxfee/mintxfee/wallet=simwallet2) written to ~/.qogecoin/qogecoin.conf before any mining, daemon restarted, and simwallet2 auto-loaded with no manual loadwallet call.
+  - Hourly logging loop running as PID 6758, first entry already captured in ~/deployment-log.txt.
+
+  Mining has not been started, per instructions. This VM is ready to be cloned for the second node — networking/isolation and mining start are next steps once both VMs exist.
+
+  Key values for reference:
+  - nStartTime real-world date/time: 2026-07-19 03:51:03 UTC (2026-07-19 04:51:03 WEST local) — epoch 1784433063
+  - Legacy mining address: qNX7ex9211t1PzZz5xUk93nF7C637enmyV
+
+✻ Churned for 5m 35s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Get the second VM's IP and confirm SSH access before cloning
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
