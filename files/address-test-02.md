@@ -28,8 +28,28 @@ func main() {
   seed, err := hex.DecodeString(os.Args[1])
   if err != nil || len(seed) != 32 {
     fmt.Fprintf(os.Stderr, "seed must be 32 bytes hex, got %d bytes\n", len(seed))
-go run main.go $SEED-hex 32)err)ess()wallet.db", seed)
-SEED: 062b10927bddf8939ad51240c4ec95d5c5c55d2550b3a9affcd883dc2313d50a
+    os.Exit(1)
+  }
+  address.DefaultNetwork = address.Mainnet
+  w, err := wallet.New("/tmp/realsim-wallet.db", seed)
+  if err != nil {
+    fmt.Fprintln(os.Stderr, err)
+    os.Exit(1)
+  }
+  defer w.Close()
+  addr, err := w.NextReceiveAddress()
+  if err != nil {
+    fmt.Fprintln(os.Stderr, err)
+    os.Exit(1)
+  }
+  fmt.Println(addr)
+}
+EOF
+SEED=$(openssl rand -hex 32)
+echo "SEED: $SEED"
+go mod tidy
+go run main.go $SEED
+SEED: 65b96a6bc4bfffebd01b3b75603afa2f4c9d69a5197a554d4a76a98f2f8bcfe2
 bq1z9w4j4kk5pxn75ceywuvr5rtpzrg53mna6jq5jzltmd5wxgj6k8gss0zc27
 ion@ion-VirtualBox:~/p2qpk-realsim-test$ 
 
