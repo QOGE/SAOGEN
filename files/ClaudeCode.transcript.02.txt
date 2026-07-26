@@ -1,0 +1,125 @@
+❯  Before proceeding with Option A, verify one more thing: what is CMainParams's actual nPowTargetSpacing (the real block target time), read directly from chainparams.cpp? Report the exact value in seconds. Then compute, using that real value: how many real-world days does one 8064-block window actually take, and how many total days from LOCKED_IN reachable to ACTIVE? Do not assume 10 minutes or 1 minute — read the actual constant and calculate from it.                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  Also confirm: is 8064/6048 something that was ever deliberately chosen/reasoned about for this project's actual block time, or does it look like an unexamined value inherited from upstream Bitcoin's own 10-minute-block constants (the same class of problem as the already-fixed testnet threshold bug, c00f6112d)? Just report what you find — this doesn't need to change anything for Option A, just needs to be understood correctly before we document the real expected timeline.                                                                                                                                                
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+  Once confirmed, proceed with Option A exactly as originally scoped: touch only nStartTime/nTimeout, leave bit/window/threshold untouched, rebuild, verify, show the diff, commit, push, then stop.                                                                                                                                                                                                                                                                                                                                                                                                                                         
+
+● Reading the actual CMainParams timing constants directly from source.
+
+  Ran 1 shell command 
+
+● Found it. Let me compute the exact timeline.
+
+  Ran 1 shell command 
+
+● Summary before proceeding:
+
+  - nPowTargetSpacing = 60 s — confirmed 1-minute blocks
+  - nMinerConfirmationWindow = 8064 — one window = 5.6 days (not 10-minute-block derived: 8064 = 4×2016, an unexamined inherited constant; the // nPowTargetTimespan / nPowTargetSpacing comment is factually wrong — that formula gives 70,560, not 8064)
+  - nRuleChangeActivationThreshold = 6048 — 75% of 8064, internally consistent ✓
+  - Timeline: nStartTime + 14 days from now → ACTIVE in 11–17 days after that = ~25–31 days from this commit; nTimeout at 104 days from now gives ~74 days of margin after nStartTime — plenty of runway even with slow signaling adoption
+
+  Same class of inherited-and-unexamined constant as the c00f6112d threshold bug, but since 6048/8064 = 75% exactly, it's internally consistent. Proceeding with Option A — leaving 8064/6048 untouched, changing only nStartTime/nTimeout.
+
+  ---
+  Step 2 — compute live timestamps:
+
+  Ran 1 shell command 
+
+✻ Cogitated for 8m 16s
+
+❯ proceed yes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
+  Ran 1 shell command 
+
+● Values confirmed:
+  - nStartTime = 1786284720 → Sun Aug 9 14:12 UTC 2026
+  - nTimeout   = 1794060720 → Sat Nov 7 14:12 UTC 2026
+  - Difference: exactly 90 days ✓
+
+  Step 3 — read exact current lines then apply edit:
+
+  Read 1 file 
+
+● Update(~/qogecoin/src/chainparams.cpp)
+  ⎿  Added 7 lines, removed 5 lines
+       93          consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;
+       94          consensus.vDeployments[Consensus::DEPLOYMENT_TAPROOT].min_activation_height = 0; // No activation delay
+       95  
+       96 -        // P2QPK (SIP-QOGE-PQC-02): explicitly NEVER_ACTIVE on mainnet until governance                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+       97 -        // selects activation parameters (bit, nStartTime, nTimeout).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+       98 -        // Do not leave unconfigured — BIP9Deployment lacks safe defaults in this tree.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+       96 +        // P2QPK (SIP-QOGE-PQC-02) real mainnet activation — set 2026-07-26.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+       97 +        // nStartTime = now + 14 days (2026-08-09), nTimeout = nStartTime + 90 days (2026-11-07).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+       98 +        // bit=3, nMinerConfirmationWindow=8064 (5.6 days/window), nRuleChangeActivationThreshold=6048 (75%).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+       99 +        // Validated end-to-end via real-parameter BIP9 simulation (2026-07).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+      100 +        // See docs/sips/SIP-QOGE-PQC-02.md §5 Phase G.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+      101          consensus.vDeployments[Consensus::DEPLOYMENT_P2QPK].bit = 3;
+      100 -        consensus.vDeployments[Consensus::DEPLOYMENT_P2QPK].nStartTime = Consensus::BIP9Deployment::NEVER_ACTIVE;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+      101 -        consensus.vDeployments[Consensus::DEPLOYMENT_P2QPK].nTimeout = Consensus::BIP9Deployment::NO_TIMEOUT;                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+      102 +        consensus.vDeployments[Consensus::DEPLOYMENT_P2QPK].nStartTime = 1786284720; // 2026-08-09 14:12 UTC                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+      103 +        consensus.vDeployments[Consensus::DEPLOYMENT_P2QPK].nTimeout = 1794060720;   // 2026-11-07 14:12 UTC                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+      104          consensus.vDeployments[Consensus::DEPLOYMENT_P2QPK].min_activation_height = 0;
+      105  
+      106          consensus.nMinimumChainWork = uint256S("0x00");
+
+● Good. Now verify the diff is exactly scoped before building:
+
+  Ran 1 shell command 
+
+● Diff is clean — only CMainParams's nStartTime/nTimeout lines changed, nothing else in the file. bit=3 and min_activation_height=0 untouched. No testnet/regtest/signet entries touched.
+
+  Step 4 — rebuild and verify:
+
+  Ran 3 shell commands 
+
+● Regtest p2qpk shows "status": "active" with start_time: -1 — that's ALWAYS_ACTIVE from CRegTestParams, unchanged and correct. Our edit did not touch it.
+
+  Now run the P2QPK test suite:
+
+  Ran 1 shell command 
+
+● The fuzz binary fails to link because it doesn't have the liboqs static lib in its LDADD — that's a pre-existing issue unrelated to our change (the main test_qogecoin binary built fine). Let me run just the P2QPK tests directly:
+
+  Ran 1 shell command 
+
+● 5/5 P2QPK tests pass. Build and tests clean.
+
+  Step 5 — commit and push:
+
+  Committed 7912fa1c1, pushed to stable 
+
+● STOP — awaiting independent review.
+
+  ---
+  Result
+
+  Commit: 7912fa1c1
+
+  Values set:
+
+  ┌────────────┬────────────┬──────────────────────────┐
+  │ Parameter  │   Value    │        Human date        │
+  ├────────────┼────────────┼──────────────────────────┤
+  │ nStartTime │ 1786284720 │ Sun 2026-08-09 14:12 UTC │
+  ├────────────┼────────────┼──────────────────────────┤
+  │ nTimeout   │ 1794060720 │ Sat 2026-11-07 14:12 UTC │
+  └────────────┴────────────┴──────────────────────────┘
+
+  Everything else: unchanged — bit=3, nMinerConfirmationWindow=8064, nRuleChangeActivationThreshold=6048, all testnet/regtest/signet entries untouched.
+
+  Expected timeline:
+  - STARTED: first 8064-block boundary after 2026-08-09 (~5.6 days after that date)
+  - ACTIVE: ~11–17 days after STARTED (~25–31 days from today)
+  - Timeout: 2026-11-07 (90 days of signaling runway after nStartTime)
+
+  5/5 P2QPK consensus tests pass. The fuzz link failure is pre-existing (missing liboqs in its LDADD, unrelated to this change).
+
+  This commit needs Codex and Grok Build review before a binary built from it goes anywhere near miners.
+
+✻ Cogitated for 7m 27s
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ update the SIP-02 document with the activation parameters
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
