@@ -1,0 +1,81 @@
+● Starting Step 1 — reading current state before touching anything.
+
+  Ran 2 shell commands 
+
+● Step 1 findings: No qogecoin.conf exists yet — the ~/.qogecoin/ directory has testnet3/ and wallets/ subdirs but no config file. Daemon is not running. Nothing to stop.
+
+  I'll create the config fresh. The testnet3/ dir shows the node has run in testnet mode at some point, but the primary use here is mainnet dev — I'll place changetype=bech32 globally (no section header), which applies to all chain modes, and note the reasoning.
+
+  Step 2 — find the right location in the repo:
+
+  Read 1 file, ran 3 shell commands 
+
+● Step 2 findings: The established location is share/examples/qogecoin.conf (Bitcoin Core ancestry convention). However, that file is the generic annotated reference — the right place for an operational production config with project-specific lessons is contrib/, mirroring contrib/init/ for init configs. I'll create contrib/qogecoin-production.conf.example.
+
+  Step 1 action: Daemon is not running, so no stop/start needed — just create the file.
+
+● Write(~/.qogecoin/qogecoin.conf)
+  ⎿  Wrote 26 lines to ../.qogecoin/qogecoin.conf
+      1 ##
+      2 ## qogecoin.conf — dev VM local config (QOGE/qogecoin development machine)
+      3 ##
+      4 
+      5 server=1
+      6 listen=1
+      7 
+      8 rpcbind=127.0.0.1
+      9 rpcallowip=127.0.0.1
+     … +16 lines 
+
+● Step 3 — create the reference config in the repo:
+
+● Write(~/qogecoin/contrib/qogecoin-production.conf.example)
+  ⎿  Wrote 105 lines to ../qogecoin/contrib/qogecoin-production.conf.example
+       1 ##
+       2 ## qogecoin-production.conf.example
+       3 ##
+       4 ## Reference production node configuration for QOGE/qogecoin.
+       5 ## Every setting below reflects a specific operational lesson learned during
+       6 ## this project's development, testnet, and mainnet activation simulation.
+       7 ##
+       8 ## HOW TO USE:
+       9 ##   cp contrib/qogecoin-production.conf.example ~/.qogecoin/qogecoin.conf
+      10 ##   Edit the file — change ALL placeholder credentials before starting the node.
+     … +95 lines 
+
+● Step 4 — verify no real credentials, show diff, commit, push:
+
+  Ran 1 shell command 
+
+● Credentials are plainly fake placeholders. Full diff:
+
+  Ran 1 shell command 
+
+● Clean — only the new file, no consensus code touched, no real credentials. Committing:
+
+  Committed 37adfd719, pushed to stable 
+
+● Done. Commit 37adfd719 pushed to both branches.
+
+  ---
+  Summary of what was done:
+
+  Step 1 — Dev VM config created (~/.qogecoin/qogecoin.conf):
+  - No existing config existed; daemon was not running — clean slate
+  - changetype=bech32 placed globally (no section header) because this VM runs mainnet, testnet, and regtest during development and the protection is correct in all modes
+  - Includes fee fallback settings and a brief rationale comment for each
+
+  Step 2 — Location: contrib/qogecoin-production.conf.example — fits the repo's contrib/ convention for operational tooling (alongside contrib/init/); the existing share/examples/qogecoin.conf is the generic upstream reference and this is project-specific operational guidance
+
+  Step 3 — Reference config: 105 lines; four documented lessons:
+  - Fee estimation failure on low-activity chains (fallbackfee/paytxfee/mintxfee)
+  - Wallet not reloading after restart (wallet= commented template)
+  - Taproot change address exposure (changetype=bech32 under all three chain sections)
+  - RPC security (rpcbind/rpcallowip localhost-only, with rpcauth alternative noted)
+
+✻ Cooked for 2m 1s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ push it
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
