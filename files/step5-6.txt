@@ -1,0 +1,1923 @@
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_avx2.dir/pqov_ov_III_pkc_avx2/utils_hash.c.o
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_avx2.dir/pqov_ov_III_pkc_avx2/utils_prng.c.o
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_avx2.dir/pqov_ov_III_pkc_avx2/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 86%] Built target uov_ov_III_pkc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/sig_uov_ov_V_pkc.c.o
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/blas_matrix.c.o
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/blas_matrix_ref.c.o
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/ov.c.o
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/ov_keypair.c.o
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/ov_keypair_computation.c.o
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/ov_publicmap.c.o
+[ 86%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/parallel_matrix_op.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/sign.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/utils_hash.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/utils_prng.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_ref.dir/pqov_ov_V_pkc_ref/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 87%] Built target uov_ov_V_pkc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/blas_matrix.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/blas_matrix_avx2.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/gf16_tabs.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/gf256_tabs.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/ov.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/ov_keypair.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/ov_keypair_computation.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/ov_publicmap.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/parallel_matrix_op.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/sign.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/utils_hash.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/utils_prng.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_avx2.dir/pqov_ov_V_pkc_avx2/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 87%] Built target uov_ov_V_pkc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/sig_uov_ov_Is_pkc_skc.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/blas_matrix.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/blas_matrix_ref.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/ov.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/ov_keypair.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/ov_keypair_computation.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/ov_publicmap.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/parallel_matrix_op.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/sign.c.o
+[ 87%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/utils_hash.c.o
+[ 88%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/utils_prng.c.o
+[ 88%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_ref.dir/pqov_ov_Is_pkc_skc_ref/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 88%] Built target uov_ov_Is_pkc_skc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/blas_matrix.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/blas_matrix_avx2.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/blas_matrix_ref.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/gf16_tabs.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/gf256_tabs.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/ov.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/ov_keypair.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/ov_keypair_computation.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/ov_publicmap.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/parallel_matrix_op.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/sign.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/utils_hash.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/utils_prng.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Is_pkc_skc_avx2.dir/pqov_ov_Is_pkc_skc_avx2/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 89%] Built target uov_ov_Is_pkc_skc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/sig_uov_ov_Ip_pkc_skc.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/blas_matrix.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/blas_matrix_ref.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/ov.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/ov_keypair.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/ov_keypair_computation.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/ov_publicmap.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/parallel_matrix_op.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/sign.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/utils_hash.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/utils_prng.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_ref.dir/pqov_ov_Ip_pkc_skc_ref/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 89%] Built target uov_ov_Ip_pkc_skc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/blas_matrix.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/blas_matrix_avx2.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/gf16_tabs.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/gf256_tabs.c.o
+[ 89%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/ov.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/ov_keypair.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/ov_keypair_computation.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/ov_publicmap.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/parallel_matrix_op.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/sign.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/utils_hash.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/utils_prng.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_Ip_pkc_skc_avx2.dir/pqov_ov_Ip_pkc_skc_avx2/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 90%] Built target uov_ov_Ip_pkc_skc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/sig_uov_ov_III_pkc_skc.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/blas_matrix.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/blas_matrix_ref.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/ov.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/ov_keypair.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/ov_keypair_computation.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/ov_publicmap.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/parallel_matrix_op.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/sign.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/utils_hash.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/utils_prng.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_ref.dir/pqov_ov_III_pkc_skc_ref/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 90%] Built target uov_ov_III_pkc_skc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/blas_matrix.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/blas_matrix_avx2.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/gf16_tabs.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/gf256_tabs.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/ov.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/ov_keypair.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/ov_keypair_computation.c.o
+[ 90%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/ov_publicmap.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/parallel_matrix_op.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/sign.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/utils_hash.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/utils_prng.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_III_pkc_skc_avx2.dir/pqov_ov_III_pkc_skc_avx2/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 91%] Built target uov_ov_III_pkc_skc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/sig_uov_ov_V_pkc_skc.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/blas_matrix.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/blas_matrix_ref.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/ov.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/ov_keypair.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/ov_keypair_computation.c.o
+[ 91%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/ov_publicmap.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/parallel_matrix_op.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/sign.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/utils_hash.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/utils_prng.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_ref.dir/pqov_ov_V_pkc_skc_ref/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target uov_ov_V_pkc_skc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/blas_matrix.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/blas_matrix_avx2.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/gf16_tabs.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/gf256_tabs.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/ov.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/ov_keypair.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/ov_keypair_computation.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/ov_publicmap.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/parallel_matrix_op.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/sign.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/utils_hash.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/utils_prng.c.o
+[ 92%] Building C object src/sig/uov/CMakeFiles/uov_ov_V_pkc_skc_avx2.dir/pqov_ov_V_pkc_skc_avx2/utils_randombytes.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target uov_ov_V_pkc_skc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_opt.dir/sig_snova_SNOVA_24_5_4.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_opt.dir/snova_SNOVA_24_5_4_opt/oqs_snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_opt.dir/snova_SNOVA_24_5_4_opt/snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_opt.dir/snova_SNOVA_24_5_4_opt/snova_aes.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_opt.dir/snova_SNOVA_24_5_4_opt/snova_common.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_opt.dir/snova_SNOVA_24_5_4_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_avx2.dir/snova_SNOVA_24_5_4_avx2/oqs_snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_avx2.dir/snova_SNOVA_24_5_4_avx2/snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_avx2.dir/snova_SNOVA_24_5_4_avx2/snova_aes.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_avx2.dir/snova_SNOVA_24_5_4_avx2/snova_common.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_avx2.dir/snova_SNOVA_24_5_4_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_opt.dir/sig_snova_SNOVA_24_5_4_SHAKE.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_opt.dir/snova_SNOVA_24_5_4_SHAKE_opt/oqs_snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_opt.dir/snova_SNOVA_24_5_4_SHAKE_opt/snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_opt.dir/snova_SNOVA_24_5_4_SHAKE_opt/snova_aes.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_opt.dir/snova_SNOVA_24_5_4_SHAKE_opt/snova_common.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_opt.dir/snova_SNOVA_24_5_4_SHAKE_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_SHAKE_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_avx2.dir/snova_SNOVA_24_5_4_SHAKE_avx2/oqs_snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_avx2.dir/snova_SNOVA_24_5_4_SHAKE_avx2/snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_avx2.dir/snova_SNOVA_24_5_4_SHAKE_avx2/snova_aes.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_avx2.dir/snova_SNOVA_24_5_4_SHAKE_avx2/snova_common.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_avx2.dir/snova_SNOVA_24_5_4_SHAKE_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_SHAKE_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_opt.dir/sig_snova_SNOVA_24_5_4_esk.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_opt.dir/snova_SNOVA_24_5_4_esk_opt/oqs_snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_opt.dir/snova_SNOVA_24_5_4_esk_opt/snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_opt.dir/snova_SNOVA_24_5_4_esk_opt/snova_aes.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_opt.dir/snova_SNOVA_24_5_4_esk_opt/snova_common.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_opt.dir/snova_SNOVA_24_5_4_esk_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_esk_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_avx2.dir/snova_SNOVA_24_5_4_esk_avx2/oqs_snova.c.o
+[ 92%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_avx2.dir/snova_SNOVA_24_5_4_esk_avx2/snova.c.o
+[ 93%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_avx2.dir/snova_SNOVA_24_5_4_esk_avx2/snova_aes.c.o
+[ 93%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_avx2.dir/snova_SNOVA_24_5_4_esk_avx2/snova_common.c.o
+[ 93%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_esk_avx2.dir/snova_SNOVA_24_5_4_esk_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 93%] Built target snova_SNOVA_24_5_4_esk_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 93%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_opt.dir/sig_snova_SNOVA_24_5_4_SHAKE_esk.c.o
+[ 93%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_opt.dir/snova_SNOVA_24_5_4_SHAKE_esk_opt/oqs_snova.c.o
+[ 93%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_opt.dir/snova_SNOVA_24_5_4_SHAKE_esk_opt/snova.c.o
+[ 93%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_opt.dir/snova_SNOVA_24_5_4_SHAKE_esk_opt/snova_aes.c.o
+[ 93%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_opt.dir/snova_SNOVA_24_5_4_SHAKE_esk_opt/snova_common.c.o
+[ 93%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_opt.dir/snova_SNOVA_24_5_4_SHAKE_esk_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 93%] Built target snova_SNOVA_24_5_4_SHAKE_esk_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_avx2.dir/snova_SNOVA_24_5_4_SHAKE_esk_avx2/oqs_snova.c.o
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_avx2.dir/snova_SNOVA_24_5_4_SHAKE_esk_avx2/snova.c.o
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_avx2.dir/snova_SNOVA_24_5_4_SHAKE_esk_avx2/snova_aes.c.o
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_avx2.dir/snova_SNOVA_24_5_4_SHAKE_esk_avx2/snova_common.c.o
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_4_SHAKE_esk_avx2.dir/snova_SNOVA_24_5_4_SHAKE_esk_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 94%] Built target snova_SNOVA_24_5_4_SHAKE_esk_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_opt.dir/sig_snova_SNOVA_37_17_2.c.o
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_opt.dir/snova_SNOVA_37_17_2_opt/oqs_snova.c.o
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_opt.dir/snova_SNOVA_37_17_2_opt/snova.c.o
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_opt.dir/snova_SNOVA_37_17_2_opt/snova_aes.c.o
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_opt.dir/snova_SNOVA_37_17_2_opt/snova_common.c.o
+[ 94%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_opt.dir/snova_SNOVA_37_17_2_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 94%] Built target snova_SNOVA_37_17_2_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_avx2.dir/snova_SNOVA_37_17_2_avx2/oqs_snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_avx2.dir/snova_SNOVA_37_17_2_avx2/snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_avx2.dir/snova_SNOVA_37_17_2_avx2/snova_aes.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_avx2.dir/snova_SNOVA_37_17_2_avx2/snova_common.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_17_2_avx2.dir/snova_SNOVA_37_17_2_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_37_17_2_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_opt.dir/sig_snova_SNOVA_25_8_3.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_opt.dir/snova_SNOVA_25_8_3_opt/oqs_snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_opt.dir/snova_SNOVA_25_8_3_opt/snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_opt.dir/snova_SNOVA_25_8_3_opt/snova_aes.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_opt.dir/snova_SNOVA_25_8_3_opt/snova_common.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_opt.dir/snova_SNOVA_25_8_3_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_25_8_3_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_avx2.dir/snova_SNOVA_25_8_3_avx2/oqs_snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_avx2.dir/snova_SNOVA_25_8_3_avx2/snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_avx2.dir/snova_SNOVA_25_8_3_avx2/snova_aes.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_avx2.dir/snova_SNOVA_25_8_3_avx2/snova_common.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_25_8_3_avx2.dir/snova_SNOVA_25_8_3_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_25_8_3_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_opt.dir/sig_snova_SNOVA_56_25_2.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_opt.dir/snova_SNOVA_56_25_2_opt/oqs_snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_opt.dir/snova_SNOVA_56_25_2_opt/snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_opt.dir/snova_SNOVA_56_25_2_opt/snova_aes.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_opt.dir/snova_SNOVA_56_25_2_opt/snova_common.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_opt.dir/snova_SNOVA_56_25_2_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_56_25_2_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_avx2.dir/snova_SNOVA_56_25_2_avx2/oqs_snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_avx2.dir/snova_SNOVA_56_25_2_avx2/snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_avx2.dir/snova_SNOVA_56_25_2_avx2/snova_aes.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_avx2.dir/snova_SNOVA_56_25_2_avx2/snova_common.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_56_25_2_avx2.dir/snova_SNOVA_56_25_2_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_56_25_2_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_opt.dir/sig_snova_SNOVA_49_11_3.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_opt.dir/snova_SNOVA_49_11_3_opt/oqs_snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_opt.dir/snova_SNOVA_49_11_3_opt/snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_opt.dir/snova_SNOVA_49_11_3_opt/snova_aes.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_opt.dir/snova_SNOVA_49_11_3_opt/snova_common.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_opt.dir/snova_SNOVA_49_11_3_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_49_11_3_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_avx2.dir/snova_SNOVA_49_11_3_avx2/oqs_snova.c.o
+[ 95%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_avx2.dir/snova_SNOVA_49_11_3_avx2/snova.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_avx2.dir/snova_SNOVA_49_11_3_avx2/snova_aes.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_avx2.dir/snova_SNOVA_49_11_3_avx2/snova_common.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_49_11_3_avx2.dir/snova_SNOVA_49_11_3_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 96%] Built target snova_SNOVA_49_11_3_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_opt.dir/sig_snova_SNOVA_37_8_4.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_opt.dir/snova_SNOVA_37_8_4_opt/oqs_snova.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_opt.dir/snova_SNOVA_37_8_4_opt/snova.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_opt.dir/snova_SNOVA_37_8_4_opt/snova_aes.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_opt.dir/snova_SNOVA_37_8_4_opt/snova_common.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_opt.dir/snova_SNOVA_37_8_4_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 96%] Built target snova_SNOVA_37_8_4_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_avx2.dir/snova_SNOVA_37_8_4_avx2/oqs_snova.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_avx2.dir/snova_SNOVA_37_8_4_avx2/snova.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_avx2.dir/snova_SNOVA_37_8_4_avx2/snova_aes.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_avx2.dir/snova_SNOVA_37_8_4_avx2/snova_common.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_37_8_4_avx2.dir/snova_SNOVA_37_8_4_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 96%] Built target snova_SNOVA_37_8_4_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_opt.dir/sig_snova_SNOVA_24_5_5.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_opt.dir/snova_SNOVA_24_5_5_opt/oqs_snova.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_opt.dir/snova_SNOVA_24_5_5_opt/snova.c.o
+[ 96%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_opt.dir/snova_SNOVA_24_5_5_opt/snova_aes.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_opt.dir/snova_SNOVA_24_5_5_opt/snova_common.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_opt.dir/snova_SNOVA_24_5_5_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 97%] Built target snova_SNOVA_24_5_5_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_avx2.dir/snova_SNOVA_24_5_5_avx2/oqs_snova.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_avx2.dir/snova_SNOVA_24_5_5_avx2/snova.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_avx2.dir/snova_SNOVA_24_5_5_avx2/snova_aes.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_avx2.dir/snova_SNOVA_24_5_5_avx2/snova_common.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_24_5_5_avx2.dir/snova_SNOVA_24_5_5_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 97%] Built target snova_SNOVA_24_5_5_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_opt.dir/sig_snova_SNOVA_60_10_4.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_opt.dir/snova_SNOVA_60_10_4_opt/oqs_snova.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_opt.dir/snova_SNOVA_60_10_4_opt/snova.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_opt.dir/snova_SNOVA_60_10_4_opt/snova_aes.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_opt.dir/snova_SNOVA_60_10_4_opt/snova_common.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_opt.dir/snova_SNOVA_60_10_4_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 97%] Built target snova_SNOVA_60_10_4_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_avx2.dir/snova_SNOVA_60_10_4_avx2/oqs_snova.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_avx2.dir/snova_SNOVA_60_10_4_avx2/snova.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_avx2.dir/snova_SNOVA_60_10_4_avx2/snova_aes.c.o
+[ 97%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_avx2.dir/snova_SNOVA_60_10_4_avx2/snova_common.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_60_10_4_avx2.dir/snova_SNOVA_60_10_4_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target snova_SNOVA_60_10_4_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_opt.dir/sig_snova_SNOVA_29_6_5.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_opt.dir/snova_SNOVA_29_6_5_opt/oqs_snova.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_opt.dir/snova_SNOVA_29_6_5_opt/snova.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_opt.dir/snova_SNOVA_29_6_5_opt/snova_aes.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_opt.dir/snova_SNOVA_29_6_5_opt/snova_common.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_opt.dir/snova_SNOVA_29_6_5_opt/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target snova_SNOVA_29_6_5_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_avx2.dir/snova_SNOVA_29_6_5_avx2/oqs_snova.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_avx2.dir/snova_SNOVA_29_6_5_avx2/snova.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_avx2.dir/snova_SNOVA_29_6_5_avx2/snova_aes.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_avx2.dir/snova_SNOVA_29_6_5_avx2/snova_common.c.o
+[ 98%] Building C object src/sig/snova/CMakeFiles/snova_SNOVA_29_6_5_avx2.dir/snova_SNOVA_29_6_5_avx2/snova_shake.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target snova_SNOVA_29_6_5_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Building C object src/CMakeFiles/oqs.dir/kem/kem.c.o
+[ 98%] Building C object src/CMakeFiles/oqs.dir/sig/sig.c.o
+[ 98%] Building C object src/CMakeFiles/oqs.dir/sig_stfl/sig_stfl.c.o
+[ 98%] Linking C static library ../lib/liboqs.a
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target oqs
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/aes/aes_impl.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/aes/aes_c.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/aes/aes128_ni.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/aes/aes256_ni.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/aes/aes.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/sha2/sha2_ossl.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/sha2/sha2.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/sha3/xkcp_sha3.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/sha3/xkcp_sha3x4.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/sha3/avx512vl_sha3.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/sha3/avx512vl_sha3x4.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/sha3/sha3.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/sha3/sha3x4.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/ossl_helpers.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/common.c.o
+[ 98%] Building C object src/common/CMakeFiles/internal.dir/rand/rand_nist.c.o
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target internal
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Linking C static library ../lib/liboqs-internal.a
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target oqs-internal
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Building C object tests/CMakeFiles/test_aes.dir/test_aes.c.o
+[ 98%] Linking C executable test_aes
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target test_aes
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Building C object tests/CMakeFiles/test_hash.dir/test_hash.c.o
+[ 98%] Linking C executable test_hash
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target test_hash
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Building C object tests/CMakeFiles/test_sha3.dir/test_sha3.c.o
+[ 98%] Linking C executable test_sha3
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target test_sha3
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Building C object tests/CMakeFiles/speed_common.dir/speed_common.c.o
+[ 98%] Linking C executable speed_common
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target speed_common
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Building C object tests/CMakeFiles/example_kem.dir/example_kem.c.o
+[ 98%] Linking C executable example_kem
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target example_kem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/kat_kem.dir/kat_kem.c.o
+[ 99%] Building C object tests/CMakeFiles/kat_kem.dir/test_helpers.c.o
+[ 99%] Linking C executable kat_kem
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target kat_kem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/test_kem.dir/test_kem.c.o
+[ 99%] Building C object tests/CMakeFiles/test_kem.dir/test_helpers.c.o
+[ 99%] Linking C executable test_kem
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target test_kem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/test_kem_mem.dir/test_kem_mem.c.o
+[ 99%] Building C object tests/CMakeFiles/test_kem_mem.dir/test_helpers.c.o
+[ 99%] Linking C executable test_kem_mem
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target test_kem_mem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/speed_kem.dir/speed_kem.c.o
+[ 99%] Linking C executable speed_kem
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target speed_kem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/example_sig.dir/example_sig.c.o
+[ 99%] Linking C executable example_sig
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target example_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/example_sig_stfl.dir/example_sig_stfl.c.o
+[ 99%] Linking C executable example_sig_stfl
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target example_sig_stfl
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/kat_sig.dir/kat_sig.c.o
+[ 99%] Building C object tests/CMakeFiles/kat_sig.dir/test_helpers.c.o
+[ 99%] Linking C executable kat_sig
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target kat_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/kat_sig_stfl.dir/kat_sig_stfl.c.o
+[ 99%] Building C object tests/CMakeFiles/kat_sig_stfl.dir/test_helpers.c.o
+[ 99%] Linking C executable kat_sig_stfl
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target kat_sig_stfl
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/test_sig.dir/test_sig.c.o
+[ 99%] Building C object tests/CMakeFiles/test_sig.dir/test_helpers.c.o
+[ 99%] Linking C executable test_sig
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target test_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/test_sig_mem.dir/test_sig_mem.c.o
+[ 99%] Linking C executable test_sig_mem
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target test_sig_mem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/speed_sig.dir/speed_sig.c.o
+[ 99%] Linking C executable speed_sig
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target speed_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Building C object tests/CMakeFiles/test_sig_stfl.dir/test_sig_stfl.c.o
+[100%] Building C object tests/CMakeFiles/test_sig_stfl.dir/test_helpers.c.o
+[100%] Linking C executable test_sig_stfl
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target test_sig_stfl
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Building C object tests/CMakeFiles/speed_sig_stfl.dir/speed_sig_stfl.c.o
+[100%] Linking C executable speed_sig_stfl
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target speed_sig_stfl
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Building C object tests/CMakeFiles/dump_alg_info.dir/dump_alg_info.c.o
+[100%] Linking C executable dump_alg_info
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target dump_alg_info
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Building C object tests/CMakeFiles/vectors_sig.dir/vectors_sig.c.o
+[100%] Linking C executable vectors_sig
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target vectors_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Building C object tests/CMakeFiles/vectors_kem.dir/vectors_kem.c.o
+[100%] Linking C executable vectors_kem
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target vectors_kem
+make[2]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[1]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+Staging liboqs...
+make[1]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[2]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[  7%] Built target slh_dsa_c
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[  8%] Built target common
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[  8%] Built target xkcp_low_keccakp_1600_plain64
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[  9%] Built target xkcp_low_keccakp_1600times4_serial
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[  9%] Built target xkcp_low_keccakp_1600_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[  9%] Built target xkcp_low_keccakp_1600times4_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[  9%] Built target sha3_avx512vl_low
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[  9%] Built target kem_bike
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[  9%] Built target bike_l1
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 10%] Built target bike_l3
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 11%] Built target bike_l5
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 12%] Built target frodokem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 12%] Built target frodokem_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 13%] Built target ntruprime_sntrup761_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 14%] Built target ntruprime_sntrup761_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 15%] Built target ntru_hps2048509_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 16%] Built target ntru_hps2048509_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 16%] Built target ntru_hps2048677_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 17%] Built target ntru_hps2048677_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 18%] Built target ntru_hps4096821_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 19%] Built target ntru_hps4096821_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 20%] Built target ntru_hps40961229_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 21%] Built target ntru_hrss701_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 22%] Built target ntru_hrss701_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 22%] Built target ntru_hrss1373_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 22%] Built target classic_mceliece_348864_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 24%] Built target classic_mceliece_348864_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 24%] Built target classic_mceliece_348864f_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 26%] Built target classic_mceliece_348864f_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 27%] Built target classic_mceliece_460896_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 29%] Built target classic_mceliece_460896_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 30%] Built target classic_mceliece_460896f_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 31%] Built target classic_mceliece_460896f_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 32%] Built target classic_mceliece_6688128_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 33%] Built target classic_mceliece_6688128_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 34%] Built target classic_mceliece_6688128f_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 35%] Built target classic_mceliece_6688128f_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 36%] Built target classic_mceliece_6960119_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 37%] Built target classic_mceliece_6960119_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 38%] Built target classic_mceliece_6960119f_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 39%] Built target classic_mceliece_6960119f_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 40%] Built target classic_mceliece_8192128_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 41%] Built target classic_mceliece_8192128_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 42%] Built target classic_mceliece_8192128f_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 43%] Built target classic_mceliece_8192128f_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 44%] Built target kyber_512_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 44%] Built target kyber_512_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 45%] Built target kyber_768_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 45%] Built target kyber_768_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 46%] Built target kyber_1024_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 46%] Built target kyber_1024_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 47%] Built target ml_kem_512_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 48%] Built target ml_kem_512_x86_64
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 48%] Built target ml_kem_768_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 49%] Built target ml_kem_768_x86_64
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 49%] Built target ml_kem_1024_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 50%] Built target ml_kem_1024_x86_64
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 50%] Built target ml_dsa_44_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 51%] Built target ml_dsa_44_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 51%] Built target ml_dsa_65_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 52%] Built target ml_dsa_65_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 52%] Built target ml_dsa_87_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 53%] Built target ml_dsa_87_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 53%] Built target falcon_512_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 53%] Built target falcon_512_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 54%] Built target falcon_1024_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 54%] Built target falcon_1024_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 54%] Built target falcon_padded_512_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 55%] Built target falcon_padded_512_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 55%] Built target falcon_padded_1024_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 56%] Built target falcon_padded_1024_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 56%] Built target sphincs_sha2_128f_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 57%] Built target sphincs_sha2_128f_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 57%] Built target sphincs_sha2_128s_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 58%] Built target sphincs_sha2_128s_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 58%] Built target sphincs_sha2_192f_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 59%] Built target sphincs_sha2_192f_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 59%] Built target sphincs_sha2_192s_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 60%] Built target sphincs_sha2_192s_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 61%] Built target sphincs_sha2_256f_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 62%] Built target sphincs_sha2_256f_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 63%] Built target sphincs_sha2_256s_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 63%] Built target sphincs_sha2_256s_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 64%] Built target sphincs_shake_128f_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 64%] Built target sphincs_shake_128f_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 65%] Built target sphincs_shake_128s_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 65%] Built target sphincs_shake_128s_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 66%] Built target sphincs_shake_192f_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 66%] Built target sphincs_shake_192f_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 67%] Built target sphincs_shake_192s_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 67%] Built target sphincs_shake_192s_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 68%] Built target sphincs_shake_256f_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 68%] Built target sphincs_shake_256f_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 69%] Built target sphincs_shake_256s_simple_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 69%] Built target sphincs_shake_256s_simple_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 69%] Built target mayo_1_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 69%] Built target mayo_1_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 70%] Built target mayo_2_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 70%] Built target mayo_2_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 70%] Built target mayo_3_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 70%] Built target mayo_3_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 70%] Built target mayo_5_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 70%] Built target mayo_5_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 70%] Built target cross_rsdp_128_balanced_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 70%] Built target cross_rsdp_128_balanced_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 70%] Built target cross_rsdp_128_fast_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 71%] Built target cross_rsdp_128_fast_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 71%] Built target cross_rsdp_128_small_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 71%] Built target cross_rsdp_128_small_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 71%] Built target cross_rsdp_192_balanced_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 72%] Built target cross_rsdp_192_balanced_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 73%] Built target cross_rsdp_192_fast_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 73%] Built target cross_rsdp_192_fast_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 73%] Built target cross_rsdp_192_small_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 73%] Built target cross_rsdp_192_small_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 74%] Built target cross_rsdp_256_balanced_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 74%] Built target cross_rsdp_256_balanced_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 74%] Built target cross_rsdp_256_fast_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 74%] Built target cross_rsdp_256_fast_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 75%] Built target cross_rsdp_256_small_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 75%] Built target cross_rsdp_256_small_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 75%] Built target cross_rsdpg_128_balanced_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 75%] Built target cross_rsdpg_128_balanced_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 76%] Built target cross_rsdpg_128_fast_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 76%] Built target cross_rsdpg_128_fast_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 76%] Built target cross_rsdpg_128_small_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 76%] Built target cross_rsdpg_128_small_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 76%] Built target cross_rsdpg_192_balanced_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 77%] Built target cross_rsdpg_192_balanced_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 77%] Built target cross_rsdpg_192_fast_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 77%] Built target cross_rsdpg_192_fast_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 77%] Built target cross_rsdpg_192_small_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 78%] Built target cross_rsdpg_192_small_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 78%] Built target cross_rsdpg_256_balanced_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 78%] Built target cross_rsdpg_256_balanced_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 78%] Built target cross_rsdpg_256_fast_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 79%] Built target cross_rsdpg_256_fast_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 80%] Built target cross_rsdpg_256_small_clean
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 80%] Built target cross_rsdpg_256_small_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 80%] Built target uov_ov_Is_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 80%] Built target uov_ov_Is_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 81%] Built target uov_ov_Ip_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 81%] Built target uov_ov_Ip_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 82%] Built target uov_ov_III_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 82%] Built target uov_ov_III_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 82%] Built target uov_ov_V_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 83%] Built target uov_ov_V_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 83%] Built target uov_ov_Is_pkc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 84%] Built target uov_ov_Is_pkc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 84%] Built target uov_ov_Ip_pkc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 85%] Built target uov_ov_Ip_pkc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 85%] Built target uov_ov_III_pkc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 86%] Built target uov_ov_III_pkc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 87%] Built target uov_ov_V_pkc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 87%] Built target uov_ov_V_pkc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 88%] Built target uov_ov_Is_pkc_skc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 89%] Built target uov_ov_Is_pkc_skc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 89%] Built target uov_ov_Ip_pkc_skc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 90%] Built target uov_ov_Ip_pkc_skc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 90%] Built target uov_ov_III_pkc_skc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 91%] Built target uov_ov_III_pkc_skc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target uov_ov_V_pkc_skc_ref
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target uov_ov_V_pkc_skc_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_SHAKE_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_SHAKE_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 92%] Built target snova_SNOVA_24_5_4_esk_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 93%] Built target snova_SNOVA_24_5_4_esk_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 93%] Built target snova_SNOVA_24_5_4_SHAKE_esk_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 94%] Built target snova_SNOVA_24_5_4_SHAKE_esk_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 94%] Built target snova_SNOVA_37_17_2_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_37_17_2_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_25_8_3_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_25_8_3_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_56_25_2_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_56_25_2_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 95%] Built target snova_SNOVA_49_11_3_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 96%] Built target snova_SNOVA_49_11_3_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 96%] Built target snova_SNOVA_37_8_4_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 96%] Built target snova_SNOVA_37_8_4_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 97%] Built target snova_SNOVA_24_5_5_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 97%] Built target snova_SNOVA_24_5_5_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 97%] Built target snova_SNOVA_60_10_4_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target snova_SNOVA_60_10_4_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target snova_SNOVA_29_6_5_opt
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target snova_SNOVA_29_6_5_avx2
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target oqs
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target internal
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target oqs-internal
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target test_aes
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target test_hash
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target test_sha3
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target speed_common
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 98%] Built target example_kem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target kat_kem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target test_kem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target test_kem_mem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target speed_kem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target example_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target example_sig_stfl
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target kat_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target kat_sig_stfl
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target test_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target test_sig_mem
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[ 99%] Built target speed_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target test_sig_stfl
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target speed_sig_stfl
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target dump_alg_info
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target vectors_sig
+make[3]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+make[3]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+[100%] Built target vectors_kem
+make[2]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+Install the project...
+-- Install configuration: "Release"
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/lib/cmake/liboqs/liboqsConfig.cmake
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/lib/cmake/liboqs/liboqsConfigVersion.cmake
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/lib/pkgconfig/liboqs.pc
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/lib/liboqs.a
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/lib/cmake/liboqs/liboqsTargets.cmake
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/lib/cmake/liboqs/liboqsTargets-release.cmake
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/oqs.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/aes_ops.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/common.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/rand.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sha2_ops.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sha3_ops.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sha3x4_ops.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/kem.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig_stfl.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/kem_bike.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/kem_frodokem.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/kem_ntruprime.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/kem_ntru.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/kem_classic_mceliece.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/kem_kyber.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/kem_ml_kem.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig_ml_dsa.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig_falcon.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig_sphincs.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig_mayo.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig_cross.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig_uov.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig_snova.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/sig_slh_dsa.h
+-- Installing: /root/qogecoin/depends/work/staging/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c/root/qogecoin/depends/x86_64-linux-gnu/include/oqs/oqsconfig.h
+make[1]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/liboqs/0.15.0-ba10445c76c'
+Postprocessing liboqs...
+Caching liboqs...
+Fetching sqlite-autoconf-3320100.tar.gz from https://sqlite.org/2020/
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 2834k  100 2834k    0     0  1389k      0  0:00:02  0:00:02 --:--:-- 1389k
+/root/qogecoin/depends/work/download/sqlite-3320100/sqlite-autoconf-3320100.tar.gz.temp: OK
+Extracting sqlite...
+/root/qogecoin/depends/sources/sqlite-autoconf-3320100.tar.gz: OK
+Preprocessing sqlite...
+Configuring sqlite...
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether build environment is sane... yes
+checking for x86_64-linux-gnu-strip... x86_64-linux-gnu-strip
+checking for a thread-safe mkdir -p... /usr/bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking for style of include used by make... GNU
+checking for x86_64-linux-gnu-gcc... gcc -m64
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables...
+checking whether we are cross compiling... yes
+checking for suffix of object files... o
+checking whether we are using the GNU C compiler... yes
+checking whether gcc -m64 accepts -g... yes
+checking for gcc -m64 option to accept ISO C89... none needed
+checking whether gcc -m64 understands -c and -o together... yes
+checking dependency style of gcc -m64... gcc3
+checking for special C compiler options needed for large files... no
+checking for _FILE_OFFSET_BITS value needed for large files... no
+checking for x86_64-linux-gnu-gcc... (cached) gcc -m64
+checking whether we are using the GNU C compiler... (cached) yes
+checking whether gcc -m64 accepts -g... (cached) yes
+checking for gcc -m64 option to accept ISO C89... (cached) none needed
+checking whether gcc -m64 understands -c and -o together... (cached) yes
+checking dependency style of gcc -m64... (cached) gcc3
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking how to print strings... printf
+checking for a sed that does not truncate output... /usr/bin/sed
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for fgrep... /usr/bin/grep -F
+checking for ld used by gcc -m64... /usr/bin/ld
+checking if the linker (/usr/bin/ld) is GNU ld... yes
+checking for BSD- or MS-compatible name lister (nm)... nm
+checking the name lister (nm) interface... BSD nm
+checking whether ln -s works... yes
+checking the maximum length of command line arguments... 1572864
+checking how to convert x86_64-pc-linux-gnu file names to x86_64-pc-linux-gnu format... func_convert_file_noop
+checking how to convert x86_64-pc-linux-gnu file names to toolchain format... func_convert_file_noop
+checking for /usr/bin/ld option to reload object files... -r
+checking for x86_64-linux-gnu-objdump... x86_64-linux-gnu-objdump
+checking how to recognize dependent libraries... pass_all
+checking for x86_64-linux-gnu-dlltool... no
+checking for dlltool... no
+checking how to associate runtime and link libraries... printf %s\n
+checking for x86_64-linux-gnu-ar... ar
+checking for archiver @FILE support... @
+checking for x86_64-linux-gnu-strip... (cached) x86_64-linux-gnu-strip
+checking for x86_64-linux-gnu-ranlib... ranlib
+checking command to parse nm output from gcc -m64 object... ok
+checking for sysroot... no
+checking for a working dd... /usr/bin/dd
+checking how to truncate binary pipes... /usr/bin/dd bs=4096 count=1
+checking for x86_64-linux-gnu-mt... no
+checking for mt... mt
+configure: WARNING: using cross tools not prefixed with host triplet
+checking if mt is a manifest tool... no
+checking how to run the C preprocessor... gcc -m64 -E
+checking for ANSI C header files... yes
+checking for sys/types.h... yes
+checking for sys/stat.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for memory.h... yes
+checking for strings.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for unistd.h... yes
+checking for dlfcn.h... yes
+checking for objdir... .libs
+checking if gcc -m64 supports -fno-rtti -fno-exceptions... no
+checking for gcc -m64 option to produce PIC... -fPIC -DPIC
+checking if gcc -m64 PIC flag -fPIC -DPIC works... yes
+checking if gcc -m64 static flag -static works... yes
+checking if gcc -m64 supports -c -o file.o... yes
+checking if gcc -m64 supports -c -o file.o... (cached) yes
+checking whether the gcc -m64 linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
+checking dynamic linker characteristics... GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether stripping libraries is possible... yes
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... no
+checking whether to build static libraries... yes
+checking for fdatasync... yes
+checking for usleep... yes
+checking for fullfsync... no
+checking for localtime_r... yes
+checking for gmtime_r... yes
+checking whether strerror_r is declared... yes
+checking for strerror_r... yes
+checking whether strerror_r returns char *... no
+checking editline/readline.h usability... no
+checking editline/readline.h presence... no
+checking for editline/readline.h... no
+checking for library containing pthread_create... none required
+checking for library containing pthread_mutexattr_init... none required
+checking for whether to support dynamic extensions... no
+checking for library containing log... -lm
+checking for posix_fallocate... yes
+checking zlib.h usability... yes
+checking zlib.h presence... yes
+checking for zlib.h... yes
+checking for library containing deflate... -lz
+checking for library containing system... none required
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+config.status: creating Makefile
+config.status: creating sqlite3.pc
+config.status: executing depfiles commands
+config.status: executing libtool commands
+Building sqlite...
+make[1]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95'
+/bin/bash ./libtool  --tag=CC   --mode=compile gcc -m64 -DPACKAGE_NAME=\"sqlite\" -DPACKAGE_TARNAME=\"sqlite\" -DPACKAGE_VERSION=\"3.32.1\" -DPACKAGE_STRING=\"sqlite\ 3.32.1\" -DPACKAGE_BUGREPORT=\"http://www.sqlite.org\" -DPACKAGE_URL=\"\" -DPACKAGE=\"sqlite\" -DVERSION=\"3.32.1\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -DHAVE_FDATASYNC=1 -DHAVE_USLEEP=1 -DHAVE_LOCALTIME_R=1 -DHAVE_GMTIME_R=1 -DHAVE_DECL_STRERROR_R=1 -DHAVE_STRERROR_R=1 -DHAVE_POSIX_FALLOCATE=1 -DHAVE_ZLIB_H=1 -I.   -I/root/qogecoin/depends/x86_64-linux-gnu/include -D_REENTRANT=1 -DSQLITE_THREADSAFE=1 -DSQLITE_OMIT_LOAD_EXTENSION=1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_GEOPOLY -DSQLITE_HAVE_ZLIB  -pipe -O2 -MT sqlite3.lo -MD -MP -MF .deps/sqlite3.Tpo -c -o sqlite3.lo sqlite3.c
+libtool: compile:  gcc -m64 -DPACKAGE_NAME=\"sqlite\" -DPACKAGE_TARNAME=\"sqlite\" -DPACKAGE_VERSION=\"3.32.1\" "-DPACKAGE_STRING=\"sqlite 3.32.1\"" -DPACKAGE_BUGREPORT=\"http://www.sqlite.org\" -DPACKAGE_URL=\"\" -DPACKAGE=\"sqlite\" -DVERSION=\"3.32.1\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -DHAVE_FDATASYNC=1 -DHAVE_USLEEP=1 -DHAVE_LOCALTIME_R=1 -DHAVE_GMTIME_R=1 -DHAVE_DECL_STRERROR_R=1 -DHAVE_STRERROR_R=1 -DHAVE_POSIX_FALLOCATE=1 -DHAVE_ZLIB_H=1 -I. -I/root/qogecoin/depends/x86_64-linux-gnu/include -D_REENTRANT=1 -DSQLITE_THREADSAFE=1 -DSQLITE_OMIT_LOAD_EXTENSION=1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_GEOPOLY -DSQLITE_HAVE_ZLIB -pipe -O2 -MT sqlite3.lo -MD -MP -MF .deps/sqlite3.Tpo -c sqlite3.c  -fPIC -DPIC -o sqlite3.o
+sqlite3.c: In function ‘sqlite3SelectNew’:
+sqlite3.c:129016:10: warning: function may return address of local variable [-Wreturn-local-addr]
+129016 |   return pNew;
+       |          ^~~~
+sqlite3.c:128976:10: note: declared here
+128976 |   Select standin;
+       |          ^~~~~~~
+In file included from /usr/include/string.h:548,
+                 from sqlite3.c:14113:
+In function ‘memcpy’,
+    inlined from ‘sqlite3Fts5IndexQuery’ at sqlite3.c:220862:18:
+/usr/include/x86_64-linux-gnu/bits/string_fortified.h:29:10: warning: ‘__builtin_memcpy’ specified bound 18446744073709551615 exceeds maximum object size 9223372036854775807 [-Wstringop-overflow=]
+   29 |   return __builtin___memcpy_chk (__dest, __src, __len,
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   30 |                                  __glibc_objsize0 (__dest));
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~
+mv -f .deps/sqlite3.Tpo .deps/sqlite3.Plo
+/bin/bash ./libtool  --tag=CC   --mode=link gcc -m64 -D_REENTRANT=1 -DSQLITE_THREADSAFE=1 -DSQLITE_OMIT_LOAD_EXTENSION=1 -DSQLITE_ENABLE_FTS4 -DSQLITE_ENABLE_FTS5 -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_GEOPOLY -DSQLITE_HAVE_ZLIB  -pipe -O2 -no-undefined -version-info 8:6:8 -L/root/qogecoin/depends/x86_64-linux-gnu/lib -o libsqlite3.la -rpath /root/qogecoin/depends/x86_64-linux-gnu/lib sqlite3.lo  -lz -lm
+libtool: link: ar cru .libs/libsqlite3.a  sqlite3.o
+ar: `u' modifier ignored since `D' is the default (see `U')
+libtool: link: ranlib .libs/libsqlite3.a
+libtool: link: ( cd ".libs" && rm -f "libsqlite3.la" && ln -s "../libsqlite3.la" "libsqlite3.la" )
+make[1]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95'
+Staging sqlite...
+make[1]: Entering directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95'
+ /usr/bin/mkdir -p '/root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/lib'
+ /bin/bash ./libtool   --mode=install /usr/bin/install -c   libsqlite3.la '/root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/lib'
+libtool: install: /usr/bin/install -c .libs/libsqlite3.lai /root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/lib/libsqlite3.la
+libtool: install: /usr/bin/install -c .libs/libsqlite3.a /root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/lib/libsqlite3.a
+libtool: install: chmod 644 /root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/lib/libsqlite3.a
+libtool: install: ranlib /root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/lib/libsqlite3.a
+libtool: warning: remember to run 'libtool --finish /root/qogecoin/depends/x86_64-linux-gnu/lib'
+ /usr/bin/mkdir -p '/root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/include'
+ /usr/bin/install -c -m 644 sqlite3.h sqlite3ext.h '/root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/include'
+ /usr/bin/mkdir -p '/root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/lib/pkgconfig'
+ /usr/bin/install -c -m 644 sqlite3.pc '/root/qogecoin/depends/work/staging/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95/root/qogecoin/depends/x86_64-linux-gnu/lib/pkgconfig'
+make[1]: Leaving directory '/root/qogecoin/depends/work/build/x86_64-linux-gnu/sqlite/3320100-5a4eb652c95'
+Postprocessing sqlite...
+Caching sqlite...
+copying packages: boost libevent liboqs sqlite
+to: /root/qogecoin/depends/x86_64-linux-gnu
+make: Leaving directory '/root/qogecoin/depends'
+root@vmi3403633:~/qogecoin# ^C
+root@vmi3403633:~/qogecoin# ls -la ~/qogecoin/depends/x86_64-linux-gnu/
+total 24
+drwxr-xr-x  6 root root 4096 Jul 28 21:24 .
+drwxr-xr-x 10 root root 4096 Jul 28 21:23 ..
+-rw-r--r--  1 root root    0 Jul 28 21:24 .stamp_93fb1510f18
+-rw-r--r--  1 root root    0 Jul 28 21:23 .stamp_postprocessed
+drwxr-xr-x  2 root root 4096 Jul 28 21:06 bin
+drwxr-xr-x  5 root root 4096 Jul 28 21:23 include
+drwxr-xr-x  4 root root 4096 Jul 28 21:23 lib
+drwxr-xr-x  2 root root 4096 Jul 28 21:24 share
+root@vmi3403633:~/qogecoin# ^C
+root@vmi3403633:~/qogecoin#
+root@vmi3403633:~/qogecoin#
+root@vmi3403633:~/qogecoin#
+root@vmi3403633:~/qogecoin# cd ~/qogecoin
+CONFIG_SITE=$PWD/depends/x86_64-linux-gnu/share/config.site \
+./configure --without-miniupnpc --without-natpmp --enable-tests \
+--disable-bench --without-gui --without-zmq
+configure: loading site script /root/qogecoin/depends/x86_64-linux-gnu/share/config.site
+checking for x86_64-linux-gnu-pkg-config... /usr/bin/pkg-config --static
+checking pkg-config is at least version 0.9.0... yes
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether build environment is sane... yes
+checking for x86_64-linux-gnu-strip... x86_64-linux-gnu-strip
+checking for a race-free mkdir -p... /usr/bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking whether to enable maintainer-specific portions of Makefiles... yes
+checking whether make supports nested variables... (cached) yes
+checking whether the C++ compiler works... yes
+checking for C++ compiler default output file name... a.out
+checking for suffix of executables...
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether the compiler supports GNU C++... yes
+checking whether g++ -m64 accepts -g... yes
+checking for g++ -m64 option to enable C++11 features... none needed
+checking whether make supports the include directive... yes (GNU style)
+checking dependency style of g++ -m64... gcc3
+checking whether g++ -m64 supports C++17 features with -std=c++17... yes
+checking whether std::atomic can be used without link library... yes
+checking whether std::filesystem can be used without link library... yes
+checking for x86_64-linux-gnu-g++... g++ -m64 -std=c++17
+checking whether the compiler supports GNU Objective C++... no
+checking whether g++ -m64 -std=c++17 accepts -g... no
+checking dependency style of g++ -m64 -std=c++17... gcc3
+checking how to print strings... printf
+checking for x86_64-linux-gnu-gcc... gcc -m64
+checking whether the compiler supports GNU C... yes
+checking whether gcc -m64 accepts -g... yes
+checking for gcc -m64 option to enable C11 features... none needed
+checking whether gcc -m64 understands -c and -o together... yes
+checking dependency style of gcc -m64... gcc3
+checking for a sed that does not truncate output... /usr/bin/sed
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for fgrep... /usr/bin/grep -F
+checking for ld used by gcc -m64... /usr/bin/ld
+checking if the linker (/usr/bin/ld) is GNU ld... yes
+checking for BSD- or MS-compatible name lister (nm)... nm
+checking the name lister (nm) interface... BSD nm
+checking whether ln -s works... yes
+checking the maximum length of command line arguments... 1572864
+checking how to convert x86_64-pc-linux-gnu file names to x86_64-pc-linux-gnu format... func_convert_file_noop
+checking how to convert x86_64-pc-linux-gnu file names to toolchain format... func_convert_file_noop
+checking for /usr/bin/ld option to reload object files... -r
+checking for x86_64-linux-gnu-file... no
+checking for file... file
+checking for x86_64-linux-gnu-objdump... x86_64-linux-gnu-objdump
+checking how to recognize dependent libraries... pass_all
+checking for x86_64-linux-gnu-dlltool... no
+checking for dlltool... no
+checking how to associate runtime and link libraries... printf %s\n
+checking for x86_64-linux-gnu-ar... ar
+checking for archiver @FILE support... @
+checking for x86_64-linux-gnu-strip... (cached) x86_64-linux-gnu-strip
+checking for x86_64-linux-gnu-ranlib... ranlib
+checking command to parse nm output from gcc -m64 object... ok
+checking for sysroot... no
+checking for a working dd... /usr/bin/dd
+checking how to truncate binary pipes... /usr/bin/dd bs=4096 count=1
+checking for x86_64-linux-gnu-mt... no
+checking for mt... mt
+checking if mt is a manifest tool... no
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... yes
+checking for sys/stat.h... yes
+checking for sys/types.h... yes
+checking for unistd.h... yes
+checking for dlfcn.h... yes
+checking for objdir... .libs
+checking if gcc -m64 supports -fno-rtti -fno-exceptions... no
+checking for gcc -m64 option to produce PIC... -fPIC -DPIC
+checking if gcc -m64 PIC flag -fPIC -DPIC works... yes
+checking if gcc -m64 static flag -static works... yes
+checking if gcc -m64 supports -c -o file.o... yes
+checking if gcc -m64 supports -c -o file.o... (cached) yes
+checking whether the gcc -m64 linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
+checking whether -lc should be explicitly linked in... no
+checking dynamic linker characteristics... GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether stripping libraries is possible... yes
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... yes
+checking whether to build static libraries... yes
+checking how to run the C++ preprocessor... g++ -m64 -std=c++17 -E
+checking for ld used by g++ -m64 -std=c++17... /usr/bin/ld -m elf_x86_64
+checking if the linker (/usr/bin/ld -m elf_x86_64) is GNU ld... yes
+checking whether the g++ -m64 -std=c++17 linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
+checking for g++ -m64 -std=c++17 option to produce PIC... -fPIC -DPIC
+checking if g++ -m64 -std=c++17 PIC flag -fPIC -DPIC works... yes
+checking if g++ -m64 -std=c++17 static flag -static works... yes
+checking if g++ -m64 -std=c++17 supports -c -o file.o... yes
+checking if g++ -m64 -std=c++17 supports -c -o file.o... (cached) yes
+checking whether the g++ -m64 -std=c++17 linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
+checking dynamic linker characteristics... (cached) GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking for x86_64-linux-gnu-ar... /usr/bin/x86_64-linux-gnu-ar
+checking for x86_64-linux-gnu-ranlib... /usr/bin/x86_64-linux-gnu-ranlib
+checking for x86_64-linux-gnu-strip... /usr/bin/x86_64-linux-gnu-strip
+checking for x86_64-linux-gnu-gcov... /usr/bin/x86_64-linux-gnu-gcov
+checking for x86_64-linux-gnu-llvm-cov... no
+checking for llvm-cov... no
+checking for lcov... no
+checking for python3.6... no
+checking for python3.7... no
+checking for python3.8... no
+checking for python3.9... no
+checking for python3.10... no
+checking for python3.11... no
+checking for python3... /usr/bin/python3
+checking for genhtml... no
+checking for git... /usr/bin/git
+checking for ccache... no
+checking for xgettext... no
+checking for hexdump... /usr/bin/hexdump
+checking for x86_64-linux-gnu-objcopy... /usr/bin/x86_64-linux-gnu-objcopy
+checking for doxygen... no
+checking whether C++ compiler accepts -Werror... yes
+checking whether the linker accepts -Wl,--fatal-warnings... yes
+checking whether C++ compiler accepts -fno-extended-identifiers... yes
+checking whether C++ compiler accepts -msse4.2... yes
+checking whether C++ compiler accepts -msse4.1... yes
+checking whether C++ compiler accepts -mavx -mavx2... yes
+checking whether C++ compiler accepts -msse4 -msha... yes
+checking whether C++ compiler accepts -mpclmul... yes
+checking for SSE4.2 intrinsics... yes
+checking for SSE4.1 intrinsics... yes
+checking for AVX2 intrinsics... yes
+checking for x86 SHA-NI intrinsics... yes
+checking whether C++ compiler accepts -march=armv8-a+crc+crypto... no
+checking whether C++ compiler accepts -march=armv8-a+crc+crypto... (cached) no
+checking for ARMv8 CRC32 intrinsics... no
+checking for ARMv8 SHA-NI intrinsics... no
+checking whether byte ordering is bigendian... no
+checking how to run the C preprocessor... gcc -m64 -E
+checking whether gcc -m64 is Clang... no
+checking whether pthreads work with "-pthread" and "-lpthread"... yes
+checking for joinable pthread attribute... PTHREAD_CREATE_JOINABLE
+checking whether more special flags are required for pthreads... no
+checking for PTHREAD_PRIO_INHERIT... yes
+checking for special C compiler options needed for large files... no
+checking for _FILE_OFFSET_BITS value needed for large files... no
+checking for g++ -m64 -std=c++17 options needed to detect all undeclared functions... none needed
+checking whether strerror_r is declared... yes
+checking whether strerror_r returns char *... yes
+checking for library containing clock_gettime... none required
+checking whether C++ compiler accepts -fPIC... yes
+checking whether C++ compiler accepts -fstack-reuse=none... yes
+checking whether C++ compiler accepts -Wstack-protector... yes
+checking whether C++ compiler accepts -fstack-protector-all... yes
+checking whether the linker accepts -fcf-protection=full... yes
+checking whether C++ compiler accepts -fstack-clash-protection... yes
+checking whether C++ preprocessor accepts -D_FORTIFY_SOURCE=2... yes
+checking whether C++ preprocessor accepts -U_FORTIFY_SOURCE... yes
+checking whether the linker accepts -Wl,--enable-reloc-section... no
+checking whether the linker accepts -Wl,--dynamicbase... no
+checking whether the linker accepts -Wl,--nxcompat... no
+checking whether the linker accepts -Wl,--high-entropy-va... no
+checking whether the linker accepts -Wl,-z,relro... yes
+checking whether the linker accepts -Wl,-z,now... yes
+checking whether the linker accepts -Wl,-z,separate-code... yes
+checking whether the linker accepts -fPIE -pie... yes
+checking for endian.h... yes
+checking for sys/endian.h... no
+checking for byteswap.h... yes
+checking for stdio.h... (cached) yes
+checking for stdlib.h... (cached) yes
+checking for unistd.h... (cached) yes
+checking for strings.h... (cached) yes
+checking for sys/types.h... (cached) yes
+checking for sys/stat.h... (cached) yes
+checking for sys/select.h... yes
+checking for sys/prctl.h... yes
+checking for sys/sysctl.h... no
+checking for vm/vm_param.h... no
+checking for sys/vmmeter.h... no
+checking for sys/resources.h... no
+checking whether getifaddrs is declared... yes
+checking whether ifaddrs funcs can be used without link library... yes
+checking whether freeifaddrs is declared... yes
+checking whether ifaddrs funcs can be used without link library... yes
+checking whether fork is declared... yes
+checking whether setsid is declared... yes
+checking whether pipe2 is declared... yes
+checking whether le16toh is declared... yes
+checking whether le32toh is declared... yes
+checking whether le64toh is declared... yes
+checking whether htole16 is declared... yes
+checking whether htole32 is declared... yes
+checking whether htole64 is declared... yes
+checking whether be16toh is declared... yes
+checking whether be32toh is declared... yes
+checking whether be64toh is declared... yes
+checking whether htobe16 is declared... yes
+checking whether htobe32 is declared... yes
+checking whether htobe64 is declared... yes
+checking whether bswap_16 is declared... yes
+checking whether bswap_32 is declared... yes
+checking whether bswap_64 is declared... yes
+checking for __builtin_clzl... yes
+checking for __builtin_clzll... yes
+checking for getmemoryinfo... yes
+checking for mallopt M_ARENA_MAX... yes
+checking for posix_fallocate... yes
+checking for default visibility attribute... yes
+checking for dllexport attribute... no
+checking for thread_local support... yes
+checking for gmtime_r... yes
+checking for Linux getrandom syscall... yes
+checking for getentropy via random.h... yes
+checking for sysctl... no
+checking for sysctl KERN_ARND... no
+checking for if type char equals int8_t... no
+checking for fdatasync... yes
+checking for F_FULLFSYNC... no
+checking for O_CLOEXEC... yes
+checking for __builtin_prefetch... yes
+checking for _mm_prefetch... yes
+checking for strong getauxval support in the system headers... yes
+checking for std::system... yes
+checking for ::_wsystem... no
+checking whether to build Qogecoin Core GUI... no
+checking whether main function is needed for fuzz binary... checking whether the linker accepts ... no
+yes
+checking for __builtin_mul_overflow... yes
+checking for sqlite3 >= 3.7.17... yes
+checking whether to build wallet with support for sqlite... yes
+checking for boostlib >= 1.64.0 (106400) includes in "/root/qogecoin/depends/x86_64-linux-gnu/include"... yes
+checking for boostlib >= 1.64.0 (106400) lib path in "/root/qogecoin/depends/x86_64-linux-gnu/lib/x86_64-linux-gnu"... no
+checking for boostlib >= 1.64.0 (106400) lib path in "/root/qogecoin/depends/x86_64-linux-gnu/lib64"... no
+checking for boostlib >= 1.64.0 (106400) lib path in "/root/qogecoin/depends/x86_64-linux-gnu/libx32"... no
+checking for boostlib >= 1.64.0 (106400) lib path in "/root/qogecoin/depends/x86_64-linux-gnu/lib"... yes
+checking for boostlib >= 1.64.0 (106400)... yes
+checking whether Boost.Process can be used... yes
+checking for seccomp-bpf (Linux x86-64)... yes
+checking for libevent >= 2.1.8... yes
+checking for libevent_pthreads >= 2.1.8... yes
+checking if evhttp_connection_get_peer expects const char**... no
+checking for liboqs... yes
+configure: liboqs: Option B — system pkg-config (dev-only)
+checking for libmultiprocess... no
+checking whether to build qogecoind... yes
+checking whether to build qogecoin-cli... yes
+checking whether to build qogecoin-tx... yes
+checking whether to build qogecoin-wallet... yes
+checking whether to build qogecoin-util... yes
+checking whether to build experimental qogecoin-chainstate... no
+checking whether to build libraries... yes
+checking if ccache should be used... no
+checking if wallet should be enabled... yes
+checking whether to build with support for UPnP... no
+checking whether to build with support for NAT-PMP... no
+checking whether to build test_qogecoin... yes
+checking whether to reduce exports... no
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+config.status: creating libqogecoinconsensus.pc
+config.status: creating Makefile
+config.status: creating src/Makefile
+config.status: creating doc/man/Makefile
+config.status: creating share/setup.nsi
+config.status: creating share/qt/Info.plist
+config.status: creating test/config.ini
+config.status: creating contrib/devtools/split-debug.sh
+config.status: creating src/config/qogecoin-config.h
+config.status: executing depfiles commands
+config.status: executing libtool commands
+=== configuring in src/secp256k1 (/root/qogecoin/src/secp256k1)
+configure: running /bin/bash ./configure --disable-option-checking '--prefix=/usr/local'  '--without-miniupnpc' '--without-natpmp' '--enable-tests' '--disable-bench' '--without-gui' '--without-zmq' '--disable-shared' '--with-pic' '--enable-benchmark=no' '--enable-module-recovery' '--enable-module-schnorrsig' --cache-file=/dev/null --srcdir=.
+configure: loading site script /root/qogecoin/depends/x86_64-linux-gnu/share/config.site
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether build environment is sane... yes
+checking for x86_64-linux-gnu-strip... x86_64-linux-gnu-strip
+checking for a race-free mkdir -p... /usr/bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking whether make supports nested variables... (cached) yes
+checking for x86_64-linux-gnu-gcc... gcc -m64
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables...
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether the compiler supports GNU C... yes
+checking whether gcc -m64 accepts -g... yes
+checking for gcc -m64 option to enable C11 features... none needed
+checking whether gcc -m64 understands -c and -o together... yes
+checking whether make supports the include directive... yes (GNU style)
+checking dependency style of gcc -m64... gcc3
+checking dependency style of gcc -m64... gcc3
+checking for x86_64-linux-gnu-ar... ar
+checking the archiver (ar) interface... ar
+checking how to print strings... printf
+checking for a sed that does not truncate output... /usr/bin/sed
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for egrep... /usr/bin/grep -E
+checking for fgrep... /usr/bin/grep -F
+checking for ld used by gcc -m64... /usr/bin/ld
+checking if the linker (/usr/bin/ld) is GNU ld... yes
+checking for BSD- or MS-compatible name lister (nm)... nm
+checking the name lister (nm) interface... BSD nm
+checking whether ln -s works... yes
+checking the maximum length of command line arguments... 1572864
+checking how to convert x86_64-pc-linux-gnu file names to x86_64-pc-linux-gnu format... func_convert_file_noop
+checking how to convert x86_64-pc-linux-gnu file names to toolchain format... func_convert_file_noop
+checking for /usr/bin/ld option to reload object files... -r
+checking for x86_64-linux-gnu-file... no
+checking for file... file
+checking for x86_64-linux-gnu-objdump... x86_64-linux-gnu-objdump
+checking how to recognize dependent libraries... pass_all
+checking for x86_64-linux-gnu-dlltool... no
+checking for dlltool... no
+checking how to associate runtime and link libraries... printf %s\n
+checking for x86_64-linux-gnu-ar... (cached) ar
+checking for archiver @FILE support... @
+checking for x86_64-linux-gnu-strip... (cached) x86_64-linux-gnu-strip
+checking for x86_64-linux-gnu-ranlib... ranlib
+checking command to parse nm output from gcc -m64 object... ok
+checking for sysroot... no
+checking for a working dd... /usr/bin/dd
+checking how to truncate binary pipes... /usr/bin/dd bs=4096 count=1
+checking for x86_64-linux-gnu-mt... no
+checking for mt... mt
+checking if mt is a manifest tool... no
+checking for stdio.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for strings.h... yes
+checking for sys/stat.h... yes
+checking for sys/types.h... yes
+checking for unistd.h... yes
+checking for dlfcn.h... yes
+checking for objdir... .libs
+checking if gcc -m64 supports -fno-rtti -fno-exceptions... no
+checking for gcc -m64 option to produce PIC... -fPIC -DPIC
+checking if gcc -m64 PIC flag -fPIC -DPIC works... yes
+checking if gcc -m64 static flag -static works... yes
+checking if gcc -m64 supports -c -o file.o... yes
+checking if gcc -m64 supports -c -o file.o... (cached) yes
+checking whether the gcc -m64 linker (/usr/bin/ld -m elf_x86_64) supports shared libraries... yes
+checking dynamic linker characteristics... GNU/Linux ld.so
+checking how to hardcode library paths into programs... immediate
+checking whether stripping libraries is possible... yes
+checking if libtool supports shared libraries... yes
+checking whether to build shared libraries... no
+checking whether to build static libraries... yes
+checking if gcc -m64 supports -Werror=unknown-warning-option... no
+checking if gcc -m64 supports -std=c89 -pedantic -Wno-long-long -Wnested-externs -Wshadow -Wstrict-prototypes -Wundef... yes
+checking if gcc -m64 supports -Wno-overlength-strings... yes
+checking if gcc -m64 supports -Wall... yes
+checking if gcc -m64 supports -Wno-unused-function... yes
+checking if gcc -m64 supports -Wextra... yes
+checking if gcc -m64 supports -Wcast-align... yes
+checking if gcc -m64 supports -Wcast-align=strict... yes
+checking if gcc -m64 supports -Wconditional-uninitialized... no
+checking if gcc -m64 supports -fvisibility=hidden... yes
+checking for x86_64 assembly availability... yes
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+config.status: creating Makefile
+config.status: creating libsecp256k1.pc
+config.status: creating src/libsecp256k1-config.h
+config.status: executing depfiles commands
+config.status: executing libtool commands
+
+Build Options:
+  with external callbacks = no
+  with benchmarks         = no
+  with tests              = yes
+  with coverage           = no
+  with examples           = no
+  module ecdh             = no
+  module recovery         = yes
+  module extrakeys        = yes
+  module schnorrsig       = yes
+
+  asm                     = x86_64
+  ecmult window size      = 15
+  ecmult gen prec. bits   = 4
+
+  valgrind                = no
+  CC                      = gcc -m64
+  CPPFLAGS                =  -I/root/qogecoin/depends/x86_64-linux-gnu/include/
+  SECP_CFLAGS             = -O2  -std=c89 -pedantic -Wno-long-long -Wnested-externs -Wshadow -Wstrict-prototypes -Wundef -Wno-overlength-strings -Wall -Wno-unused-function -Wextra -Wcast-align -Wcast-align=strict -fvisibility=hidden
+  CFLAGS                  = -pipe -O2
+  LDFLAGS                 = -L/root/qogecoin/depends/x86_64-linux-gnu/lib
+
+Options used to compile and link:
+  external signer = yes
+  multiprocess    = no
+  with experimental syscall sandbox support = yes
+  with libs       = yes
+  with wallet     = yes
+    with sqlite   = yes
+    with bdb      = no
+  with gui / qt   = no
+  with zmq        = no
+  with test       = yes
+  with fuzz binary = yes
+  with bench      = no
+  with upnp       = no
+  with natpmp     = no
+  use asm         = yes
+  USDT tracing    = no
+  sanitizers      =
+  debug enabled   = no
+  gprof enabled   = no
+  werror          = no
+  LTO             = no
+
+  target os       = linux-gnu
+  build os        = linux-gnu
+
+  CC              = gcc -m64
+  CFLAGS          = -pthread -pipe -O2
+  CPPFLAGS        =   -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2  -DHAVE_BUILD_INFO -DPROVIDE_FUZZ_MAIN_FUNCTION -I/root/qogecoin/depends/x86_64-linux-gnu/include/
+  CXX             = g++ -m64 -std=c++17
+  CXXFLAGS        =    -fstack-reuse=none -Wstack-protector -fstack-protector-all -fcf-protection=full -fstack-clash-protection      -fno-extended-identifiers -pipe -O2
+  LDFLAGS         =  -lpthread  -Wl,-z,relro -Wl,-z,now -Wl,-z,separate-code -pie   -L/root/qogecoin/depends/x86_64-linux-gnu/lib
+  ARFLAGS         = cr
+
+root@vmi3403633:~/qogecoin#
