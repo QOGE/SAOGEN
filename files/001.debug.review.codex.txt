@@ -1,0 +1,152 @@
+ I’ll inspect the repository state, the exact diff, and the fetch macro implementation without changing any files.
+
+✔ You approved codex to always run commands that start with git status --short
+
+• Ran git status --short && git diff -- depends/packages/boost.mk && git diff --name-only && nl -ba depends/packages/boost.mk | sed -n '1,90p' && nl -ba depends/funcs.mk | rg -n -C 8 'fetch_file_inner|fetch_cmds'
+  └  M configure.ac
+     M depends/packages/boost.mk
+    … +63 lines (ctrl + t to view transcript)
+        27    endef
+    /bin/bash: line 1: rg: command not found
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The worktree contains an additional tracked change in configure.ac plus generated untracked files. I’m separating that repository-wide fact from the Boost patch itself and checking the macro and baseline hash now.
+
+✔ You approved codex to always run commands that start with nl -ba depends/funcs.mk
+
+• Ran nl -ba depends/funcs.mk | grep -n -A 18 -B 8 'define fetch_file_inner'
+  │ git show HEAD:depends/packages/boost.mk | nl -ba | sed -n '1,12p'
+  │ git diff -- depends/Makefile depends/funcs.mk depends/packages/packages.mk depends/packages/'*.mk'
+  │ … +1 lines
+  └ 20-    20                  -I$$($$($(1)_type)_prefix)/include
+    21-    21    $(1)_recipe_hash:=
+    … +100 lines (ctrl + t to view transcript)
+     if test -f "${liboqs_prefix}/lib/liboqs.a"; then
+       dnl Option A — depends-built static liboqs
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• ## Verification results
+
+  ### 1. Exact boost.mk diff — PASS
+
+  The current git diff -- depends/packages/boost.mk is:
+
+  diff --git a/depends/packages/boost.mk b/depends/packages/boost.mk
+  index 563848c39..b51d591ee 100644
+  --- a/depends/packages/boost.mk
+  +++ b/depends/packages/boost.mk
+  @@ -1,9 +1,26 @@
+   package=boost
+   $(package)_version=1.77.0
+  -$(package)_download_path=https://boostorg.jfrog.io/artifactory/main/release/$($(package)_version)/source/
+  +$(package)_download_path=https://archives.boost.io/release/$($(package)_version)/source/
+  +$(package)_download_path_fallback=https://github.com/QOGE/qogecoin/releases/download/depends-boost-1.77.0
+   $(package)_file_name=boost_$(subst .,_,$($(package)_version)).tar.bz2
+   $(package)_sha256_hash=fc9f85fc030e233142908241af7a846e60630aa7388de9a5fafb1f3a26840854
+
+  +# Three-tier fetch, scoped to boost only: archives.boost.io (upstream Bitcoin
+  +# Core's own fix for the now-dead boostorg.jfrog.io mirror — see
+  +# bitcoin/bitcoin@ffbc173ca1) -> this project's GitHub-hosted mirror of the
+  +# same sha256-verified tarball -> the project-wide FALLBACK_DOWNLOAD_PATH.
+  +# Not implemented via FALLBACK_DOWNLOAD_PATH itself because the GitHub release
+  +# tag (depends-boost-1.77.0) is package-and-version-specific: setting it
+  +# globally would break the fallback for every other depends package the next
+  +# time its primary source failed. Overriding $(package)_fetch_cmds per
+  +# package is an existing pattern in this tree (see qt.mk).
+  +define $(package)_fetch_cmds
+  +  ( test -f $($(package)_source_dir)/$($(package)_file_name) || \
+  +    ( $(call fetch_file_inner,$(package),$($(package)_download_path),$($(package)_file_name),$($(package)_file_name),$($(package)_sha256_hash)) || \
+  +      $(call fetch_file_inner,$(package),$($(package)_download_path_fallback),$($(package)_file_name),$($(package)_file_name),$($(package)_sha256_hash)) || \
+  +      $(call fetch_file_inner,$(package),$(FALLBACK_DOWNLOAD_PATH),$($(package)_file_name),$($(package)_file_name),$($(package)_sha256_hash))))
+  +endef
+  +
+   define $(package)_stage_cmds
+     mkdir -p $($(package)_staging_prefix_dir)/include && \
+     cp -r boost $($(package)_staging_prefix_dir)/include
+
+  Current implementation: depends/packages/boost.mk:1.
+
+  ### 2. SHA-256 unchanged — PASS
+
+  Both HEAD and the working copy contain exactly:
+
+  $(package)_sha256_hash=fc9f85fc030e233142908241af7a846e60630aa7388de9a5fafb1f3a26840854
+
+  The hash line is context, not an added or removed line in the diff. The required digest therefore remains unchanged: depends/packages/boost.mk:6.
+
+  ### 3. fetch_file_inner argument order/count — PASS
+
+  The real macro accepts five positional arguments:
+
+  1. package
+  2. download base path
+  3. remote filename
+  4. local/source filename
+  5. SHA-256 hash
+
+  It downloads from "$(2)/$(3)", checks argument 5, then moves the result under argument 4: depends/funcs.mk:28.
+
+  All three new calls supply exactly those five arguments in the correct order:
+
+  $(package), <download path>, <file name>, <file name>, <sha256 hash>
+
+  See depends/packages/boost.mk:19.
+
+  ### 4. Diff scope — FAIL, repository-wide; PASS within depends
+
+  No changes exist in:
+
+  - depends/Makefile
+  - depends/funcs.mk
+  - depends/packages/packages.mk
+  - Any package .mk other than depends/packages/boost.mk
+
+  However, the current repository-wide tracked diff does not touch only boost.mk: configure.ac is also modified, around configure.ac:1614.
+
+  There are also two untracked generated files:
+
+  - libqogecoinconsensus.pc
+  - src/config/qogecoin-config.h
+  - src/config/qogecoin-config.h.in
+
+  Thus the Boost/depends patch itself is isolated correctly, but the literal assertion that the entire current worktree diff contains only boost.mk is false.
+
+  ### 5. Fallback URL construction — PASS
+
+
+  The fallback base is:
+
+  https://github.com/QOGE/qogecoin/releases/download/depends-boost-1.77.0
+
+  The filename expands to:
+
+  boost_1_77_0.tar.bz2
+
+  Because fetch_file_inner constructs the URL as "$(2)/$(3)", the resulting URL is exactly:
+
+  https://github.com/QOGE/qogecoin/releases/download/depends-boost-1.77.0/boost_1_77_0.tar.bz2
+
+  The fallback base is correctly written without a trailing slash, while the macro supplies the separator: depends/packages/boost.mk:4, depends/funcs.mk:30.
+
+  ### 6. Claimed three-tier empirical outcome — PASS
+
+  The shell || chain implements precisely:
+
+  existing local source
+    OR primary archives.boost.io
+    OR QOGE GitHub release
+    OR global FALLBACK_DOWNLOAD_PATH
+
+  Each download attempt verifies the same unchanged SHA-256 before moving the tarball into the source directory. A successful tier-2 call returns success and short-circuits the final ||, so tier 3 is never invoked: depends/packages/boost.mk:18, depends/funcs.mk:29.
+
+  Nothing in the code is inconsistent with the reported test: deliberately breaking tier 1 would cause tier 2 to run; a successful, hash-verified tier 2 fetch would prevent tier 3 from being reached. The only deviation found is the unrelated configure.ac worktree change noted above.
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ 
+› Find and fix a bug in @filename
+ 
+  gpt-5.6-sol default · ~/qogecoin
+
