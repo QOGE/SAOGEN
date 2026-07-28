@@ -1,0 +1,284 @@
+GROK BUILD Verification: configure.ac liboqs prefix fix
+
+Read-only check against the current tree. Verdicts use PASS/FAIL with file:line citations.
+
+───
+
+1. Exact current diff (git diff -- configure.ac)
+
+PASS — single-file hunk, 12 insertions / 5 deletions. Full diff:
+
+diff --git a/configure.ac b/configure.ac
+index 210f56ffa..55acbf0d0 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1611,8 +1611,11 @@ dnl liboqs check (SIP-QOGE-PQC-02 Phase B — required for P2QPK / VerifyWitness
+ dnl
+ dnl Option A (depends build, Phase F+): liboqs built as a static library by
+ dnl depends/packages/liboqs.mk (version 0.15.0, OQS_DIST_BUILD=ON, BUILD_SHARED_LIBS=OFF)
+-dnl and installed to $(prefix)/lib/liboqs.a. Selected when that file is present — i.e.
+-dnl when ./configure is invoked with the depends prefix via CONFIG_SITE or --prefix.
++dnl and installed to $(depends_prefix)/lib/liboqs.a. depends/config.site.in sets
++dnl depends_prefix (via CONFIG_SITE) but deliberately never overrides autoconf's
++dnl own $prefix, so $prefix cannot be used to locate the depends tree; use
++dnl depends_prefix directly when CONFIG_SITE supplied one, else fall back to the
++dnl ordinary install prefix for non-depends builds.
+ dnl LIBOQS_LIBS explicitly includes -lcrypto because liboqs.a links against OpenSSL
+ dnl (OQS_USE_OPENSSL=ON) and private deps must be spelled out for static archives.
+ dnl
+@@ -1622,9 +1625,13 @@ dnl installed to /usr/local before running ./configure (see symbiont-wallet READ
+ dnl This path uses the dynamic liboqs.so and should NOT be used for distribution builds.
+ 
+ liboqs_found=no
+-liboqs_prefix=${prefix}
+-if test "x${liboqs_prefix}" = "xNONE"; then
+-  liboqs_prefix=${ac_default_prefix}
++if test -n "${depends_prefix}"; then
++  liboqs_prefix=${depends_prefix}
++else
++  liboqs_prefix=${prefix}
++  if test "x${liboqs_prefix}" = "xNONE"; then
++    liboqs_prefix=${ac_default_prefix}
++  fi
+ fi
+ if test -f "${liboqs_prefix}/lib/liboqs.a"; then
+   dnl Option A — depends-built static liboqs
+
+───
+
+2. ${depends_prefix} is real and set by config.site.in
+
+PASS
+
+┌────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────┐
+│ Fact                                       │ Citation                                                                                  │
+├────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ Defined when depends CONFIG_SITE is loaded │ depends/config.site.in:11 — depends_prefix="$(cd "$(dirname "$ac_site_file")/.." && pwd)" │
+├────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ Same line in the installed site file       │ depends/x86_64-linux-gnu/share/config.site:11                                             │
+├────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ Used for include/lib search paths          │ depends/config.site.in:87–93 (PKG_CONFIG_*, CPPFLAGS, LDFLAGS)                            │
+├────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────┤
+│ Does not assign autoconf $prefix           │ Full depends/config.site.in — no prefix=                                                  │
+└────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────┘
+
+So under a normal depends configure (CONFIG_SITE=…/share/config.site ./configure), depends_prefix is a real shell variable pointing at the host depends tree (here, effectively …/depends/x86_64-linux-gnu). Without CONFIG_SITE, it is unset — which is what the new test -n branch relies on.
+
+Caveat (does not fail this check): depends/README.md:23–24 says the default install prefix when using config.site is --prefix=depends/<host>, but that is documentation/workflow text; config.site.in itself never sets $prefix. Guix-style builds use --prefix=/ (contrib/guix/libexec/build.sh:269–270); CI often passes --prefix=${DEPENDS_DIR}/$HOST. The fix’s claim that you cannot locate the depends tree via $prefix alone is correct for the “CONFIG_SITE only, no matching --prefix” case.
+
+───
+
+3. Fallback when depends_prefix is unset preserves original logic
+
+PASS
+
+Before (HEAD):
+
+liboqs_prefix=${prefix}
+if test "x${liboqs_prefix}" = "xNONE"; then
+  liboqs_prefix=${ac_default_prefix}
+fi
+
+After (working tree), else branch only — configure.ac:1630–1634:
+
+else
+  liboqs_prefix=${prefix}
+  if test "x${liboqs_prefix}" = "xNONE"; then
+    liboqs_prefix=${ac_default_prefix}
+  fi
+fi
+
+That is the same sequence: $prefix, then ac_default_prefix if NONE (autoconf default is /usr/local; confirmed in this tree’s configure / config.log as ac_default_prefix=/usr/local). Non-depends Option B (system//usr/local install + pkg-config) is unchanged when CONFIG_SITE is not used.
+
+───
+
+4. LIBOQS_CFLAGS / LIBOQS_LIBS construction untouched
+
+PASS
+
+Post-selection block is identical on both sides of the diff — configure.ac:1636–1642:
+
+if test -f "${liboqs_prefix}/lib/liboqs.a"; then
+  dnl Option A — depends-built static liboqs
+  LIBOQS_CFLAGS="-I${liboqs_prefix}/include"
+  LIBOQS_LIBS="-L${liboqs_prefix}/lib -loqs -lcrypto"
+  ...
+fi
+
+Option B still uses only PKG_CHECK_MODULES([LIBOQS], [liboqs], …) — configure.ac:1644–1650.  
+AC_SUBST(LIBOQS_CFLAGS) / AC_SUBST(LIBOQS_LIBS) at configure.ac:1983–1984 are outside the diff.  
+Only which prefix is chosen for the file test / Option A templates changed, not the template strings themselves.
+
+───
+
+5. Diff touches only the liboqs prefix-detection block
+
+PASS
+
+• git diff --stat -- configure.ac → one file, one contiguous region around the liboqs dnl + prefix assignment.
+• No changes to ZMQ above, libmultiprocess below, flag construction, or other macros.
+• Comment edits are in the same liboqs Option A documentation block (configure.ac:1611–1618 area).
+
+───
+
+6. Does the code explain the empirical result?
+
+PASS (with one precision note on “LIBOQS_LIBS unchanged”)
+
+Why Option A was misreported before
+
+1. With depends, liboqs.a lives under the depends host prefix, e.g.  
+   depends/x86_64-linux-gnu/lib/liboqs.a (present on this machine).
+2. Old code used $prefix → if unset/NONE, ac_default_prefix → typically /usr/local/lib/liboqs.a, which is not where depends installs.
+3. File test failed → liboqs_found=no → Option B notice via PKG_CHECK_MODULES (configure.ac:1644–1648).
+4. Under depends, that still often succeeds: config.site forces PKG_CONFIG_LIBDIR / PKG_CONFIG_PATH into the depends tree (depends/config.site.in:87–89) and PKG_CONFIG="… --static" (:82). Local liboqs.pc points at the same archive (prefix=…/depends/x86_64-linux-gnu, Libs: -L${libdir} -loqs).
+
+So you get the label “Option B” while still linking the pinned depends static library — matches the reported mis-detection.
+
+Why the fix yields Option A
+
+• depends_prefix is non-empty under CONFIG_SITE → liboqs_prefix=${depends_prefix} (configure.ac:1628–1629).
+• test -f "${liboqs_prefix}/lib/liboqs.a" succeeds → Option A notice and hard-coded flags.
+• Confirmed in current config.log:  
+  liboqs: Option A — static lib at /home/virtualbox/qogecoin/depends/x86_64-linux-gnu/lib/liboqs.a  
+  and  
+  LIBOQS_LIBS='-L/home/virtualbox/qogecoin/depends/x86_64-linux-gnu/lib -loqs -lcrypto'.
+
+“Linked library unchanged”
+
+Plausible and well-supported: both pre-fix Option B (depends pkg-config) and post-fix Option A resolve to the same depends/.../lib/liboqs.a. LDFLAGS also already includes -L${depends_prefix}/lib from config.site.in:93.
+
+Precision note on “LIBOQS_LIBS is unchanged” as a string
+
+If the pre-fix path was truly Option B, LIBOQS_LIBS came from pkg-config (Libs: -L… -loqs plus static expansion of Requires.private: openssl), not from the Option A line -L… -loqs -lcrypto. Those strings can be equivalent for linking without being byte-identical. If the empirical claim is “same resolved archive / same effective link,” PASS. If it means the exact LIBOQS_LIBS= line in config.log never differed across a true B→A transition, that is slightly stronger than the code guarantees; I did not re-run pre-fix configure here to re-measure that string.
+
+───
+
+Summary
+
+┌───┬─────────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────────┐
+│ # │ Check                                                   │ Result                                                           │
+├───┼─────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
+│ 1 │ Exact git diff -- configure.ac quoted                   │ PASS                                                             │
+├───┼─────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
+│ 2 │ depends_prefix real, set by config.site.in              │ PASS                                                             │
+├───┼─────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
+│ 3 │ Fallback preserves $prefix → $ac_default_prefix if NONE │ PASS                                                             │
+├───┼─────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
+│ 4 │ LIBOQS_CFLAGS/LIBS construction unchanged               │ PASS                                                             │
+├───┼─────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
+│ 5 │ Diff limited to liboqs prefix-detection block           │ PASS                                                             │
+├───┼─────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────┤
+│ 6 │ Explains Option A reporting + same linked lib           │ PASS (literal LIBOQS_LIBS string-identity is the only soft edge) │
+└───┴─────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────┘
+
+Overall: The fix is a correct, minimal correction of the Option A probe: use depends_prefix when CONFIG_SITE provides it; otherwise keep the old $prefix / ac_default_prefix behavior. That is consistent with the stated bug and with the observed Option A + same depends static library outcome.
+
+
+
+
+
+
+
+
+CODEX verification>
+
+All requested checks pass. No files were modified.
+
+1. **PASS — exact current diff**
+
+`git diff -- configure.ac` returns exactly:
+
+```diff
+diff --git a/configure.ac b/configure.ac
+index 210f56ffa..55acbf0d0 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1611,8 +1611,11 @@ dnl liboqs check (SIP-QOGE-PQC-02 Phase B — required for P2QPK / VerifyWitness
+ dnl
+ dnl Option A (depends build, Phase F+): liboqs built as a static library by
+ dnl depends/packages/liboqs.mk (version 0.15.0, OQS_DIST_BUILD=ON, BUILD_SHARED_LIBS=OFF)
+-dnl and installed to $(prefix)/lib/liboqs.a. Selected when that file is present — i.e.
+-dnl when ./configure is invoked with the depends prefix via CONFIG_SITE or --prefix.
++dnl and installed to $(depends_prefix)/lib/liboqs.a. depends/config.site.in sets
++dnl depends_prefix (via CONFIG_SITE) but deliberately never overrides autoconf's
++dnl own $prefix, so $prefix cannot be used to locate the depends tree; use
++dnl depends_prefix directly when CONFIG_SITE supplied one, else fall back to the
++dnl ordinary install prefix for non-depends builds.
+ dnl LIBOQS_LIBS explicitly includes -lcrypto because liboqs.a links against OpenSSL
+ dnl (OQS_USE_OPENSSL=ON) and private deps must be spelled out for static archives.
+ dnl
+@@ -1622,9 +1625,13 @@ dnl installed to /usr/local before running ./configure (see symbiont-wallet READ
+ dnl This path uses the dynamic liboqs.so and should NOT be used for distribution builds.
+
+ liboqs_found=no
+-liboqs_prefix=${prefix}
+-if test "x${liboqs_prefix}" = "xNONE"; then
+-  liboqs_prefix=${ac_default_prefix}
++if test -n "${depends_prefix}"; then
++  liboqs_prefix=${depends_prefix}
++else
++  liboqs_prefix=${prefix}
++  if test "x${liboqs_prefix}" = "xNONE"; then
++    liboqs_prefix=${ac_default_prefix}
++  fi
+ fi
+ if test -f "${liboqs_prefix}/lib/liboqs.a"; then
+   dnl Option A — depends-built static liboqs
+```
+
+Citations: [configure.ac:1610](/home/virtualbox/qogecoin/configure.ac:1610), [configure.ac:1627](/home/virtualbox/qogecoin/configure.ac:1627)
+
+2. **PASS — `depends_prefix` is genuinely defined**
+
+The depends-generated configuration site explicitly assigns it from the directory containing the active `ac_site_file`:
+
+```sh
+depends_prefix="$(cd "$(dirname "$ac_site_file")/.." && pwd)"
+```
+
+It is subsequently used for Boost, Qt, tools, pkg-config paths, include paths, and library paths, confirming it is an established depends variable rather than a new assumption.
+
+Citations: [depends/config.site.in:11](/home/virtualbox/qogecoin/depends/config.site.in:11), [depends/config.site.in:18](/home/virtualbox/qogecoin/depends/config.site.in:18), [depends/config.site.in:81](/home/virtualbox/qogecoin/depends/config.site.in:81), [depends/config.site.in:87](/home/virtualbox/qogecoin/depends/config.site.in:87), [depends/config.site.in:92](/home/virtualbox/qogecoin/depends/config.site.in:92)
+
+3. **PASS — unset fallback preserves the original logic exactly**
+
+When `depends_prefix` is empty, the new `else` branch executes the original three statements unchanged:
+
+```sh
+liboqs_prefix=${prefix}
+if test "x${liboqs_prefix}" = "xNONE"; then
+  liboqs_prefix=${ac_default_prefix}
+fi
+```
+
+Therefore non-depends builds retain the original install-prefix/default-prefix lookup, followed by the unchanged pkg-config Option B fallback if no static archive is found.
+
+Citations: [configure.ac:1630](/home/virtualbox/qogecoin/configure.ac:1630), [configure.ac:1636](/home/virtualbox/qogecoin/configure.ac:1636), [configure.ac:1644](/home/virtualbox/qogecoin/configure.ac:1644)
+
+4. **PASS — flag construction is untouched**
+
+The current assignments remain:
+
+```sh
+LIBOQS_CFLAGS="-I${liboqs_prefix}/include"
+LIBOQS_LIBS="-L${liboqs_prefix}/lib -loqs -lcrypto"
+```
+
+They are identical to committed `HEAD`; neither line appears in the diff as an addition or deletion. The later `AC_SUBST` declarations are also unchanged.
+
+Citations: [configure.ac:1638](/home/virtualbox/qogecoin/configure.ac:1638), [configure.ac:1639](/home/virtualbox/qogecoin/configure.ac:1639), [configure.ac:1983](/home/virtualbox/qogecoin/configure.ac:1983)
+
+5. **PASS — diff is confined to prefix detection**
+
+There is one diff hunk. Its functional change is solely the initialization of `liboqs_prefix`; the other changed lines are the immediately preceding explanatory comments. No code before or after the liboqs prefix-detection block is changed.
+
+Citations: [configure.ac:1612](/home/virtualbox/qogecoin/configure.ac:1612), [configure.ac:1627](/home/virtualbox/qogecoin/configure.ac:1627)
+
+6. **PASS — empirical result is plausibly and directly explained**
+
+Under depends, `config.site.in` sets `depends_prefix` to the depends installation tree. The new code checks `${depends_prefix}/lib/liboqs.a`, so the existing pinned static archive now triggers Option A and its notice at line 1641.
+
+Previously, the archive check used Autoconf’s unrelated `${prefix}`/`${ac_default_prefix}`. Missing the archive caused execution to continue into Option B. But depends also configures pkg-config to search `${depends_prefix}` and use static metadata, so Option B could still resolve the same pinned library and equivalent link flags. Thus “reported Option A now, resolved `LIBOQS_LIBS` unchanged” is internally consistent with the code.
+
+Citations: [depends/config.site.in:11](/home/virtualbox/qogecoin/depends/config.site.in:11), [depends/config.site.in:82](/home/virtualbox/qogecoin/depends/config.site.in:82), [depends/config.site.in:87](/home/virtualbox/qogecoin/depends/config.site.in:87), [depends/config.site.in:89](/home/virtualbox/qogecoin/depends/config.site.in:89), [configure.ac:1628](/home/virtualbox/qogecoin/configure.ac:1628), [configure.ac:1636](/home/virtualbox/qogecoin/configure.ac:1636), [configure.ac:1641](/home/virtualbox/qogecoin/configure.ac:1641), [configure.ac:1645](/home/virtualbox/qogecoin/configure.ac:1645)
