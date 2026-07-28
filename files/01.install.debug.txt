@@ -1,0 +1,37 @@
+Searched for 4 patterns, read 1 file, ran 5 shell commands 
+
+● Findings, confirmed by reading depends/Makefile, depends/packages/packages.mk, depends/config.site.in, and depends/funcs.mk, plus a live check of the mirrors:
+
+  There's no NO_BOOST-style escape hatch. depends/packages/packages.mk line 1 sets packages:=boost libevent liboqs unconditionally — this is the base set with no gating variable. All the documented NO_* flags (NO_QT, NO_QR,
+  NO_BDB, NO_SQLITE, NO_WALLET, NO_ZMQ, NO_UPNP, NO_NATPMP, NO_USDT, plus MULTIPROCESS) only gate the optional package groups (Qt, BDB/SQLite/wallet, ZMQ, UPnP, NAT-PMP, systemtap, libmultiprocess). boost/libevent/liboqs have no
+  equivalent knob. OpenSSL isn't a depends package in this repo at all, so it's moot.
+
+  Why the mirror actually fails: boostorg.jfrog.io now 302-redirects every request to https://landing.jfrog.com/reactivate-server/boostorg — JFrog killed free hosting for Boost releases. That 138-byte redirect body is exactly your
+  "corrupt/tiny download." It's dead upstream, not a local network issue. And qogecoincore.org (the FALLBACK_DOWNLOAD_PATH in depends/Makefile) doesn't resolve at all.
+
+  The good news — the boost package doesn't actually compile anything. Its stage_cmds in depends/packages/boost.mk is just mkdir + cp -r boost <prefix>/include — pure header copy, no build. And fetch_file in depends/funcs.mk
+  (lines 37-39) checks test -f $(SOURCES_PATH)/<filename> first and skips downloading entirely if the file's already present.
+
+  So the clean fix, no depends-system edits needed: obtain boost_1_77_0.tar.bz2 from any reachable source (e.g. https://archives.boost.io/release/1.77.0/source/, sourceforge mirror, etc.), verify it matches sha256 
+  fc9f85fc030e233142908241af7a846e60630aa7388de9a5fafb1f3a26840854, drop it at depends/sources/boost_1_77_0.tar.bz2, then rerun make -C depends HOST=x86_64-linux-gnu install. It'll skip the download and just extract/copy headers —
+  done in seconds. The system already has libboost-all-dev 1.83.0.1ubuntu2 installed via apt, but that's irrelevant to unblocking this path since depends won't touch it.
+
+  The alternative (permanently drop boost from the depends build and point configure at system boost) requires patching both packages.mk (remove boost from the list) and config.site.in (the with_boost="$depends_prefix" fallback is
+  unconditional — nothing gates it on boost actually being built), which is a heavier, unsupported change to the build system for a one-off mirror outage.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ ☐ Fix approach 
+
+How do you want to unblock the depends build?
+
+❯ 1. Fetch tarball, place in sources/ (Recommended)
+     Download boost_1_77_0.tar.bz2 from an alternate reachable mirror, verify the sha256 hash, drop it at depends/sources/boost_1_77_0.tar.bz2, then rerun make install. No changes to the depends build system.
+  2. Patch packages.mk + config.site.in
+     Permanently remove boost from the depends package list and make config.site fall back to system boost. Bigger, unsupported change to shared build-system files — affects every future depends build on every machine.
+  3. Just tell me, I'll do it myself
+     You've got the diagnosis; you'll handle fetching the tarball or editing files yourself.
+  4. Type something.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · ↑/↓ to navigate · Esc to cancel
+
