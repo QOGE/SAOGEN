@@ -15,6 +15,21 @@ stratum mining pool for a Qogecoin (QOGE, yescryptR16) node.
 - **Redis** 7.x (tested with 7.0.15). Any recent Redis 6/7 build is fine —
   zny-nomp uses it for round/share/balance state and nothing exotic
   (plain hashes, sets, and pub/sub).
+  Worth installing it now, before npm install, actually, since it's a real prerequisite for the pool to function even though npm install itself won't fail without it.
+   ```bash
+  sudo apt-get install -y redis-server
+  redis-server --version
+  ```
+   Should print something in the 6.x/7.x range — matches what the tutorial confirms is fine.
+
+   Worth enabling it to start automatically, since the systemd service in Step 7 expects it already running (After=network.target redis-server.service):
+   ```bash
+   sudo systemctl enable redis-server
+   sudo systemctl start redis-server
+   sudo systemctl status redis-server --no-pager
+   ```
+   Should show active (running). Once that's confirmed, continue with the build dependencies and npm install from the previous message.
+  
 - **Build dependencies** for native modules (`node-multi-hashing`, and
   friends pulled in via git dependencies) — install before `npm install`:
   ```bash
