@@ -1,0 +1,73 @@
+
+sudo systemctl status zny-nomp --no-pager
+Created symlink /etc/systemd/system/multi-user.target.wants/zny-nomp.service → /etc/systemd/system/zny-no
+● zny-nomp.service - ZNY-NOMP QOGE Mining Pool
+     Loaded: loaded (/etc/systemd/system/zny-nomp.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2026-07-30 05:11:23 CEST; 30ms ago
+    Process: 68646 ExecStartPre=/bin/sleep 20 (code=exited, status=0/SUCCESS)
+   Main PID: 68681 (node)
+      Tasks: 1 (limit: 14306)
+     Memory: 3.1M (peak: 3.1M)
+        CPU: 25ms
+     CGroup: /system.slice/zny-nomp.service
+             └─68681 /root/.nvm/versions/node/v20.20.2/bin/node init.js
+
+Jul 30 05:11:03 vmi3403633 systemd[1]: Starting zny-nomp.service - ZNY-NOMP QOGE Mining Pool...
+Jul 30 05:11:23 vmi3403633 systemd[1]: Started zny-nomp.service - ZNY-NOMP QOGE Mining Pool.
+root@vmi3403633:~# journalctl -u zny-nomp -f
+Jul 30 05:11:25 vmi3403633 node[68681]:     at file:///root/zny-nomp/init.js:35:27
+Jul 30 05:11:25 vmi3403633 node[68681]:     at ModuleJob.run (node:internal/modules/esm/module_job:325:25
+Jul 30 05:11:25 vmi3403633 node[68681]:     at async ModuleLoader.import (node:internal/modules/esm/loade
+Jul 30 05:11:25 vmi3403633 node[68681]:     at async asyncRunEntryPointWithESMLoader (node:internal/modul
+Jul 30 05:11:25 vmi3403633 node[68681]: Node.js v20.20.2
+Jul 30 05:11:25 vmi3403633 systemd[1]: zny-nomp.service: Main process exited, code=exited, status=1/FAILU
+Jul 30 05:11:25 vmi3403633 systemd[1]: zny-nomp.service: Failed with result 'exit-code'.
+Jul 30 05:11:25 vmi3403633 systemd[1]: zny-nomp.service: Consumed 1.578s CPU time, 3.1M memory peak, 0B m
+Jul 30 05:11:35 vmi3403633 systemd[1]: zny-nomp.service: Scheduled restart job, restart counter is at 1.
+Jul 30 05:11:35 vmi3403633 systemd[1]: Starting zny-nomp.service - ZNY-NOMP QOGE Mining Pool...
+Jul 30 05:11:55 vmi3403633 systemd[1]: Started zny-nomp.service - ZNY-NOMP QOGE Mining Pool.
+Jul 30 05:11:55 vmi3403633 node[68700]: <anonymous_script>:1
+Jul 30 05:11:55 vmi3403633 node[68700]: {"logLevel":"debug","logColors":true,"cliPort":17117,"clustering"forks":"1"},"defaultPoolConfigs":{"blockRefreshInterval":500,"jobRebroadcastTimeout":55,"connectionTimeouBlockHashes":false,"validateWorkerUsername":true,"tcpProxyProtocol":false,"banning":{"enabled":true,"timent":50,"checkThreshold":500,"purgeInterval":300},"redis":{"host":"127.0.0.1","port":6379,"password":""}},":true"host":"127.0.0.1","port":8080,"stratumHost":"postquantum.qoge.org","stats":{"updateInterval":10,"h:14400,"hashrateWindow":300},"redis":{"host":"127.0.0.1","port":6379}}
+Jul 30 05:11:55 vmi3403633 node[68700]:                                                                                                                                                                                                                                                                                                                                                                                                   ^
+Jul 30 05:11:55 vmi3403633 node[68700]: SyntaxError: Expected ',' or '}' after property value in JSON at
+Jul 30 05:11:55 vmi3403633 node[68700]:     at JSON.parse (<anonymous>)
+Jul 30 05:11:55 vmi3403633 node[68700]:     at file:///root/zny-nomp/init.js:35:27
+Jul 30 05:11:55 vmi3403633 node[68700]:     at ModuleJob.run (node:internal/modules/esm/module_job:325:25
+Jul 30 05:11:55 vmi3403633 node[68700]:     at async ModuleLoader.import (node:internal/modules/esm/loade
+Jul 30 05:11:55 vmi3403633 node[68700]:     at async asyncRunEntryPointWithESMLoader (node:internal/modul
+Jul 30 05:11:55 vmi3403633 node[68700]: Node.js v20.20.2
+Jul 30 05:11:55 vmi3403633 systemd[1]: zny-nomp.service: Main process exited, code=exited, status=1/FAILU
+Jul 30 05:11:55 vmi3403633 systemd[1]: zny-nomp.service: Failed with result 'exit-code'.
+Jul 30 05:12:05 vmi3403633 systemd[1]: zny-nomp.service: Scheduled restart job, restart counter is at 2.
+Jul 30 05:12:05 vmi3403633 systemd[1]: Starting zny-nomp.service - ZNY-NOMP QOGE Mining Pool...
+Jul 30 05:12:25 vmi3403633 systemd[1]: Started zny-nomp.service - ZNY-NOMP QOGE Mining Pool.
+Jul 30 05:12:26 vmi3403633 node[68714]: <anonymous_script>:1
+Jul 30 05:12:26 vmi3403633 node[68714]: {"logLevel":"debug","logColors":true,"cliPort":17117,"clustering"forks":"1"},"defaultPoolConfigs":{"blockRefreshInterval":500,"jobRebroadcastTimeout":55,"connectionTimeouBlockHashes":false,"validateWorkerUsername":true,"tcpProxyProtocol":false,"banning":{"enabled":true,"timent":50,"checkThreshold":500,"purgeInterval":300},"redis":{"host":"127.0.0.1","port":6379,"password":""}},":true"host":"127.0.0.1","port":8080,"stratumHost":"postquantum.qoge.org","stats":{"updateInterval":10,"h:14400,"hashrateWindow":300},"redis":{"host":"127.0.0.1","port":6379}}
+Jul 30 05:12:26 vmi3403633 node[68714]:                                                                                                                                                                                                                                                                                                                                                                                                   ^
+Jul 30 05:12:26 vmi3403633 node[68714]: SyntaxError: Expected ',' or '}' after property value in JSON at
+Jul 30 05:12:26 vmi3403633 node[68714]:     at JSON.parse (<anonymous>)
+Jul 30 05:12:26 vmi3403633 node[68714]:     at file:///root/zny-nomp/init.js:35:27
+Jul 30 05:12:26 vmi3403633 node[68714]:     at ModuleJob.run (node:internal/modules/esm/module_job:325:25
+Jul 30 05:12:26 vmi3403633 node[68714]:     at async ModuleLoader.import (node:internal/modules/esm/loade
+Jul 30 05:12:26 vmi3403633 node[68714]:     at async asyncRunEntryPointWithESMLoader (node:internal/modul
+Jul 30 05:12:26 vmi3403633 node[68714]: Node.js v20.20.2
+Jul 30 05:12:26 vmi3403633 systemd[1]: zny-nomp.service: Main process exited, code=exited, status=1/FAILU
+Jul 30 05:12:26 vmi3403633 systemd[1]: zny-nomp.service: Failed with result 'exit-code'.
+Jul 30 05:12:36 vmi3403633 systemd[1]: zny-nomp.service: Scheduled restart job, restart counter is at 3.
+Jul 30 05:12:36 vmi3403633 systemd[1]: Starting zny-nomp.service - ZNY-NOMP QOGE Mining Pool...
+Jul 30 05:12:56 vmi3403633 systemd[1]: Started zny-nomp.service - ZNY-NOMP QOGE Mining Pool.
+Jul 30 05:12:57 vmi3403633 node[68729]: <anonymous_script>:1
+Jul 30 05:12:57 vmi3403633 node[68729]: {"logLevel":"debug","logColors":true,"cliPort":17117,"clustering":{"enabled":false,"forks":"1"},"defaultPoolConfigs":{"blockRefreshInterval":500,"jobRebroadcastTimeout":55,"connectionTimeout":600,"emitInvalidBlockHashes":false,"validateWorkerUsername":true,"tcpProxyProtocol":false,"banning":{"enabled":true,"time":600,"invalidPercent":50,"checkThreshold":500,"purgeInterval":300},"redis":{"host":"127.0.0.1","port":6379,"password":""}},"website":{"enabled":true"host":"127.0.0.1","port":8080,"stratumHost":"postquantum.qoge.org","stats":{"updateInterval":10,"historicalRetention":14400,"hashrateWindow":300},"redis":{"host":"127.0.0.1","port":6379}}
+Jul 30 05:12:57 vmi3403633 node[68729]:                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+Jul 30 05:12:57 vmi3403633 node[68729]: SyntaxError: Expected ',' or '}' after property value in JSON at position 462
+Jul 30 05:12:57 vmi3403633 node[68729]:     at JSON.parse (<anonymous>)
+Jul 30 05:12:57 vmi3403633 node[68729]:     at file:///root/zny-nomp/init.js:35:27
+Jul 30 05:12:57 vmi3403633 node[68729]:     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+Jul 30 05:12:57 vmi3403633 node[68729]:     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+Jul 30 05:12:57 vmi3403633 node[68729]:     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+Jul 30 05:12:57 vmi3403633 node[68729]: Node.js v20.20.2
+Jul 30 05:12:57 vmi3403633 systemd[1]: zny-nomp.service: Main process exited, code=exited, status=1/FAILURE
+Jul 30 05:12:57 vmi3403633 systemd[1]: zny-nomp.service: Failed with result 'exit-code'.
+Jul 30 05:13:07 vmi3403633 systemd[1]: zny-nomp.service: Scheduled restart job, restart counter is at 4.
+Jul 30 05:13:07 vmi3403633 systemd[1]: Starting zny-nomp.service - ZNY-NOMP QOGE Mining Pool...
+^C
