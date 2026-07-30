@@ -1,0 +1,49 @@
+root@vmi3403633:~# tail -50 ~/.qogecoin/debug.log
+
+
+
+
+
+2026-07-30T00:31:04Z Qogecoin Core version v24.00.1 (release build)
+2026-07-30T00:31:04Z Assuming ancestors of block 78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d                                                                                                                                                  9be7ce95e504bfa447aadc have valid signatures.
+2026-07-30T00:31:04Z Setting nMinimumChainWork=00000000000000000000000000000000000000000000                                                                                                                                                  00000000000000000000
+2026-07-30T00:31:04Z Using the 'x86_shani(1way,2way)' SHA256 implementation
+2026-07-30T00:31:04Z Using RdSeed as additional entropy source
+2026-07-30T00:31:04Z Using RdRand as an additional entropy source
+2026-07-30T00:31:04Z Default data directory /root/.qogecoin
+2026-07-30T00:31:04Z Using data directory /root/.qogecoin
+2026-07-30T00:31:04Z Config file: /root/.qogecoin/qogecoin.conf
+2026-07-30T00:31:04Z Config file arg: fallbackfee="0.0001"
+2026-07-30T00:31:04Z Config file arg: listen="1"
+2026-07-30T00:31:04Z Config file arg: mintxfee="0.00001"
+2026-07-30T00:31:04Z Config file arg: paytxfee="0.0001"
+2026-07-30T00:31:04Z Config file arg: rpcallowip="127.0.0.1"
+2026-07-30T00:31:04Z Config file arg: rpcbind=****
+2026-07-30T00:31:04Z Config file arg: rpcpassword=****
+2026-07-30T00:31:04Z Config file arg: rpcport="8332"
+2026-07-30T00:31:04Z Config file arg: rpcuser=****
+2026-07-30T00:31:04Z Config file arg: server="1"
+2026-07-30T00:31:04Z Config file arg: txindex="1"
+2026-07-30T00:31:04Z Config file arg: wallet=""
+2026-07-30T00:31:04Z Config file arg: [main] changetype="bech32"
+2026-07-30T00:31:04Z Config file arg: [regtest] addnode="38.242.226.36"
+2026-07-30T00:31:04Z Config file arg: [regtest] addnode="185.255.131.11"
+2026-07-30T00:31:04Z Config file arg: [regtest] changetype="bech32"
+2026-07-30T00:31:04Z Config file arg: [regtest] maxconnections="125"
+2026-07-30T00:31:04Z Config file arg: [test] changetype="bech32"
+2026-07-30T00:31:04Z Command-line arg: daemon=""
+2026-07-30T00:31:04Z Using at most 125 automatic connections (1024 file descriptors availab                                                                                                                                                  le)
+2026-07-30T00:31:04Z Using 16 MiB out of 32/2 requested for signature cache, able to store                                                                                                                                                   524288 elements
+2026-07-30T00:31:04Z Using 16 MiB out of 32/2 requested for script execution cache, able to                                                                                                                                                   store 524288 elements
+2026-07-30T00:31:04Z Script verification uses 5 additional threads
+2026-07-30T00:31:04Z scheduler thread start
+2026-07-30T00:31:04Z HTTP: creating work queue of depth 16
+2026-07-30T00:31:04Z Config options rpcuser and rpcpassword will soon be deprecated. Locall                                                                                                                                                  y-run instances may remove rpcuser to use cookie-based auth, or may be replaced with rpcaut                                                                                                                                                  h. Please see share/rpcauth for rpcauth auth generation.
+2026-07-30T00:31:04Z HTTP: starting 4 worker threads
+2026-07-30T00:31:04Z Using wallet directory /root/.qogecoin
+2026-07-30T00:31:04Z init message: Verifying wallet(s)…
+2026-07-30T00:31:04Z Error: Failed to load database path '/root/.qogecoin'. Data is not in                                                                                                                                                   recognized format.
+2026-07-30T00:31:04Z Shutdown: In progress...
+2026-07-30T00:31:04Z scheduler thread exit
+2026-07-30T00:31:04Z Shutdown: done
+root@vmi3403633:~#
