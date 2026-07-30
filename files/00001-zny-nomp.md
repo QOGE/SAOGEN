@@ -321,6 +321,7 @@ mind if you ever inspect Redis directly.
         "autoCreateWorker": false
     }
 }
+
 ```
 
 > **Warning**: replace every `CHANGE_ME_*` / `YOUR_POOL_WALLET_ADDRESS_HERE`
@@ -339,8 +340,8 @@ a production-appropriate value (60s or higher) afterward.
     "logColors": true,
     "cliPort": 17117,
     "clustering": {
-        "enabled": true,
-        "forks": 1
+        "enabled": false,
+        "forks": "1"
     },
     "defaultPoolConfigs": {
         "blockRefreshInterval": 500,
@@ -363,13 +364,22 @@ a production-appropriate value (60s or higher) afterward.
         }
     },
     "website": {
-        "enabled": false
+        "enabled": true,
+        "host": "127.0.0.1",
+        "port": 8080,
+        "stratumHost": "postquantum.qoge.org",
+        "stats": {
+            "updateInterval": 10,
+            "historicalRetention": 14400,
+            "hashrateWindow": 300
+        }
     },
     "redis": {
         "host": "127.0.0.1",
         "port": 6379
     }
 }
+
 ```
 
 Raise `clustering.forks` above `1` once you're running more than one
