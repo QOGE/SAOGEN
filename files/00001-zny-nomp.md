@@ -392,19 +392,19 @@ deployment.
 
 ```ini
 [Unit]
-Description=ZNY-NOMP Mining Pool
-After=network.target redis-server.service
+Description=ZNY-NOMP QOGE Mining Pool
+After=network-online.target redis-server.service qogecoind.service
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=YOUR_SERVICE_USER
-WorkingDirectory=/path/to/zny-nomp
-Environment=NODE_ENV=production
-ExecStart=/home/YOUR_SERVICE_USER/.nvm/versions/node/v20.20.2/bin/node init.js
+WorkingDirectory=/root/zny-nomp
+ExecStartPre=/bin/sleep 20
+ExecStart=/root/.nvm/versions/node/v20.20.2/bin/node init.js
 Restart=always
-RestartSec=5
-StandardOutput=append:/var/log/zny-nomp/nomp.log
-StandardError=append:/var/log/zny-nomp/nomp.log
+RestartSec=10
+User=root
+Environment=NODE_ENV=production
 
 [Install]
 WantedBy=multi-user.target
