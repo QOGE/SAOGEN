@@ -413,10 +413,10 @@ WantedBy=multi-user.target
 Enable and start:
 
 ```bash
-sudo mkdir -p /var/log/zny-nomp
-sudo systemctl daemon-reload
-sudo systemctl enable zny-nomp
+sudo systemctl daemon-reload   # always required after creating/editing any unit file
+sudo systemctl enable zny-nomp # survives reboots
 sudo systemctl start zny-nomp
+sudo systemctl status zny-nomp --no-pager
 ```
 
 Note the `ExecStart` uses the full path to the nvm-managed Node binary —
