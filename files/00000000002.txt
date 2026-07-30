@@ -1,0 +1,52 @@
+root@vmi3403633:~# python3 -m json.tool ~/zny-nomp/coins/qoge.json > /dev/null && echo "coins/qoge.json OK"
+sudo systemctl restart zny-nomp
+sleep 25
+sudo systemctl status zny-nomp --no-pager
+journalctl -u zny-nomp -n 20 --no-pager
+coins/qoge.json OK
+● zny-nomp.service - ZNY-NOMP QOGE Mining Pool
+     Loaded: loaded (/etc/systemd/system/zny-nomp.service; enabled; preset: enabled)
+     Active: active (running) since Thu 2026-07-30 06:05:16 CEST; 25s ago
+    Process: 73042 ExecStartPre=/bin/sleep 20 (code=exited, status=0/SUCCESS)
+   Main PID: 73052 (node)
+      Tasks: 44 (limit: 14306)
+     Memory: 125.7M (peak: 288.1M)
+        CPU: 5.996s
+     CGroup: /system.slice/zny-nomp.service
+             ├─73052 /root/.nvm/versions/node/v20.20.2/bin/node init.js
+             ├─73064 /root/.nvm/versions/node/v20.20.2/bin/node /root/zny-nomp/init.js
+             ├─73065 /root/.nvm/versions/node/v20.20.2/bin/node /root/zny-nomp/init.js
+             └─73086 /root/.nvm/versions/node/v20.20.2/bin/node /root/zny-nomp/init.js
+
+Jul 30 06:05:18 vmi3403633 node[73064]: 2026/07/30 06:05:18 [Payments]        [qogecoin] qogecoin PPLNT: false, time period: 0.51
+Jul 30 06:05:18 vmi3403633 node[73065]: 2026/07/30 06:05:18 [Website]        [Server] Website started on 127.0.0.1:8080
+Jul 30 06:05:18 vmi3403633 node[73064]: 2026/07/30 06:05:18 [Payments]        [qogecoin] Payment processing setup with daemon ….0.1:6379)
+Jul 30 06:05:18 vmi3403633 node[73086]: 2026/07/30 06:05:18 [Pool]        [qogecoin] (Thread 1) Share processing setup with re….0.1:6379)
+Jul 30 06:05:18 vmi3403633 node[73086]: 2026/07/30 06:05:18 [Pool]        [qogecoin] (Thread 1) Daemon is still syncing with n…nce synced
+Jul 30 06:05:18 vmi3403633 node[73086]: 2026/07/30 06:05:18 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find pee… connected
+Jul 30 06:05:23 vmi3403633 node[73086]: 2026/07/30 06:05:23 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find pee… connected
+Jul 30 06:05:28 vmi3403633 node[73086]: 2026/07/30 06:05:28 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find pee… connected
+Jul 30 06:05:33 vmi3403633 node[73086]: 2026/07/30 06:05:33 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find pee… connected
+Jul 30 06:05:38 vmi3403633 node[73086]: 2026/07/30 06:05:38 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find pee… connected
+Hint: Some lines were ellipsized, use -l to show in full.
+Jul 30 06:05:17 vmi3403633 node[73052]: 2026/07/30 06:05:17 [POSIX]        [Connection Limit] (Safe to ignore) POSIX module not installed and resource (connection) limit was not raised
+Jul 30 06:05:17 vmi3403633 node[73052]: 2026/07/30 06:05:17 [Master]        [qogecoin] blockIdentifier: postquantum.qoge.org
+Jul 30 06:05:17 vmi3403633 node[73052]: 2026/07/30 06:05:17 [Master]        [CLI] CLI listening on port 17117
+Jul 30 06:05:17 vmi3403633 node[73052]: 2026/07/30 06:05:17 [PPLNT]        [qogecoin] TimeShare processing setup with redis (127.0.0.1:6379)
+Jul 30 06:05:17 vmi3403633 node[73052]: 2026/07/30 06:05:17 [Master]        [PoolSpawner] Spawned 1 pool(s) on 1 thread(s)
+Jul 30 06:05:18 vmi3403633 node[73064]: 2026/07/30 06:05:18 [Payments]        [qogecoin] maxUnshieldAmount: 100
+Jul 30 06:05:18 vmi3403633 node[73064]: 2026/07/30 06:05:18 [Payments]        [qogecoin] qogecoin requireShielding: false
+Jul 30 06:05:18 vmi3403633 node[73064]: 2026/07/30 06:05:18 [Payments]        [qogecoin] qogecoin minConf: 10
+Jul 30 06:05:18 vmi3403633 node[73064]: 2026/07/30 06:05:18 [Payments]        [qogecoin] qogecoin payments txfee reserve: 0.0001
+Jul 30 06:05:18 vmi3403633 node[73064]: 2026/07/30 06:05:18 [Payments]        [qogecoin] qogecoin maxBlocksPerPayment: 30
+Jul 30 06:05:18 vmi3403633 node[73064]: 2026/07/30 06:05:18 [Payments]        [qogecoin] qogecoin PPLNT: false, time period: 0.51
+Jul 30 06:05:18 vmi3403633 node[73065]: 2026/07/30 06:05:18 [Website]        [Server] Website started on 127.0.0.1:8080
+Jul 30 06:05:18 vmi3403633 node[73064]: 2026/07/30 06:05:18 [Payments]        [qogecoin] Payment processing setup with daemon (qogecoin@127.0.0.1:8332) and redis (127.0.0.1:6379)
+Jul 30 06:05:18 vmi3403633 node[73086]: 2026/07/30 06:05:18 [Pool]        [qogecoin] (Thread 1) Share processing setup with redis (127.0.0.1:6379)
+Jul 30 06:05:18 vmi3403633 node[73086]: 2026/07/30 06:05:18 [Pool]        [qogecoin] (Thread 1) Daemon is still syncing with network (download blockchain) - server will be started once synced
+Jul 30 06:05:18 vmi3403633 node[73086]: 2026/07/30 06:05:18 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find peer connections - 0 peers connected
+Jul 30 06:05:23 vmi3403633 node[73086]: 2026/07/30 06:05:23 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find peer connections - 0 peers connected
+Jul 30 06:05:28 vmi3403633 node[73086]: 2026/07/30 06:05:28 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find peer connections - 0 peers connected
+Jul 30 06:05:33 vmi3403633 node[73086]: 2026/07/30 06:05:33 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find peer connections - 0 peers connected
+Jul 30 06:05:38 vmi3403633 node[73086]: 2026/07/30 06:05:38 [Pool]        [qogecoin] (Thread 1) Waiting for daemon to find peer connections - 0 peers connected
+root@vmi3403633:~#
