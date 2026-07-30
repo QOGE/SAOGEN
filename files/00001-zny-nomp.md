@@ -243,30 +243,30 @@ mind if you ever inspect Redis directly.
     "enabled": true,
     "coin": "qoge.json",
     "BTCover17": true,
-    "_comment_BTCover17": "Set true if the daemon is Bitcoin-Core-derived 0.17+ (uses getaddressinfo). Set false for older daemons (validateaddress). Must match the actual daemon version exactly, or payment processing silently refuses to start.",
+    "_comment_BTCover17": "Set true if the daemon is Bitcoin-Core-derived 0.17+ (uses getaddressinfo). Set false for older daemons (validateaddress). Must match the actual daemon version exactly,>
 
-    "address": "YOUR_POOL_WALLET_ADDRESS_HERE",
+    "address": "qJkYaooBiLgFY3APdTuHenALqGj5iRL9Jj",
     "_comment_address": "Legacy/Base58 address from step 3 above. Must be owned by the daemon's loaded wallet.",
 
     "rewardRecipients": {
-        "YOUR_POOL_WALLET_ADDRESS_HERE": 1.0
+        "qJkYaooBiLgFY3APdTuHenALqGj5iRL9Jj": 1.0
     },
-    "_comment_rewardRecipients": "This key MUST exactly match the address above. A mismatched or empty-string key here silently breaks payment processing even though the daemon connection and address checks all pass.",
+    "_comment_rewardRecipients": "This key MUST exactly match the address above. A mismatched or empty-string key here silently breaks payment processing even though the daemon connection and add>
 
     "paymentProcessing": {
         "minConf": 10,
         "enabled": true,
         "paymentMode": "prop",
         "_comment_paymentMode": "prop, pplnt",
-        "paymentInterval": 60,
+        "paymentInterval": 600,
         "minimumPayment": 0.001,
-        "maxBlocksPerPayment": 3,
-        "_comment_maxBlocksPerPayment": "Throttles how many pending blocks are processed per interval. Can be temporarily raised (e.g. to 10+) to drain a large backlog faster, then lowered back down for steady-state operation.",
+        "maxBlocksPerPayment": 30,
+        "_comment_maxBlocksPerPayment": "Throttles how many pending blocks are processed per interval. Can be temporarily raised (e.g. to 10+) to drain a large backlog faster, then lowered back d>
         "daemon": {
             "host": "127.0.0.1",
-            "port": CHANGE_ME_rpcport,
-            "user": "CHANGE_ME_rpcuser",
-            "password": "CHANGE_ME_rpcpass"
+            "port": 8332,
+            "user": "xxxxxx",
+            "password": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         }
     },
 
@@ -278,7 +278,7 @@ mind if you ever inspect Redis directly.
     },
 
     "ports": {
-        "3421": {
+        "3032": {
             "diff": 0.001,
             "tls": false,
             "varDiff": {
@@ -297,16 +297,16 @@ mind if you ever inspect Redis directly.
     "daemons": [
         {
             "host": "127.0.0.1",
-            "port": CHANGE_ME_rpcport,
-            "user": "CHANGE_ME_rpcuser",
-            "password": "CHANGE_ME_rpcpass"
+            "port": 8332,
+            "user": "qogecoin",
+            "password": "qP8fvsiJaaabGtVgw1F6xCUw81ya4G1MAd"
         }
     ],
 
     "p2p": {
         "enabled": false,
         "host": "127.0.0.1",
-        "port": CHANGE_ME_p2pport,
+        "port": 8333,
         "disableTransactions": true
     },
 
