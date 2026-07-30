@@ -220,10 +220,15 @@ payment processor needs `listunspent`/`sendmany` against it continuously.
         "bip32": {
             "public": "0488b21e"
         },
-        "pubKeyHash": "41",
-        "scriptHash": "69"
+        "pubKeyHash": "78",
+        "scriptHash": "66"
+    },
+    "explorer": {
+        "txURL": "https://explorer.qoge.org/tx/",
+        "blockURL": "https://explorer.qoge.org/block/"
     }
 }
+
 ```
 
 Note: `name` is `"Qogecoin"`. zny-nomp lowercases this internally
