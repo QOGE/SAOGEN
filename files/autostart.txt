@@ -1,0 +1,112 @@
+
+root@vmi3403633:~# ~/qogecoin/src/qogecoin-cli stop
+sleep 10
+pgrep -a qogecoind
+Qogecoin Core stopping
+root@vmi3403633:~# nano ~/.qogecoin/qogecoin.conf
+root@vmi3403633:~# sudo nano /etc/systemd/system/qogecoind.service
+root@vmi3403633:~# sudo systemctl daemon-reload
+sudo systemctl enable qogecoind
+sudo systemctl start qogecoind
+sleep 10
+sudo systemctl status qogecoind --no-pager
+Created symlink /etc/systemd/system/multi-user.target.wants/qogecoind.service → /etc/systemd/system/qogecoind.service.
+● qogecoind.service - Qogecoin Core Daemon
+     Loaded: loaded (/etc/systemd/system/qogecoind.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2026-07-31 13:01:12 CEST; 10s ago
+   Main PID: 110642 (qogecoind)
+      Tasks: 13 (limit: 14306)
+     Memory: 1.0G (peak: 1.0G)
+        CPU: 10.366s
+     CGroup: /system.slice/qogecoind.service
+             └─110642 /root/qogecoin/src/qogecoind -conf=/root/.qogecoin/qogecoin.conf -datadir=/root/.qogecoin
+
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z Cache configuration:
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z * Using 2.0 MiB for block index database
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z * Using 56.0 MiB for transaction index database
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z * Using 8.0 MiB for chain state database
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z * Using 384.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z init message: Loading block index…
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z Switching active chainstate to Chainstate [ibd] @ height -1 (null)
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z Opening LevelDB in /root/.qogecoin/blocks/index
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z Opened LevelDB successfully
+Jul 31 13:01:13 vmi3403633 qogecoind[110642]: 2026-07-31T11:01:13Z Using obfuscation key for /root/.qogecoin/blocks/index: 0000000000000000
+root@vmi3403633:~# ^C
+root@vmi3403633:~#
+root@vmi3403633:~#
+root@vmi3403633:~#
+root@vmi3403633:~# ~/qogecoin/src/qogecoin-cli getblockchaininfo | grep -E "blocks|initialblockdownload"
+~/qogecoin/src/qogecoin-cli listwallets
+  "blocks": 2427766,
+  "initialblockdownload": false,
+[
+  "poolwallet"
+]
+root@vmi3403633:~# journalctl -u zny-nomp -n 20 --no-pager
+Jul 31 10:58:23 vmi3403633 node[73064]: 2026/07/31 10:58:23 [Payments]        [qogecoin] Finished interval - time spent: 8ms total, 2ms redis, 3ms daemon RPC
+Jul 31 11:08:23 vmi3403633 node[73064]: 2026/07/31 11:08:23 [Payments]        [qogecoin] Finished interval - time spent: 3ms total, 1ms redis, 1ms daemon RPC
+Jul 31 11:18:23 vmi3403633 node[73064]: 2026/07/31 11:18:23 [Payments]        [qogecoin] Finished interval - time spent: 7ms total, 3ms redis, 3ms daemon RPC
+Jul 31 11:28:23 vmi3403633 node[73064]: 2026/07/31 11:28:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 1ms redis, 3ms daemon RPC
+Jul 31 11:38:23 vmi3403633 node[73064]: 2026/07/31 11:38:23 [Payments]        [qogecoin] Finished interval - time spent: 11ms total, 6ms redis, 8ms daemon RPC
+Jul 31 11:48:23 vmi3403633 node[73064]: 2026/07/31 11:48:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 2ms redis, 2ms daemon RPC
+Jul 31 11:58:23 vmi3403633 node[73064]: 2026/07/31 11:58:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 1ms redis, 3ms daemon RPC
+Jul 31 12:08:23 vmi3403633 node[73064]: 2026/07/31 12:08:23 [Payments]        [qogecoin] Finished interval - time spent: 6ms total, 3ms redis, 2ms daemon RPC
+Jul 31 12:18:23 vmi3403633 node[73064]: 2026/07/31 12:18:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 2ms redis, 2ms daemon RPC
+Jul 31 12:28:23 vmi3403633 node[73064]: 2026/07/31 12:28:23 [Payments]        [qogecoin] Finished interval - time spent: 7ms total, 2ms redis, 1ms daemon RPC
+Jul 31 12:38:23 vmi3403633 node[73064]: 2026/07/31 12:38:23 [Payments]        [qogecoin] Finished interval - time spent: 8ms total, 5ms redis, 4ms daemon RPC
+Jul 31 12:48:23 vmi3403633 node[73064]: 2026/07/31 12:48:23 [Payments]        [qogecoin] Finished interval - time spent: 3ms total, 1ms redis, 1ms daemon RPC
+Jul 31 12:55:46 vmi3403633 node[73064]: 2026/07/31 12:55:46 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:56:44 vmi3403633 node[73064]: 2026/07/31 12:56:44 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:57:42 vmi3403633 node[73064]: 2026/07/31 12:57:42 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:58:23 vmi3403633 node[73064]: 2026/07/31 12:58:23 [Payments]        [qogecoin] Check finished - daemon rpc error with batch gettransactions {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:58:23 vmi3403633 node[73064]: 2026/07/31 12:58:23 [Payments]        [qogecoin] Finished interval - time spent: 2ms total, 1ms redis, 2ms daemon RPC
+Jul 31 12:58:40 vmi3403633 node[73064]: 2026/07/31 12:58:40 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:59:38 vmi3403633 node[73064]: 2026/07/31 12:59:38 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 13:00:36 vmi3403633 node[73064]: 2026/07/31 13:00:36 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+root@vmi3403633:~# journalctl -u zny-nomp -n 20 --no-pager
+Jul 31 10:58:23 vmi3403633 node[73064]: 2026/07/31 10:58:23 [Payments]        [qogecoin] Finished interval - time spent: 8ms total, 2ms redis, 3ms daemon RPC
+Jul 31 11:08:23 vmi3403633 node[73064]: 2026/07/31 11:08:23 [Payments]        [qogecoin] Finished interval - time spent: 3ms total, 1ms redis, 1ms daemon RPC
+Jul 31 11:18:23 vmi3403633 node[73064]: 2026/07/31 11:18:23 [Payments]        [qogecoin] Finished interval - time spent: 7ms total, 3ms redis, 3ms daemon RPC
+Jul 31 11:28:23 vmi3403633 node[73064]: 2026/07/31 11:28:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 1ms redis, 3ms daemon RPC
+Jul 31 11:38:23 vmi3403633 node[73064]: 2026/07/31 11:38:23 [Payments]        [qogecoin] Finished interval - time spent: 11ms total, 6ms redis, 8ms daemon RPC
+Jul 31 11:48:23 vmi3403633 node[73064]: 2026/07/31 11:48:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 2ms redis, 2ms daemon RPC
+Jul 31 11:58:23 vmi3403633 node[73064]: 2026/07/31 11:58:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 1ms redis, 3ms daemon RPC
+Jul 31 12:08:23 vmi3403633 node[73064]: 2026/07/31 12:08:23 [Payments]        [qogecoin] Finished interval - time spent: 6ms total, 3ms redis, 2ms daemon RPC
+Jul 31 12:18:23 vmi3403633 node[73064]: 2026/07/31 12:18:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 2ms redis, 2ms daemon RPC
+Jul 31 12:28:23 vmi3403633 node[73064]: 2026/07/31 12:28:23 [Payments]        [qogecoin] Finished interval - time spent: 7ms total, 2ms redis, 1ms daemon RPC
+Jul 31 12:38:23 vmi3403633 node[73064]: 2026/07/31 12:38:23 [Payments]        [qogecoin] Finished interval - time spent: 8ms total, 5ms redis, 4ms daemon RPC
+Jul 31 12:48:23 vmi3403633 node[73064]: 2026/07/31 12:48:23 [Payments]        [qogecoin] Finished interval - time spent: 3ms total, 1ms redis, 1ms daemon RPC
+Jul 31 12:55:46 vmi3403633 node[73064]: 2026/07/31 12:55:46 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:56:44 vmi3403633 node[73064]: 2026/07/31 12:56:44 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:57:42 vmi3403633 node[73064]: 2026/07/31 12:57:42 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:58:23 vmi3403633 node[73064]: 2026/07/31 12:58:23 [Payments]        [qogecoin] Check finished - daemon rpc error with batch gettransactions {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:58:23 vmi3403633 node[73064]: 2026/07/31 12:58:23 [Payments]        [qogecoin] Finished interval - time spent: 2ms total, 1ms redis, 2ms daemon RPC
+Jul 31 12:58:40 vmi3403633 node[73064]: 2026/07/31 12:58:40 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:59:38 vmi3403633 node[73064]: 2026/07/31 12:59:38 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 13:00:36 vmi3403633 node[73064]: 2026/07/31 13:00:36 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+root@vmi3403633:~# systemctl is-enabled qogecoind zny-nomp redis-server
+enabled
+enabled
+enabled
+root@vmi3403633:~# journalctl -u zny-nomp -n 20 --no-pager
+Jul 31 10:58:23 vmi3403633 node[73064]: 2026/07/31 10:58:23 [Payments]        [qogecoin] Finished interval - time spent: 8ms total, 2ms redis, 3ms daemon RPC
+Jul 31 11:08:23 vmi3403633 node[73064]: 2026/07/31 11:08:23 [Payments]        [qogecoin] Finished interval - time spent: 3ms total, 1ms redis, 1ms daemon RPC
+Jul 31 11:18:23 vmi3403633 node[73064]: 2026/07/31 11:18:23 [Payments]        [qogecoin] Finished interval - time spent: 7ms total, 3ms redis, 3ms daemon RPC
+Jul 31 11:28:23 vmi3403633 node[73064]: 2026/07/31 11:28:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 1ms redis, 3ms daemon RPC
+Jul 31 11:38:23 vmi3403633 node[73064]: 2026/07/31 11:38:23 [Payments]        [qogecoin] Finished interval - time spent: 11ms total, 6ms redis, 8ms daemon RPC
+Jul 31 11:48:23 vmi3403633 node[73064]: 2026/07/31 11:48:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 2ms redis, 2ms daemon RPC
+Jul 31 11:58:23 vmi3403633 node[73064]: 2026/07/31 11:58:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 1ms redis, 3ms daemon RPC
+Jul 31 12:08:23 vmi3403633 node[73064]: 2026/07/31 12:08:23 [Payments]        [qogecoin] Finished interval - time spent: 6ms total, 3ms redis, 2ms daemon RPC
+Jul 31 12:18:23 vmi3403633 node[73064]: 2026/07/31 12:18:23 [Payments]        [qogecoin] Finished interval - time spent: 4ms total, 2ms redis, 2ms daemon RPC
+Jul 31 12:28:23 vmi3403633 node[73064]: 2026/07/31 12:28:23 [Payments]        [qogecoin] Finished interval - time spent: 7ms total, 2ms redis, 1ms daemon RPC
+Jul 31 12:38:23 vmi3403633 node[73064]: 2026/07/31 12:38:23 [Payments]        [qogecoin] Finished interval - time spent: 8ms total, 5ms redis, 4ms daemon RPC
+Jul 31 12:48:23 vmi3403633 node[73064]: 2026/07/31 12:48:23 [Payments]        [qogecoin] Finished interval - time spent: 3ms total, 1ms redis, 1ms daemon RPC
+Jul 31 12:55:46 vmi3403633 node[73064]: 2026/07/31 12:55:46 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:56:44 vmi3403633 node[73064]: 2026/07/31 12:56:44 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:57:42 vmi3403633 node[73064]: 2026/07/31 12:57:42 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:58:23 vmi3403633 node[73064]: 2026/07/31 12:58:23 [Payments]        [qogecoin] Check finished - daemon rpc error with batch gettransactions {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:58:23 vmi3403633 node[73064]: 2026/07/31 12:58:23 [Payments]        [qogecoin] Finished interval - time spent: 2ms total, 1ms redis, 2ms daemon RPC
+Jul 31 12:58:40 vmi3403633 node[73064]: 2026/07/31 12:58:40 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 12:59:38 vmi3403633 node[73064]: 2026/07/31 12:59:38 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+Jul 31 13:00:36 vmi3403633 node[73064]: 2026/07/31 13:00:36 [Payments]        [qogecoin] Error with RPC call getmininginfo {"type":"offline","message":"connect ECONNREFUSED 127.0.0.1:8332"}
+root@vmi3403633:~#
