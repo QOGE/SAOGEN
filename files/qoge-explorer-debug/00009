@@ -1,0 +1,71 @@
+● Line 1033 is an unrelated sighash-serialization formula, no conflict. Now let's re-run the syntax check and full quality gates before updating the PR description.
+
+  Ran 3 shell commands 
+
+● All clean. Now the full test suite and race detector, uncached.
+
+  Ran 2 shell commands 
+
+● All quality gates pass. Now checking file scope and staging before commit.
+
+  Ran 1 shell command 
+
+● Exactly the expected 5 files. Let's verify outside-project cleanliness too.
+
+  Ran 1 shell command 
+
+● Same pre-existing untracked state as before — nothing new outside the project. Staging and committing.
+
+  Committed 5d0877a, pushed to phase2b-postgres-schema, ran 1 shell command 
+
+● Now updating the PR #2 description to reflect the current state of the code.
+
+  Made 1 scratchpad edit +50, edited PR #2, ran 2 shell commands 
+
+● PR #2 remains OPEN, head matches the pushed commit, description updated. All work items complete.
+
+  Ran 1 shell command 
+
+● PHASE 2B.1 FINAL SCHEMA HARDENING
+  ================================
+  Commit: 5d0877ab19140a9e2b54277a9358eb86a5ec5b49 (branch phase2b-postgres-schema)
+  PR head: 5d0877ab19140a9e2b54277a9358eb86a5ec5b49 (PR #2, state OPEN, not merged)
+
+  TRANSACTION VERSION
+  -------------------
+  Go type: chain.Transaction.Version changed int32 → uint32 (Core's TxToUniv exposes static_cast<uint32_t>(tx.nVersion) despite the in-memory nVersion type being int32_t)
+  SQL type: transactions.version changed INT → BIGINT
+  Range: CONSTRAINT transactions_version_uint32_range CHECK (version >= 0 AND version <= 4294967295), same pattern as locktime/sequence/nonce
+  Boundary tests: version negative → REJECTED; version 4294967296 → REJECTED; version 0, 2147483647, 2147483648 (2^31, the int32-overflow crossing point), 4294967295 → all ACCEPTED — TestInvariant_Uint32RangeRejected subtests, all PASS
+
+  SYNC CHECKPOINT
+  ---------------
+  Bootstrap: -1/NULL unaffected by the new trigger — confirmed still valid (TestInvariant_SyncStateCheckpointMustMatchCanonicalBlock/bootstrap_-1/NULL_remains_valid)
+  Canonical block validation: new BEFORE INSERT OR UPDATE trigger sync_state_validate_checkpoint_trigger requires indexed_block_hash (when non-NULL) to reference an existing block with canonical=true
+  Height derivation: NEW.indexed_height mechanically overwritten from blocks.height — caller-supplied height is never trusted; verified with a deliberately wrong caller-supplied height (1) against a real height-99 block → stored value corrected to 99
+  Unknown-hash test: checkpoint referencing a nonexistent block hash → REJECTED
+  Orphan-hash test: checkpoint referencing a canonical=false (orphaned) block → REJECTED
+  All 5 subtests of TestInvariant_SyncStateCheckpointMustMatchCanonicalBlock PASS
+
+  PR description updated: yes — now describes transaction_variants, the txid/wtxid split, variant-specific witness storage, the exact-prevout UTXO relation, strengthened witness metadata, migration up/down checksum protection, uint32 version semantics, and the sync_state checkpoint trigger
+
+  QUALITY
+  -------
+  gofmt: clean (no output)
+  go vet: clean
+  go test: PASS, all packages, uncached (-count=1), including all PostgreSQL-backed invariant/migration tests
+  go test -race: PASS, all packages, uncached
+  go build: clean
+
+  FILES MODIFIED OUTSIDE PROJECT
+  ------------------------------
+  NONE
+
+  Pushed to origin/phase2b-postgres-schema; PR #2 confirmed OPEN (not merged), head matches the pushed commit. Phase 2B.2 has not been started. Stopped for final external P2QPK/Core review, per instructions.
+
+✻ Crunched for 7m 24s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ stop for external review, no further action needed
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
