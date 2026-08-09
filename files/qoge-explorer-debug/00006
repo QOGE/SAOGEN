@@ -1,0 +1,124 @@
+● Numbering is clean (1–15, no gaps), and all remaining is_p2qpk mentions are correctly framed as "this was removed" statements, not stale schema. Let's mark the doc task complete and move to final quality gates.
+
+  Ran 2 shell commands
+
+● All quality gates pass. Now the pre-commit review — secrets, .env, binaries, and scope check.
+
+  Ran 2 shell commands
+
+● All other repos clean/untouched. Let's grep the diff for any hardcoded credentials before staging.
+
+  Ran 1 shell command
+
+● Clean — the only "pass" match is a generic placeholder example in usage text. Staging and committing.
+
+  Ran 1 shell command
+
+● Exactly the expected file set. Committing.
+
+  Committed 562eeaf
+
+● Committed as 562eeaf891d4fcdc5900c977f7e1e80babb41ed8. Pushing and creating the PR.
+
+  Pushed to phase2b-postgres-schema, created PR #2, ran 1 shell command
+
+● FINAL REPORT
+
+  PHASE 2B.1 — POSTGRESQL SCHEMA
+
+  Branch:              phase2b-postgres-schema
+  Commit:               562eeaf891d4fcdc5900c977f7e1e80babb41ed8
+  PR:                   https://github.com/QOGE/qoge-explorer/pull/2 (OPEN, not merged)
+  PostgreSQL version:   16.14 (Ubuntu 16.14-0ubuntu0.24.04.1), standard distro package, no third-party repo
+
+  TRANSACTION MODEL
+
+  Transaction identity:       transactions.txid PK — immutable body (version, locktime, size/vsize/weight,
+                               is_coinbase, fee_satoshis), block-independent
+  Block occurrence model:     block_transactions (block_hash, tx_index) PK, UNIQUE(block_hash, txid);
+                               block_height auto-derived by trigger from blocks.height, never trusted
+                               from the caller
+  Competing-block same-txid test: TestInvariant_SameTxidTwoBlocks — PASS (same txid linked to 2 distinct
+                               block_hash rows via block_transactions, both readable, trigger-derived
+                               heights both correct)
+
+  UTXO MODEL
+
+  Immutable output model:  transaction_outputs (txid, vout_index) PK — value, script_pubkey (BYTEA),
+                            script_type, witness_version/program only; no spend state
+  Canonical state model:   utxo_state (txid, vout_index) PK, FK to transaction_outputs — creation/spending
+                            block hash+height, spent, spending_txid/vin_index; mutable, rebuilt on reorg
+  Reorg behavior:          blocks marked canonical=false (never deleted); transactions/block_transactions/
+                            transaction_inputs/transaction_input_witness/transaction_outputs untouched;
+                            only utxo_state rows deleted (orphaned-block-created outputs) or restored
+                            (orphaned-block-spent outputs), plus addresses/sync_state rebuilt
+
+  STORAGE TYPES
+
+  Hashes:      lowercase hex TEXT, with CHECK (~ '^[0-9a-f]{64}$') format constraints — deliberate choice,
+               documented (debugging/lookup simplicity, matches the API's hex boundary anyway)
+  Scripts:     BYTEA (script_pubkey, script_sig, coinbase)
+  Witness:     BYTEA (transaction_input_witness.data; output_participants.pubkey)
+  P2QPK representation: script_type='p2qpk' is the sole source of truth — is_p2qpk removed entirely;
+               structural CHECK ties it to witness_version=2 AND octet_length(witness_program)=32
+
+  ACCOUNTING
+
+  output_addresses:      balance-accounting destinations only; BEFORE INSERT/UPDATE trigger rejects any
+                          row for a script_type='multisig' output
+  output_participants:   multisig co-signer identities, display/search only; trigger requires
+                          script_type='multisig'
+  Address aggregation invariant: TestInvariant_MultisigParticipantsNeverCreateDestinationRows — PASS
+                          (2 participant rows inserted successfully; destination-address insert for the
+                          same output rejected by Postgres itself, not just application code)
+
+  SYNC STATE
+
+  Uninitialized representation: indexed_height=-1, indexed_block_hash=NULL (bootstrap row inserted by
+                          the up migration)
+  Constraint:             CHECK enforcing (height=-1 AND hash IS NULL) OR (height>=0 AND hash IS NOT NULL);
+                           both contradictory directions tested independently (separate transactions, since
+                           a constraint violation aborts the current transaction)
+
+  MIGRATIONS
+
+  Files:            migrations/0001_initial.up.sql, migrations/0001_initial.down.sql
+  Apply test:        TestMigrations_ApplyToEmptyDB — PASS
+  Rollback test:      TestMigrations_RollbackCleanly — PASS
+  Reapply test:       TestMigrations_ReapplyAfterRollback — PASS
+
+  DATABASE INVARIANT TESTS
+
+  A. Migrations apply cleanly to empty DB                         PASS
+  B. Migrations roll back cleanly                                  PASS
+  C. Migrations reapply after rollback                              PASS
+  D. Duplicate canonical block height rejected                       PASS
+  E. Same txid associated with two different block hashes             PASS
+  F. Raw witness BYTEA preserves 17,088-byte P2QPK signature exactly   PASS
+  G. transaction_outputs preserves zero-value OP_RETURN outputs        PASS
+  H. Bare multisig participants never create destination-address rows   PASS
+  I. Malformed script_type rejected                                     PASS
+  J. Uninitialized sync state valid                                      PASS
+  K. Contradictory initialized sync state rejected (both directions)      PASS
+
+  QUALITY
+
+  gofmt:      clean
+  go vet:      clean
+  go test:      PASS (all packages, including internal/store DB tests)
+  go test -race: PASS
+  go build:     clean
+
+  FILES MODIFIED OUTSIDE PROJECT
+
+  NONE
+  Verified via git status in eiquidus, qogecoin, and symbiont-wallet — all show only pre-existing, session-unrelated state.
+
+  Not merged. Not starting Phase 2B.2. Stopping here for independent schema review.
+
+✻ Worked for 30m 39s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
