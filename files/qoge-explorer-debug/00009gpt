@@ -1,0 +1,229 @@
+00009 passes my final internal review. I also checked the actual GitHub branch rather than relying only on Claude’s report.
+
+The final hardening commit is 5d0877ab19140a9e2b54277a9358eb86a5ec5b49. Claude changed chain.Transaction.Version to uint32, PostgreSQL transactions.version to BIGINT with the full 0..4294967295 range, added the canonical-block checkpoint trigger, updated the PR description, and reran the complete uncached test/race/build suite successfully. The actual Go model now carries both TxID and WTxID and uses the intended unsigned version representation.
+
+The actual migration also matches the intended design: sync_state now verifies its initialized hash against an existing canonical block and derives the height from that block; transactions.version has uint32 bounds; and the normalized transaction_variants table remains the home for wtxid-specific size/vsize/weight.
+
+GitHub currently reports PR #2 open, not merged, and mergeable, with the expected head 5d0877ab.... Its description has also been updated to reflect the final txid/wtxid, exact-prevout, witness, migration-checksum, version, and checkpoint architecture.
+
+I found no new blocking schema issue in this pass. At this point I would stop iterating internally and do exactly what we planned: hand the finalized PR to the Claude Code session that developed/reviewed the P2QPK soft fork.
+
+Paste this into that P2QPK Dev session:
+
+Please perform the final independent P2QPK/Core-facing review of:
+
+https://github.com/QOGE/qoge-explorer/pull/2
+
+Expected PR head:
+
+5d0877ab19140a9e2b54277a9358eb86a5ec5b49
+
+This is the FINAL Phase 2B.1 PostgreSQL schema before the explorer's actual
+store/indexer implementation begins.
+
+IMPORTANT
+=========
+
+Do NOT modify the repository.
+Do NOT merge the PR.
+Review the ACTUAL current PR code/diff, not an older description or report.
+
+You developed/reviewed the QOGE P2QPK soft fork, so concentrate on whether
+the explorer's persistence model faithfully represents Qogecoin Core and
+P2QPK behavior.
+
+
+1. TXID / WTXID MODEL
+=====================
+
+Verify against Qogecoin Core that:
+
+- RPC "txid" corresponds to GetHash()
+- txid excludes witness serialization
+- RPC "hash" corresponds to GetWitnessHash()
+- wtxid includes witness serialization
+- for transactions without witness, wtxid == txid
+- different witness serializations can share a txid while having different
+  wtxids
+
+Review the explorer model:
+
+transactions
+  = immutable non-witness transaction body, keyed by txid
+
+transaction_variants
+  = concrete full serialization, keyed by wtxid and associated with txid
+
+block_transactions
+  = exact txid/wtxid variant appearing at a block position
+
+transaction_input_witness
+  = witness data keyed by wtxid, not only txid
+
+Confirm there is no Core/P2QPK discrepancy.
+
+
+2. P2QPK WITNESS PRESERVATION
+=============================
+
+Verify that the schema can faithfully preserve a P2QPK spend:
+
+- witness v2 output
+- 32-byte HASH256(pubkey) witness program
+- 32-byte SLH-DSA public key
+- exactly 17,088-byte SLH-DSA signature
+- witness stack order [signature, pubkey]
+- arbitrary witness bytes preserved byte-for-byte as BYTEA
+
+Confirm the txid/wtxid split is correct for P2QPK and that two different
+valid P2QPK witnesses for the same txid cannot overwrite each other.
+
+
+3. OUTPUT CLASSIFICATION
+========================
+
+Verify the structural metadata assumptions:
+
+p2wpkh:
+  v0 / 20
+
+p2wsh:
+  v0 / 32
+
+p2tr:
+  v1 / 32
+
+p2qpk:
+  v2 / 32
+
+unknown_witness:
+  nonzero witness version
+  structurally valid 2..40-byte witness program
+  excluding the named v1/32 and v2/32 forms
+
+unknown witness-v0 form:
+  v0
+  2..40 bytes
+  excluding lengths 20 and 32
+
+Confirm the explorer is representing Core classification rather than
+attempting consensus validation itself.
+
+
+4. TRANSACTION VERSION
+======================
+
+Review the final change:
+
+Go:
+  Version uint32
+
+PostgreSQL:
+  BIGINT with CHECK 0..4294967295
+
+The rationale is that Core stores nVersion internally as int32_t but
+TxToUniv exposes:
+
+  static_cast<uint32_t>(tx.nVersion)
+
+Confirm this is the correct representation for an explorer consuming Core
+RPC.
+
+
+5. IMMUTABLE VS CANONICAL STATE
+===============================
+
+Review whether this distinction is sound:
+
+Immutable/audit history:
+- blocks
+- transactions
+- transaction_variants
+- block_transactions
+- transaction_inputs
+- transaction_input_witness
+- transaction_outputs
+
+Canonical mutable state:
+- utxo_state
+- addresses
+- sync_state
+
+During reorgs orphan block bodies and transaction/witness history remain
+available while canonical UTXO/address/checkpoint state is rolled back.
+
+Confirm nothing here conflicts with Core transaction or reorg semantics.
+
+
+6. UTXO RELATIONSHIPS
+=====================
+
+Confirm the relational model correctly expresses:
+
+- creation transaction really occurred in creation block
+- spending input really exists
+- spending input's prev_txid/prev_vout exactly matches the UTXO being marked
+  spent
+- spending transaction really occurred in the claimed spending block
+
+No consensus decision is delegated to PostgreSQL; these are representation
+integrity constraints only.
+
+
+7. P2QPK ACTIVATION BOUNDARY
+============================
+
+Check that the schema does NOT incorrectly assume P2QPK is already ACTIVE.
+
+It should be capable of storing/classifying structurally P2QPK-shaped
+outputs independently from deployment status.
+
+Core remains authoritative for deployment status and consensus validity.
+
+The explorer should not infer validity merely from script_type='p2qpk'.
+
+
+8. DATA-LOSS / FUTURE-RISK REVIEW
+=================================
+
+Look specifically for anything that could:
+
+- lose a 17,088-byte P2QPK signature
+- collapse two wtxid variants into one
+- confuse txid and wtxid
+- reinterpret the 32-byte P2QPK program as a raw public key
+- confuse P2TR v1/32 and P2QPK v2/32
+- make future P2QPK indexing difficult once millions of rows exist
+- disagree with the actual Qogecoin Core serialization/RPC implementation
+
+
+REPORT ONLY
+===========
+
+P2QPK / CORE FINAL SCHEMA REVIEW
+================================
+
+PR head reviewed:
+Verdict: APPROVE / CHANGES REQUIRED
+
+TXID / WTXID:
+P2QPK witness representation:
+P2QPK output representation:
+Witness classification:
+Transaction version:
+Reorg/audit model:
+UTXO model:
+Activation-status handling:
+Data-loss risks:
+Consensus discrepancies:
+Architecture concerns:
+
+If APPROVE, explicitly state:
+
+  "No blocking Core/P2QPK discrepancy found. Phase 2B.1 is safe to merge."
+
+Do not modify anything.
+Do not merge.
+Stop after the report.
+
+If that session returns APPROVE, I think PR #2 should finally be merged and Phase 2B.1 closed. Then we can move to Phase 2B.2 with a genuinely reviewed storage contract instead of continuing to modify the schema underneath the indexer.
