@@ -1,0 +1,541 @@
+Phase 2A is now formally closed. Claude merged PR #1 with a normal merge commit 4440beaed274e5b66dc75896a204c9ded11efdad; local main and origin/main match, and the post-merge test/vet/build gates all passed. I independently confirmed on GitHub that PR #1 is closed and merged at that same merge commit.
+
+The ✘ Auto-update failed · Run claude doctor at the bottom is unrelated to the repository. Since Claude itself is functioning, it doesn't block development; claude doctor can be run later.
+
+Before we make PostgreSQL real, I spotted one relational-model issue worth resolving now, rather than after millions of rows exist. The current architecture gives transactions.txid a primary key while also putting block_hash directly on the transaction row. It then says orphan blocks are retained but their transaction/input/witness rows are deleted during reorg rollback.
+
+That works for ordinary linear indexing, but a transaction can legitimately occur in two competing blocks/forks. If we want orphan blocks to be a genuine audit trail, transaction identity and transaction occurrence should be separate concepts.
+
+I recommend splitting Phase 2B slightly:
+
+Phase 2B.1 = PostgreSQL schema + migrations + relational invariants.
+Phase 2B.2 = Go store implementation against that reviewed schema.
+
+That gives us one last schema review before storage code depends on it.
+
+Paste this into Claude:
+
+Begin Phase 2B.1 of QOGE Go Explorer.
+
+Phase 2A is merged into main.
+
+Repository:
+  https://github.com/QOGE/qoge-explorer
+
+Reviewed Phase 2A merge commit:
+  4440beaed274e5b66dc75896a204c9ded11efdad
+
+IMPORTANT
+=========
+
+Do not immediately transcribe the existing ARCHITECTURE.md PostgreSQL sketch
+into migrations.
+
+We are now turning the conceptual schema into the permanent relational model,
+so first resolve the invariants below.
+
+Create a new branch from current origin/main:
+
+  phase2b-postgres-schema
+
+Verify before work:
+
+- git status clean
+- local main == origin/main
+- HEAD == 4440beaed274e5b66dc75896a204c9ded11efdad
+
+Do not modify main directly.
+
+
+PHASE 2B.1 SCOPE
+================
+
+Implement:
+
+- final PostgreSQL relational schema
+- SQL migrations
+- migration runner/foundation if needed
+- schema/invariant tests
+- PostgreSQL development environment verification
+
+Do NOT implement yet:
+
+- blockchain indexer
+- historical synchronization
+- RPC -> chain translation
+- block ingestion loop
+- public API
+- web UI
+- production systemd service
+- full store/write API
+
+We will review the schema before Phase 2B.2 store code.
+
+
+1. POSTGRESQL ENVIRONMENT
+=========================
+
+Inspect the VM first:
+
+  psql --version
+  pg_config --version
+  systemctl status postgresql --no-pager
+  apt-cache policy postgresql
+
+Do not assume PostgreSQL is already installed.
+
+On Ubuntu 24.04, if PostgreSQL is absent, install the normal distro PostgreSQL
+packages.
+
+Do NOT add a third-party PostgreSQL repository unless there is a concrete
+reason and you stop to explain it first.
+
+Report the actual installed PostgreSQL major version.
+
+Do not expose database passwords in terminal reports or Git commits.
+
+
+2. IMPORTANT TRANSACTION / BLOCK MODEL CORRECTION
+=================================================
+
+The Phase-1 architecture currently defines:
+
+  transactions.txid PRIMARY KEY
+
+while also storing:
+
+  block_hash
+  block_height
+  tx_index
+
+directly on that transaction row.
+
+That conflates two different things:
+
+A. transaction identity/body
+B. occurrence of that transaction in a particular block
+
+A transaction with the same txid may appear in competing branches, and we
+intend to retain orphan blocks as an audit trail.
+
+Therefore use a normalized model.
+
+Preferred design:
+
+  transactions
+    txid PRIMARY KEY
+    version
+    locktime
+    size
+    vsize
+    weight
+    is_coinbase
+    fee_satoshis
+    indexed_at
+
+Transaction body is immutable and block-independent.
+
+Add:
+
+  block_transactions
+    block_hash
+    tx_index
+    txid
+    block_height
+
+with appropriate foreign keys and uniqueness.
+
+At minimum:
+
+  PRIMARY KEY (block_hash, tx_index)
+  UNIQUE (block_hash, txid)
+
+This allows the same transaction body to be associated with more than one
+competing block without duplicating the transaction itself.
+
+Document clearly:
+
+  transaction != transaction occurrence
+
+
+3. OUTPUT / UTXO MODEL
+======================
+
+Separate immutable transaction output data from canonical-chain spend state.
+
+transaction_outputs should describe the transaction body:
+
+  txid
+  vout_index
+  value_satoshis
+  script_pubkey
+  script_type
+  witness_version
+  witness_program
+
+Do NOT put branch-dependent creation/spending state directly into the
+immutable output identity unless there is a very strong reason.
+
+Preferred additional canonical-state table:
+
+  utxo_state
+
+keyed by:
+
+  txid
+  vout_index
+
+and carrying canonical-chain information such as:
+
+  creation_block_hash
+  creation_block_height
+  spent
+  spending_txid
+  spending_vin_index
+  spending_block_hash
+  spending_block_height
+
+This table represents the CURRENT canonical UTXO state and is deliberately
+mutable during normal indexing/reorgs.
+
+Immutable transaction/output records can remain available for orphan-chain
+audit while canonical UTXO state changes safely.
+
+Evaluate this design carefully against the planned reorg algorithm.
+
+
+4. REORG INVARIANT
+==================
+
+Update ARCHITECTURE.md so a reorg does NOT require deleting immutable
+transaction bodies merely because their block became orphaned.
+
+Preferred semantics:
+
+- blocks remain, marked canonical/orphaned
+- transactions remain
+- transaction_inputs remain
+- witness data remains
+- transaction_outputs remain
+- block_transactions preserves which blocks contained which transactions
+
+Only canonical derived state is rolled back/rebuilt:
+
+- utxo_state
+- address caches
+- sync_state
+- other explicitly derived canonical caches
+
+This gives us a real orphan-chain audit trail.
+
+
+5. RAW BYTE STORAGE
+===================
+
+Review the current proposed TEXT-hex columns.
+
+For raw binary blockchain data prefer PostgreSQL BYTEA where appropriate:
+
+- coinbase script
+- scriptSig
+- witness items
+- scriptPubKey
+- witness program
+- pubkeys where stored
+
+Avoid storing binary data as hex TEXT unless there is a specific query or
+operational advantage.
+
+Hex encoding belongs primarily at the API/display boundary.
+
+Hash/txid/block-hash columns may remain canonical lowercase TEXT if that
+meaningfully simplifies lookup/debugging; make an explicit decision and
+document it.
+
+
+6. P2QPK REDUNDANCY
+===================
+
+The current schema sketch contains both:
+
+  script_type = 'p2qpk'
+
+and:
+
+  is_p2qpk BOOLEAN
+
+Do not create two independent sources of truth.
+
+Prefer removing is_p2qpk entirely because:
+
+  script_type = 'p2qpk'
+
+already expresses the classification.
+
+If you retain it for indexing/query reasons, it must be mechanically derived
+or protected by a database constraint so contradictory states are impossible.
+
+P2QPK structural truth remains:
+
+  witness_version = 2
+  witness_program length = 32 bytes
+
+Do not put consensus validation in PostgreSQL.
+
+
+7. MULTISIG ACCOUNTING MODEL
+============================
+
+Preserve the reviewed Phase-2A correction:
+
+  output_addresses
+    destination identities used in balance accounting
+
+  output_participants
+    bare-multisig participant identities used for search/display
+
+NEVER aggregate balances using output_participants.
+
+The schema should make accidental multisig balance multiplication difficult.
+
+
+8. SYNC STATE
+=============
+
+Design bootstrap state explicitly.
+
+Do not require a fake block hash for an uninitialized explorer.
+
+For example:
+
+  indexed_height = -1
+  indexed_block_hash = NULL
+
+with a CHECK constraint ensuring:
+
+  height = -1 -> hash IS NULL
+  height >= 0 -> hash IS NOT NULL
+
+or an equivalent clean representation.
+
+The checkpoint will later be updated as the FINAL statement inside the same
+SQL transaction as canonical block-state changes.
+
+
+9. CONSTRAINTS / INDEXES
+========================
+
+Add database constraints for invariants where inexpensive and useful.
+
+Examples to evaluate:
+
+- nonnegative vout/vin indexes
+- nonnegative output value
+- witness version range 0..16 when non-null
+- witness program presence matches witness version presence
+- canonical block uniqueness per height
+- transaction position uniqueness per block
+- foreign-key integrity for output address/participant relations
+- no invalid script_type strings
+- sync-state initialization consistency
+
+Do not over-constrain historical blockchain data based on relay policy.
+The explorer must represent valid historical/nonstandard chain data.
+
+
+10. MIGRATIONS
+==============
+
+Create real versioned migrations in the repository.
+
+Use a simple, reviewable migration layout, for example:
+
+  migrations/
+    0001_initial.up.sql
+    0001_initial.down.sql
+
+or a similarly conventional structure.
+
+Do not introduce a large migration framework unless necessary.
+
+If a lightweight Go migration dependency is added, justify it.
+
+Prefer migrations that can be run repeatedly only through tracked migration
+state — not ad-hoc shell SQL.
+
+
+11. DATABASE TESTS
+==================
+
+Add tests that can run against a disposable local test database.
+
+At minimum prove:
+
+A. migrations apply cleanly to an empty DB
+B. migrations roll back cleanly where supported
+C. migrations can be reapplied after rollback
+D. duplicate canonical block height is rejected
+E. same txid can be associated with TWO different block hashes through
+   block_transactions
+F. raw witness BYTEA preserves a 17,088-byte P2QPK signature exactly
+G. transaction outputs preserve zero-value OP_RETURN outputs
+H. bare multisig participants do not create destination-address balance rows
+I. malformed script_type is rejected
+J. uninitialized sync state is valid
+K. contradictory initialized sync state is rejected
+
+Do NOT manufacture or broadcast transactions.
+These are database fixtures only.
+
+
+12. GO DATABASE DRIVER
+======================
+
+For the future store layer, prefer a well-maintained PostgreSQL-native Go
+driver such as pgx v5 unless the existing project has a reason to choose
+otherwise.
+
+Do not build the full store layer in this phase.
+
+It is acceptable to add the minimal connection/migration plumbing necessary
+for schema tests.
+
+
+13. ARCHITECTURE UPDATE
+=======================
+
+Update docs/ARCHITECTURE.md to match the FINAL schema.
+
+Do not leave the old schema example contradicting the migrations.
+
+Especially update:
+
+- transaction/block occurrence relationship
+- immutable vs canonical-derived data
+- reorg procedure
+- UTXO state
+- binary storage decisions
+- P2QPK representation
+- multisig participant accounting
+
+
+14. QUALITY GATES
+=================
+
+Run:
+
+  gofmt -l .
+  go vet ./...
+  go test ./...
+  go test -race ./...
+  go build ./...
+
+Also run the PostgreSQL migration/invariant tests.
+
+Verify:
+
+- no secrets committed
+- no .env committed
+- no generated binaries committed
+- no modifications outside qoge-explorer
+
+
+15. COMMIT / PR
+===============
+
+Commit on:
+
+  phase2b-postgres-schema
+
+Suggested commit message:
+
+  feat: add PostgreSQL schema and migration foundation
+
+Push the branch.
+
+Create a PR:
+
+Title:
+
+  Phase 2B.1: PostgreSQL schema and migration foundation
+
+Base:
+  main
+
+Head:
+  phase2b-postgres-schema
+
+Do NOT merge it.
+
+Stop for independent schema review.
+
+
+FINAL REPORT
+============
+
+PHASE 2B.1 — POSTGRESQL SCHEMA
+------------------------------
+
+Branch:
+Commit:
+PR:
+PostgreSQL version:
+
+TRANSACTION MODEL
+-----------------
+Transaction identity:
+Block occurrence model:
+Competing-block same-txid test:
+
+UTXO MODEL
+----------
+Immutable output model:
+Canonical state model:
+Reorg behavior:
+
+STORAGE TYPES
+-------------
+Hashes:
+Scripts:
+Witness:
+P2QPK representation:
+
+ACCOUNTING
+----------
+output_addresses:
+output_participants:
+Address aggregation invariant:
+
+SYNC STATE
+----------
+Uninitialized representation:
+Constraint:
+
+MIGRATIONS
+----------
+Files:
+Apply test:
+Rollback test:
+Reapply test:
+
+DATABASE INVARIANT TESTS
+------------------------
+List each test and PASS/FAIL.
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+Must say NONE.
+
+Stop. Do not merge and do not begin Phase 2B.2.
+
+This is the right moment to make that transaction-occurrence correction because the current document still couples each txid to one block_hash, while the reorg section deletes transaction bodies from orphan blocks. Once PostgreSQL starts filling with millions of rows, changing that relationship becomes much more expensive.
+
+After this PR, Phase 2B.2 should be comparatively straightforward: implement the Go store around already-reviewed SQL invariants instead of designing relational semantics while writing the indexer.
