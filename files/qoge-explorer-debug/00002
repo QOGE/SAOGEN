@@ -1,0 +1,51 @@
+Numbering intact. Now the full quality gate re-run.
+     
+  Ran 1 shell command 
+
+● All quality gates pass. Now the pre-commit review — no changes outside qoge-explorer, no secrets/binaries.
+
+  Ran 2 shell commands 
+
+● Good — exactly the expected 9 modified files, all inside the project. Checking for secrets/binaries, then committing.
+
+  Committed 290f205, pushed to phase2-chain-script, ran 2 shell commands 
+
+● PR #1 updated automatically to the new commit and remains open (not merged).
+
+  PR #1 REVIEW FIXES
+
+  P2TR:                    Added TypeP2TR ("p2tr"); v1/32 -> P2TR, verified positively against the real
+                            height-1,284,510 Taproot output and negatively as a P2QPK false-positive guard
+  Witness-v0 semantics:     v0/{19,21,31,33} -> TypeUnknown (not UnknownWitness), mirroring Core's Solver()
+                            fallthrough to TxoutType::NONSTANDARD for off-length v0 programs; v0/20 and
+                            v0/32 unchanged (P2WPKH/P2WSH); v>0 unrecognized still -> UnknownWitness
+  Multisig 17-20:           Rewrote matchMultisig as a Core-mirroring tokenizer: m/n via small-int opcode
+                            (1-16) or minimal single-byte push (17-20, maxPubKeysPerMultisig=20); pubkey
+                            pushes validated by prefix+length (isPubKeyPush, mirrors CPubKey::ValidSize)
+  Multisig accounting model: docs/ARCHITECTURE.md corrected — output_addresses (balance-accounting
+                            destinations, 0-1 row) split from new output_participants (multisig co-signer
+                            identities, display/search only, never joined into balance aggregation)
+  Amount API:               QOGE() renamed WholeQOGE() (was misleadingly named); String() fixed to never
+                            overflow at math.MinInt64 (uint64 magnitude via the -(a+1)+1 idiom)
+  Tests added:              TestClassify_RealTaproot_IsNeverP2QPK, TestClassify_WitnessV0Fallback (4 cases),
+                            TestMatchMultisig boundary subtests (16/17/20-of-N) + 9 new invalid cases
+                            (non-minimal m, non-minimal n, m>n, n≠actual count, 21-of-21 over max, 0-of-0,
+                            bad pubkey prefix), TestAmount_String_MinInt64
+  go vet:                   clean
+  go test:                  PASS (all packages)
+  go test -race:            PASS
+  go build:                 clean
+  Commit:                   290f205851d390ddab0b1303cfb74ece651bdd7e
+  PR head:                  https://github.com/QOGE/qoge-explorer/pull/1 (updated to 290f205, OPEN, not merged)
+  Files modified outside project: NONE
+
+  Verified via git status in eiquidus, qogecoin, and symbiont-wallet — all show only pre-existing, session-unrelated state. Still on phase2-chain-script, main untouched. Stopping here for the next review.
+
+✻ Cogitated for 9m 57s
+
+※ recap: Building a Go block explorer for QOGE; Phase 2A (chain model + script classification) just got fixed per PR review feedback and pushed. Next: waiting for you to re-review PR #1 before merging or starting Phase 2B.
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Merge PR #1 into main
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
