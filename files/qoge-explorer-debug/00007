@@ -1,0 +1,93 @@
+● Now the final full quality gate re-run before committing.
+
+  Ran 1 shell command 
+
+● All green. Now staging, reviewing, and committing.
+
+  Ran 1 shell command 
+
+● Exactly the expected 7 files, all inside the project. Committing.
+
+  Committed cf503ac, pushed to phase2b-postgres-schema, ran 1 shell command 
+
+● PR #2 updated and remains open, not merged.
+
+  PHASE 2B.1 REVIEW FIXES
+
+  Commit:   cf503acc9f2c9a905274160ff5796135433c0a1d
+  PR head:  https://github.com/QOGE/qoge-explorer/pull/2 (OPEN, not merged)
+
+  P2QPK STRUCTURAL CHECK
+
+  Replaced the two-constraint design (witness_presence_consistency + p2qpk_structural_consistency) with one transaction_outputs_witness_metadata_consistency CASE script_type ... END constraint. Root cause of the loophole: Postgres treats a NULL-valued CHECK result as satisfied, and script_type <> 'p2qpk' OR (witness_version = 2 AND ...) evaluates to NULL (not FALSE) when witness_version is NULL. Every branch of the new constraint is written so it can only ever
+  evaluate to TRUE/FALSE — every nullable comparison is preceded by an IS [NOT] NULL check. Now covers all known witness types (p2wpkh v0/20, p2wsh v0/32, p2tr v1/32, p2qpk v2/32, unknown_witness version>0, legacy types carry no witness metadata, unknown allows either no metadata or an off-length v0 program). 25-case table-driven test (TestInvariant_WitnessMetadataConsistency) — all PASS, including the exact p2qpk+NULL/NULL loophole scenario, v1/32, v2/31, v2/33
+  (all rejected) and v2/32 (accepted).
+
+  DESTINATION CARDINALITY
+
+  output_addresses primary key changed from (txid, vout_index, address) to (txid, vout_index) — at most one destination row per output, enforced structurally. TestInvariant_OneDestinationAddressPerOutput — PASS (first address accepted, second different address for the same output rejected).
+
+  UTXO RELATIONAL INTEGRITY
+
+  Three composite FKs added to utxo_state: (creation_block_hash, txid) → block_transactions(block_hash, txid), (spending_txid, spending_vin_index) → transaction_inputs(txid, vin_index), (spending_block_hash, spending_txid) → block_transactions(block_hash, txid). creation_block_height/spending_block_height are now trigger-derived (utxo_state_derive_heights, mirroring the existing block_transactions_set_height pattern) — never trusted from the caller. All 5
+  required tests PASS: wrong creation block rejected, nonexistent spending input rejected, spending tx not in claimed block rejected, wrong supplied heights don't persist (real values overwrite them), valid spend relationship succeeds (with correct heights on both sides).
+
+  TEST DATABASE SAFETY
+
+  DROP SCHEMA public CASCADE removed entirely. Each test now creates a uniquely-named schema (qoge_test_<24 random hex chars>), pins every pool connection's search_path to it via pgxpool.AfterConnect, and drops only that schema on cleanup. A misconfigured QOGE_TEST_DATABASE_URL can no longer destroy public or any pre-existing data — worst case is one harmless leftover empty schema if cleanup itself fails. Verified: zero leftover qoge_test_* schemas after the full
+  suite runs; public schema confirmed untouched by the automated tests.
+
+  MIGRATION DRIFT PROTECTION
+
+  schema_migrations now stores a SHA-256 checksum of each migration's UpSQL alongside version/name. VerifyChecksums runs at the start of both Up and Down, before any other action, and fails loudly (naming the exact version) if an already-applied migration's checksum or name no longer matches what's recorded. TestMigrations_ChecksumDriftDetected (mutates loaded UpSQL in memory post-apply, confirms VerifyChecksums, Up, and Down all reject it) and
+  TestMigrations_NameDriftDetected — both PASS.
+
+  NUMERIC INVARIANTS
+
+  blocks.nonce, transactions.locktime, transaction_inputs.sequence constrained to [0, 4294967295] (uint32 range); fee_satoshis >= 0 when non-NULL; coinbase transactions may not carry a fee value at all. No relay-policy constraints added. TestInvariant_Uint32RangeRejected (6 subtests: negative/over-max for each field, plus boundary values 0/4294967295 accepted) and TestInvariant_FeeConstraints (3 subtests) — all PASS.
+
+  DATABASE TESTS
+
+  All PostgreSQL-backed tests (internal/store), full run:
+  TestInvariant_DuplicateCanonicalHeightRejected                    PASS
+  TestInvariant_SameTxidTwoBlocks                                    PASS
+  TestInvariant_WitnessBYTEAPreservesLargeSignature                  PASS
+  TestInvariant_ZeroValueNullDataOutputPreserved                     PASS
+  TestInvariant_MultisigParticipantsNeverCreateDestinationRows       PASS
+  TestInvariant_MalformedScriptTypeRejected                          PASS
+  TestInvariant_UninitializedSyncStateValid                          PASS
+  TestInvariant_ContradictorySyncStateRejected (2 subtests)          PASS
+  TestInvariant_WitnessMetadataConsistency (25 subtests)             PASS
+  TestInvariant_OneDestinationAddressPerOutput                       PASS
+  TestInvariant_UTXOCreationOccurrenceFKRejectsWrongBlock            PASS
+  TestInvariant_UTXOSpendingInputFKRejectsNonexistentInput           PASS
+  TestInvariant_UTXOSpendingBlockOccurrenceFKRejectsWrongBlock       PASS
+  TestInvariant_UTXOHeightsCannotPersistWrong                        PASS
+  TestInvariant_UTXOValidSpendSucceeds                                PASS
+  TestInvariant_Uint32RangeRejected (6 subtests)                      PASS
+  TestInvariant_FeeConstraints (3 subtests)                            PASS
+  TestMigrations_ApplyToEmptyDB / RollbackCleanly / ReapplyAfterRollback PASS
+  TestLoadMigrations_RequiresBothDirections                            PASS
+  TestMigrations_ChecksumDriftDetected / NameDriftDetected             PASS
+
+  QUALITY
+
+  gofmt:       clean
+  go vet:      clean
+  go test:      PASS (all packages)
+  go test -race: PASS
+  go build:     clean
+
+  FILES MODIFIED OUTSIDE PROJECT
+
+  NONE
+  Verified via git status in eiquidus, qogecoin, and symbiont-wallet — all show only pre-existing, session-unrelated state.
+
+  Not merged. Not starting Phase 2B.2. Stopping here for final schema review.
+
+✻ Sautéed for 14m 40s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Merge PR #2 into main.
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
