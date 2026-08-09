@@ -1,0 +1,90 @@
+I read the debug file and re-reviewed the live PR #1 at its new head 290f205851d390ddab0b1303cfb74ece651bdd7e. The five requested fixes were applied, all quality gates passed, and the PR remains open/mergeable.
+
+I found two small Core-parity issues remaining, so I would make one final tiny correction before merging.
+
+First, matchP2PK() currently accepts any 33- or 65-byte blob followed by OP_CHECKSIG; it doesn't validate the public-key prefix. Core's MatchPayToPubkey() explicitly calls CPubKey::ValidSize(), and Core's ValidSize() checks that 33-byte keys start with 02/03 and 65-byte keys with 04/06/07. Conveniently, Claude already wrote isPubKeyPush() with exactly this behavior for multisig—matchP2PK() should reuse it.
+
+Second, nextToken() says it mirrors CScript::GetOp for OP_PUSHDATA1/2/4, but it actually implements only PUSHDATA1 and PUSHDATA2; PUSHDATA4 falls into the generic opcode case. This is obscure and probably never appears in QOGE history, but Core's MatchMultisig() consumes pubkeys through GetOp, so a nonminimal PUSHDATA4 pubkey can still structurally reach Core's multisig classifier. Since we're deliberately building a historical explorer rather than only a standard-transaction generator, I'd match Core here too.
+
+Give Claude this:
+
+One final PR #1 review found two small Core-parity issues.
+
+Stay on phase2-chain-script.
+Do NOT merge yet.
+Do NOT start Phase 2B.
+
+1. P2PK PUBKEY VALIDATION
+
+Current matchP2PK checks only:
+- direct push length 33 or 65
+- OP_CHECKSIG terminator
+
+But Qogecoin Core MatchPayToPubkey() additionally calls:
+
+  CPubKey::ValidSize(pubkey)
+
+and CPubKey::ValidSize checks both length AND valid serialized-key prefix:
+
+  33 bytes: prefix 0x02 or 0x03
+  65 bytes: prefix 0x04, 0x06 or 0x07
+
+We already have isPubKeyPush() implementing this correctly for multisig.
+
+Reuse it in matchP2PK so classification matches Core.
+
+Add negative tests:
+- 33-byte key with prefix 0x05 -> NOT P2PK
+- 65-byte key with invalid prefix -> NOT P2PK
+
+Keep the real block-1 and block-5000 P2PK tests passing.
+
+
+2. nextToken OP_PUSHDATA4
+
+The nextToken comment says it mirrors enough of CScript::GetOp to handle:
+
+  OP_PUSHDATA1/2/4
+
+but the implementation currently handles only PUSHDATA1 and PUSHDATA2.
+PUSHDATA4 falls through as an ordinary opcode.
+
+Add bounds-checked OP_PUSHDATA4 decoding, matching the existing logic in
+isPushOnly.
+
+Add at least one test showing that a structurally valid bare multisig pubkey
+pushed through OP_PUSHDATA4 is tokenized/classified consistently with Core's
+GetOp + MatchMultisig behavior.
+
+Also add truncated PUSHDATA4 malformed cases and ensure they never panic.
+
+
+3. QUALITY GATES
+
+Run:
+
+  gofmt -l .
+  go vet ./...
+  go test ./...
+  go test -race ./...
+  go build ./...
+
+Commit on the same branch with:
+
+  fix: complete Core parity for legacy script parsing
+
+Push normally so PR #1 updates.
+
+Do not merge.
+
+Report:
+- P2PK invalid-prefix behavior
+- PUSHDATA4 behavior
+- tests added
+- quality gates
+- commit hash
+- PR head
+
+Stop for final review.
+
+After those two details, I expect PR #1 to be ready to merge. I don't see a remaining problem with the P2QPK implementation itself; v2/32 detection, P2TR separation, v0 semantics, multisig accounting separation, and the amount fixes now look good.
