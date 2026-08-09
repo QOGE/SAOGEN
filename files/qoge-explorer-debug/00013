@@ -1,0 +1,108 @@
+● Now let's verify the migration diff is zero and check the full file scope before committing.
+
+  Ran 1 shell command 
+
+● Zero migration changes confirmed. Let's do the final quality gate pass and check file scope.
+
+  Ran 3 shell commands 
+
+● Now the final uncached test suite run (full + race) after the doc update, to make sure nothing broke.
+
+  Ran 2 shell commands 
+
+● All green. Now checking file scope and secrets before committing.
+
+  Ran 1 shell command 
+
+● Exactly the expected files. Confirming no unrelated repos touched.
+
+  Ran 1 shell command 
+
+● Same pre-existing untracked state as always. Scanning for secrets, then staging and committing.
+
+  Ran 2 shell commands 
+
+● Clean. Committing on the branch as requested.
+
+  Committed b52cca8 
+
+● Now pushing to update PR #3.
+
+  Pushed to phase2b-store-engine, ran 1 shell command 
+
+● PR #3 remains OPEN, updated to the new commit. Producing the final report.
+
+  Ran 1 shell command 
+
+● PHASE 2B.2 REVIEW FIXES
+  =======================
+
+  Commit: b52cca8f7ca9d1017b53e97cb6c46091792f5070
+  PR head: b52cca8f7ca9d1017b53e97cb6c46091792f5070 (PR #3, state OPEN, not merged)
+
+  CANONICAL CONTINUITY
+  --------------------
+  Tip lock: lockCheckpoint (store.go) — SELECT indexed_height, indexed_block_hash FROM sync_state WHERE name='main' FOR UPDATE, held for the whole transaction; called at the very start of both ApplyBlock and RollbackTo.
+  Replay rule: block.Hash == checkpoint.Hash AND block.Height == checkpoint.Height → accepted (no-op).
+  Append rule: block.Height == checkpoint.Height+1 AND block.PreviousHash == checkpoint.Hash → accepted.
+  Rejected stale/orphan rule: anything else (height jump, wrong prevHash, any block below tip whether still-canonical or orphaned) → ErrNonSequentialBlock, rejected before any write. Uninitialized checkpoint (-1/NULL) still accepts any block as bootstrap, documented explicitly on ApplyBlock's doc comment and in ARCHITECTURE.md §16.
+
+  COMPLETE BLOCK
+  --------------
+  TxCount/list enforcement: validateBlockShape requires len(block.Transactions) == block.TxCount before any DB write, checked immediately after the lock, before applyBlockHeader → ErrIncompleteBlock on mismatch.
+  Header-only test: TxCount=1/Transactions=nil rejected, zero DB writes — PASS.
+
+  IMMUTABLE COMPLETENESS
+  ----------------------
+  Inputs: verifyExactCount against transaction_inputs per txid, gated on !transactionFresh — added/omitted input on replay → ErrImmutableConflict.
+  Outputs: same pattern against transaction_outputs per txid — added/omitted output on replay → ErrImmutableConflict. output_addresses omission-on-replay and output_participants shape (ParticipantAddresses parallel to PubKeys, no silent skipping) also enforced.
+  Witness: verifyExactCount against transaction_input_witness per (wtxid, vin_index) — checked per-input, not aggregated, so a witness item "moved" between inputs is caught too — gated on !variantFresh.
+  Block occurrences: verifyExactCount against block_transactions per block_hash, gated on !blockFresh.
+  Index-set enforcement: validateBlockShape requires chain.Input.Index/chain.Output.Index == array position — makes "index moved to another slot" structurally inexpressible, reducing every completeness check above to a simple count comparison instead of a full set comparison.
+
+  ORPHAN RE-PROMOTION
+  -------------------
+  Reactivation behavior: applyBlockHeader, on finding an existing header-matching-but-orphaned row (only reachable once continuity has already proven immediate-child status), sets canonical=true, orphaned_at=NULL; canonical UTXO/address state is rebuilt by the ordinary per-transaction idempotent-insert path (RollbackTo never deleted those rows, only utxo_state).
+  Tests: TestApplyBlock_OrphanRePromotion (apply A0→A1, rollback(A0), reapply A1 → canonical=true, orphaned_at=NULL, UTXOs/addresses restored, checkpoint=A1) and the "old orphan below current replacement tip" continuity subtest (non-immediate-child orphan rejected, state unchanged) — both PASS.
+
+  CONCURRENCY
+  -----------
+  Canonical mutation serialization: sync_state FOR UPDATE lock acquired by both ApplyBlock and RollbackTo, held to commit.
+  markSpent RowsAffected handling: inspects RowsAffected directly; on 0, re-reads current spender — exact-same-spender is treated as idempotent success, any other spender returns ErrDoubleSpend, never silent success.
+  Concurrency tests: TestApplyBlock_ConcurrentCompetingChildrenSerialize (two real goroutines race to apply competing children of the same tip — exactly one succeeds, the other gets a clean ErrNonSequentialBlock, not a raw DB error), TestRollbackTo_SerializesAgainstApplyBlock (concurrent Apply/Rollback leave one of two consistent final states, never corruption), TestMarkSpent_ZeroRowUpdateDetectsConflict (direct unit test of the hardened zero-row path) — all PASS, including under `go test -race`.
+
+  P2QPK
+  -----
+  17,088-byte preservation: unaffected, still exact byte-for-byte round-trip (TestApplyBlock_P2QPKWitnessPreservation, unchanged, still PASS).
+  txid/wtxid behavior: unaffected; TestApplyBlock_WtxidVariantsRemainDistinct still PASS under the new continuity/completeness rules (its rollback+replacement flow already followed proper continuity).
+
+  DATABASE TESTS
+  --------------
+  Existing A-X: all still PASS. Only test D ("contradictory block header data") was adjusted — its original same-hash/different-height fixture now legitimately trips the new continuity check first; redesigned to use a same-hash/height/prevHash (tip-replay) fixture with a differing merkle_root, correctly isolating header-content immutability. No test was weakened.
+  New regression tests: A–O all implemented and PASS — incomplete/header-only block rejected; TxCount/list mismatch rejected; non-sequential height rejected; wrong prevHash rejected; old orphan below tip cannot mutate state; previously-orphaned immediate child re-promoted; same-txid added/omitted input rejected; same-txid added/omitted output rejected; same-wtxid added/omitted witness item rejected; changed vin/vout index set rejected; canonical mutation lock protects concurrent Apply/Rollback; zero-row markSpent cannot silently succeed.
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, all packages, uncached (-count=1)
+  go test -race: PASS, all packages, uncached
+  go build: clean
+  PostgreSQL: all internal/store tests PASS (schema invariants + migration mechanics + store-engine tests + this round's continuity/completeness/concurrency tests), per-test isolated schemas, run uncached
+
+  MIGRATION DIFF
+  --------------
+  ZERO — confirmed via `git diff main...HEAD -- migrations/` (no output).
+
+  FILES MODIFIED OUTSIDE PROJECT
+  ------------------------------
+  NONE
+
+  Pushed to origin/phase2b-store-engine; PR #3 updated and confirmed OPEN (not merged). Stopping here for another independent review, per instructions.
+
+✻ Cogitated for 9m 59s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ✘ Auto-update failed · Run claude doctor
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Stop for another independent review.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
