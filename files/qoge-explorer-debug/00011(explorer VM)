@@ -1,0 +1,80 @@
+  Ran 1 shell command 
+
+● All checks match exactly: OPEN, MERGEABLE, base=main, head=phase2b-postgres-schema, head SHA matches expected 5d0877ab19140a9e2b54277a9358eb86a5ec5b49. Proceeding to merge with a normal merge commit.
+
+  Ran 3 shell commands 
+
+● PR #2 merged successfully as commit b3373aa0621cfe666689a318fb0e82995f07fb9e. Now updating local main.
+
+  Ran 2 shell commands 
+
+● Local main and origin/main are identical, working tree clean. Now the post-merge quality/migration verification.
+
+  Ran 3 shell commands 
+
+● All clean. Now the full test suite and race detector, loading the PostgreSQL test env.
+
+  Ran 2 shell commands 
+
+● All packages pass, uncached, both plain and with the race detector. Now confirming the specific migration/invariant test behaviors requested for the schema baseline.
+
+  Ran 2 shell commands 
+
+● Working tree is clean (no output from git status). Let's also confirm the other repos remain untouched.
+
+  Ran 1 shell command 
+
+● Same pre-existing untracked state as before — nothing changed outside the project. All post-merge verification complete.
+
+  PHASE 2B.1 MERGE
+  ================
+  PR: #2 — https://github.com/QOGE/qoge-explorer/pull/2
+  Reviewed head: 5d0877ab19140a9e2b54277a9358eb86a5ec5b49 (matched expected exactly, confirmed OPEN/MERGEABLE before merging)
+  Merge method: normal merge commit (--merge, no squash, no rebase)
+  Merge commit: b3373aa0621cfe666689a318fb0e82995f07fb9e
+
+  MAIN
+  ----
+  Local main HEAD: b3373aa0621cfe666689a318fb0e82995f07fb9e
+  origin/main HEAD: b3373aa0621cfe666689a318fb0e82995f07fb9e
+  Match: YES
+
+  PR STATE
+  --------
+  State: MERGED
+  Merged: yes, mergedAt 2026-08-09T11:43:39Z
+
+  POST-MERGE QUALITY
+  ------------------
+  gofmt: clean (no output)
+  go vet: clean
+  go test: PASS, all packages, uncached (-count=1)
+  go test -race: PASS, all packages, uncached
+  go build: clean
+  PostgreSQL tests: all internal/store tests PASS (migration mechanics + full invariant suite), loaded via .localdev/test.env, run uncached
+
+  SCHEMA BASELINE
+  ---------------
+  Migration version: 0001_initial (single migration; applies/rolls back/reapplies cleanly — TestMigrations_ApplyToEmptyDB, TestMigrations_RollbackCleanly, TestMigrations_ReapplyAfterRollback all PASS)
+  txid/wtxid model present: yes — transactions (non-witness body) / transaction_variants (wtxid-keyed) / block_transactions (txid+wtxid occurrence) / transaction_input_witness (wtxid-keyed)
+  P2QPK witness preservation test: TestInvariant_WitnessBYTEAPreservesLargeSignature PASS
+  UTXO exact-prevout test: TestInvariant_UTXOSpendMustMatchExactPrevout PASS (all 3 subtests: wrong-txid rejected, wrong-vout rejected, unspent row valid)
+  sync checkpoint test: TestInvariant_SyncStateCheckpointMustMatchCanonicalBlock PASS (all 5 subtests: bootstrap valid, canonical checkpoint valid, wrong height auto-corrected, unknown hash rejected, orphaned hash rejected)
+
+  WORKING TREE
+  ------------
+  Status: clean, main up to date with origin/main
+
+  FILES MODIFIED OUTSIDE PROJECT
+  ------------------------------
+  NONE
+
+  Stopping here per instructions. Not beginning Phase 2B.2, not modifying the merged schema, and leaving phase2b-postgres-schema in place.
+
+✻ Cogitated for 1m 41s
+                                                                                                                                                                                                                                                                                                                                                                                                                                          ✘ Auto-update failed · Run claude doctor
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Now start planning Phase 2B.2
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
+
