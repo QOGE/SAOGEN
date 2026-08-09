@@ -1,0 +1,109 @@
+I reviewed the new debug report and the actual final commit/diff on PR #1. From my side, Phase 2A now passes review and is ready to merge.
+
+The final head is 30944c6094daf84934e97d8c9962556f88d31f81; PR #1 is still open, unmerged, and GitHub reports it as mergeable. Claude also reran gofmt, go vet, go test, go test -race, and go build, all successfully.
+
+I checked the two final corrections themselves. matchP2PK() now validates the serialized public-key prefix through the same isPubKeyPush() logic used by multisig, which matches Core's CPubKey::ValidSize behavior rather than merely accepting any 33/65-byte blob. The real block 1 and block 5000 vectors remain regression tests. Core indeed defines valid serialized prefixes as 02/03 for compressed keys and 04/06/07 for 65-byte keys.
+
+nextToken() now properly parses OP_PUSHDATA4, with truncation and malformed-input testing, and there is a multisig regression test specifically proving that a PUSHDATA4-pushed pubkey behaves like Core's GetOp-based parser.
+
+So the review history now looks good:
+
+canonical chain model ✅
+exact integer monetary representation ✅
+P2PK / P2PKH / P2SH ✅
+P2WPKH / P2WSH ✅
+real P2TR recognized independently ✅
+P2QPK v2/32 structurally isolated from P2TR/future witness scripts ✅
+witness-v0 nonstandard semantics aligned with Core ✅
+bare multisig through 20 keys aligned with Core ✅
+multisig participants separated from balance ownership ✅
+malformed-script/panic coverage ✅
+legacy P2PK prefix validation aligned with Core ✅
+PUSHDATA1/2/4 parsing parity ✅
+
+There is only one non-code cosmetic issue: the PR description was written before the review fixes and still lists the original script-type set without p2tr, and describes the old v1/32 negative-test behavior. That doesn't affect the code. Claude can update the PR description while merging or leave the commit history as the authoritative record; I would not hold the merge for it.
+
+Before merge: the planned P2QPK-author review
+
+Since the reason we created GitHub at this stage was specifically to let the Claude session that developed the P2QPK soft fork independently inspect consensus-facing assumptions, this is the ideal moment to give it PR #1.
+
+Give that Claude session:
+
+Please perform a final independent consensus-facing review of:
+
+https://github.com/QOGE/qoge-explorer/pull/1
+
+Current expected head:
+
+30944c6094daf84934e97d8c9962556f88d31f81
+
+Context:
+
+This is Phase 2A of the new QOGE Go block explorer.
+
+Do NOT modify the repository.
+Do NOT merge the PR.
+
+You developed/reviewed the QOGE P2QPK soft fork, so concentrate especially
+on whether the explorer represents Qogecoin Core behavior correctly.
+
+Review the ACTUAL PR diff/code, not just the PR description.
+
+Please verify:
+
+1. P2QPK
+   - witness version 2
+   - 32-byte program
+   - program is HASH256(pubkey), not the raw pubkey
+   - P2QPK detection cannot accidentally classify P2TR/future witness outputs
+   - expected 32-byte pubkey / 17,088-byte signature metadata is correct
+
+2. Witness classification
+   - v0/20 P2WPKH
+   - v0/32 P2WSH
+   - v1/32 P2TR
+   - v2/32 P2QPK
+   - other v0 lengths follow Core NONSTANDARD behavior
+   - other nonzero witness programs follow WITNESS_UNKNOWN behavior
+
+3. Legacy scripts
+   - P2PK behavior agrees with Core MatchPayToPubkey
+   - multisig behavior agrees with Core MatchMultisig/GetScriptNumber
+   - PUSHDATA handling does not introduce a classification discrepancy
+
+4. Chain model
+   - witness data can preserve P2QPK spends byte-for-byte
+   - no field/layout decision will lose the ~17 KB SLH-DSA signature
+   - transaction size/vsize/weight representation is adequate
+
+5. Architecture
+   - nothing in Phase 2A attempts consensus validation itself
+   - Core remains authoritative
+   - no incorrect assumption will become difficult to fix once PostgreSQL
+     persistence begins in Phase 2B
+
+Report only:
+
+P2QPK CONSENSUS REVIEW
+======================
+
+PR head reviewed:
+Verdict: APPROVE / CHANGES REQUIRED
+
+Consensus discrepancies:
+P2QPK discrepancies:
+Witness classification discrepancies:
+Legacy-script discrepancies:
+Data-loss risks:
+Architecture concerns:
+
+If APPROVE, explicitly state:
+
+  "No blocking discrepancy found. Phase 2A is safe to merge from the
+   P2QPK/Core perspective."
+
+Do not modify anything and do not merge.
+
+If that Claude session returns APPROVE, I would merge PR #1 immediately. I recommend a normal merge commit, not squash, because the two review/fix commits are valuable engineering history showing exactly which Core-parity issues were discovered and corrected.
+
+After that, main becomes our reviewed Phase 2A baseline and we can move to Phase 2B: PostgreSQL schema/migrations + store foundation, without touching the indexer yet.
