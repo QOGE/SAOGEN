@@ -1,0 +1,275 @@
+I reviewed 00008 and the actual updated PR #2 at head efc4b108c43ba0cdc3fe48298d28f2e62f7dd0ef. GitHub now reports the PR open and mergeable, and Claude's fresh uncached Go/PostgreSQL tests all passed.
+
+The txid/wtxid redesign is correct. transactions is now the non-witness body, transaction_variants carries wtxid plus variant-specific size/vsize/weight, block occurrences identify the exact txid/wtxid pair, and witness rows are keyed by wtxid. That removes the P2QPK witness-overwrite problem we identified. The exact-prevout UTXO FK and tightened unknown-witness metadata also look correct in the actual migration. The 17,088-byte variant test is especially valuable.
+
+I found two last schema-hardening items before I would freeze Phase 2B.1. One is a real Core/RPC representation mismatch; the other protects the checkpoint that will control the entire indexer.
+
+1. Transaction version should use uint32 semantics
+
+The Go model still declares:
+
+Version int32
+
+and PostgreSQL currently stores:
+
+version INT NOT NULL
+
+But Qogecoin Core explicitly says transaction version is unsigned for consensus purposes and casts nVersion to uint32_t before exposing it through RPC. Core's internal object happens to store nVersion as int32_t, but the RPC value can therefore be in the full 0..4294967295 range.
+
+Ordinary PostgreSQL INT cannot represent values above 2147483647, and directly unmarshalling such an RPC number into Go int32 would also fail or require an intentional bit reinterpretation.
+
+Since this explorer consumes RPC rather than Core's C++ memory representation, the clean model is:
+
+Version uint32
+
+and:
+
+version BIGINT NOT NULL
+CHECK (version >= 0 AND version <= 4294967295)
+
+That matches what Core actually gives us over JSON and avoids special conversion logic later.
+
+2. sync_state should prove its checkpoint exists and is canonical
+
+The current bootstrap constraint correctly enforces -1/NULL versus >=0/hash, but after initialization it can still contain:
+
+indexed_height = 2,000,000
+indexed_block_hash = some other valid-looking 64-byte hash
+
+or even a hash not present in blocks.
+
+Given how central checkpoint correctness is to crash/reorg safety, PostgreSQL should derive the height from the block hash exactly as it already does for block_transactions and utxo_state.
+
+I would add a trigger so that for any initialized checkpoint:
+
+referenced block must exist;
+referenced block must currently be canonical = true;
+indexed_height is derived from blocks.height, never trusted from the caller.
+
+That makes it impossible for the durable checkpoint to disagree with the actual canonical block table.
+
+Give Claude this small final correction:
+
+One final PR #2 schema review found two small but important representation
+invariants.
+
+Stay on:
+
+  phase2b-postgres-schema
+
+Do NOT merge.
+Do NOT begin Phase 2B.2.
+
+Current head:
+
+  efc4b108c43ba0cdc3fe48298d28f2e62f7dd0ef
+
+
+1. TRANSACTION VERSION — MATCH CORE RPC UINT32 SEMANTICS
+=======================================================
+
+Qogecoin Core internally stores:
+
+  int32_t nVersion
+
+but Core's TxToUniv explicitly states transaction version is actually
+unsigned in consensus checks and exposes it to RPC as:
+
+  static_cast<uint32_t>(tx.nVersion)
+
+Therefore RPC "version" has uint32 semantics:
+
+  0 .. 4294967295
+
+The current explorer model:
+
+  chain.Transaction.Version int32
+
+and SQL:
+
+  transactions.version INT
+
+cannot naturally represent the full RPC range.
+
+Change the canonical Go model to:
+
+  Version uint32
+
+Change PostgreSQL to:
+
+  version BIGINT NOT NULL
+
+with:
+
+  CHECK (version >= 0 AND version <= 4294967295)
+
+This should match the same approach already used for locktime, sequence,
+and nonce.
+
+Add tests:
+
+- version 0 accepted
+- version 2147483647 accepted
+- version 2147483648 accepted
+- version 4294967295 accepted
+- negative SQL value rejected
+- 4294967296 rejected
+
+Update ARCHITECTURE.md to explain:
+
+  Core C++ memory type = int32_t
+  RPC/consensus-facing representation = uint32
+  explorer follows the RPC representation
+
+
+2. MAKE SYNC_STATE POINT TO THE ACTUAL CANONICAL BLOCK
+======================================================
+
+Current sync_state correctly distinguishes:
+
+  -1 / NULL = uninitialized
+
+from:
+
+  >=0 / hash = initialized
+
+but the initialized height/hash pair can still disagree with blocks.
+
+Add database enforcement for initialized sync_state.
+
+Preferred approach:
+
+Create a BEFORE INSERT OR UPDATE trigger on sync_state.
+
+If indexed_block_hash IS NULL:
+
+  require bootstrap representation:
+    indexed_height = -1
+
+If indexed_block_hash IS NOT NULL:
+
+  SELECT height, canonical
+  FROM blocks
+  WHERE hash = NEW.indexed_block_hash
+
+Require:
+- block exists
+- block is canonical=true
+
+Then mechanically set:
+
+  NEW.indexed_height = blocks.height
+
+Do not trust a caller-supplied indexed_height.
+
+The bootstrap row may remain inserted before this trigger is created if that
+makes migration ordering cleaner; install the trigger after blocks exists.
+
+
+TESTS
+-----
+
+Add:
+
+A. bootstrap -1/NULL remains valid
+
+B. initialized checkpoint referencing a canonical block succeeds
+
+C. caller supplies wrong height with valid canonical hash:
+   stored height is automatically corrected to blocks.height
+
+D. nonexistent block hash:
+   rejected
+
+E. hash belonging to canonical=false/orphaned block:
+   rejected
+
+This trigger protects the durable checkpoint that Phase 2B.2 will update as
+the FINAL statement of each block transaction.
+
+
+3. UPDATE PR DESCRIPTION
+========================
+
+The PR body is now stale from before the txid/wtxid review.
+
+Update it to mention:
+
+- transaction_variants
+- txid vs wtxid
+- variant-specific witness storage
+- exact-prevout UTXO relation
+- strengthened witness metadata
+- migration up/down checksum protection
+
+This is documentation only, but make the PR description accurately describe
+the code that will be merged.
+
+
+4. QUALITY
+==========
+
+Run fresh/uncached where appropriate:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run all PostgreSQL-backed tests.
+
+No modifications outside qoge-explorer.
+
+
+5. COMMIT
+=========
+
+Commit on the existing branch with:
+
+  fix: align transaction version and checkpoint invariants
+
+Push normally.
+
+Do NOT merge.
+
+Report:
+
+PHASE 2B.1 FINAL SCHEMA HARDENING
+================================
+
+Commit:
+PR head:
+
+TRANSACTION VERSION
+-------------------
+Go type:
+SQL type:
+Range:
+Boundary tests:
+
+SYNC CHECKPOINT
+---------------
+Bootstrap:
+Canonical block validation:
+Height derivation:
+Unknown-hash test:
+Orphan-hash test:
+
+PR description updated:
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+Must say NONE.
+
+Stop for final external P2QPK/Core review.
+
+After that I would stop doing internal schema iterations and hand PR #2 to the P2QPK-development Claude for the promised independent review of the finalized txid/wtxid/witness model. The major architecture is now in very good shape; these two changes close concrete boundary/integrity gaps rather than redesigning it again.
