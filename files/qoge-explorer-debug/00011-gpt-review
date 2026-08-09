@@ -1,0 +1,629 @@
+Phase 2B.1 is now formally closed.
+
+I checked Claude’s explorer-VM report and GitHub independently. PR #2 was merged by normal merge commit as b3373aa0621cfe666689a318fb0e82995f07fb9e; GitHub confirms the PR is closed/merged and that exact SHA is the merge commit. The merged commit is indeed titled Merge pull request #2 ... Phase 2B.1: PostgreSQL schema and migration foundation.
+
+Post-merge, Claude also reran the uncached Go tests, race detector, build, and PostgreSQL migration/invariant suite successfully. The large P2QPK witness, txid/wtxid model, exact-prevout UTXO relation, and canonical checkpoint tests all passed.
+
+The repository is now exactly where we wanted it before persistence implementation: internal/store currently contains the PostgreSQL connection/migration foundation and explicitly reserves the actual block write API, UTXO/address maintenance, and reorg handling for Phase 2B.2. The indexer is still only a placeholder.
+
+The Claude auto-update failed line remains unrelated to the explorer.
+
+For the next stage, I recommend making Phase 2B.2 the store/write engine only. Do not combine RPC decoding and historical syncing into the same PR yet. That lets us prove atomic/idempotent persistence and reorg behavior entirely with controlled Go/database fixtures before live Core data enters the equation.
+
+Paste this into the explorer Claude session:
+
+Begin Phase 2B.2 of QOGE Go Explorer.
+
+Repository:
+  https://github.com/QOGE/qoge-explorer
+
+Phase 2B.1 merged baseline:
+  b3373aa0621cfe666689a318fb0e82995f07fb9e
+
+Phase 2B.1 is CLOSED.
+
+The PostgreSQL schema in:
+
+  migrations/0001_initial.up.sql
+
+is now a reviewed/frozen persistence contract.
+
+
+IMPORTANT
+=========
+
+Do NOT modify migration 0001.
+
+Do NOT redesign the schema.
+
+If implementation reveals a genuine schema defect that cannot be solved
+cleanly against the existing schema, STOP and report it rather than editing
+0001 or silently adding a workaround.
+
+Do NOT implement RPC -> chain translation yet.
+Do NOT implement historical synchronization yet.
+Do NOT create the continuous block-fetch loop yet.
+Do NOT implement the public API or web UI yet.
+
+Phase 2B.2 is the PostgreSQL STORE / BLOCK-APPLICATION ENGINE.
+
+
+BRANCH
+======
+
+Start from current origin/main.
+
+Verify:
+
+  git status
+  git fetch origin
+  git switch main
+  git pull --ff-only origin main
+  git rev-parse HEAD
+  git rev-parse origin/main
+
+Both must equal:
+
+  b3373aa0621cfe666689a318fb0e82995f07fb9e
+
+Create:
+
+  phase2b-store-engine
+
+
+1. STORE API DESIGN
+===================
+
+Implement a small, explicit internal/store API for persisting already-parsed
+chain.Block / chain.Transaction data.
+
+Keep SQL concerns inside internal/store.
+
+The caller should not need to know table ordering or PostgreSQL details.
+
+A reasonable shape may include concepts such as:
+
+  Store
+  ApplyBlock(...)
+  Tip(...)
+  RollbackTo(...)
+  GetUTXO(...)
+  ...
+
+but inspect the existing Go models and choose the smallest clean API.
+
+Do not create an oversized repository abstraction or ORM.
+
+
+2. ONE DATABASE TRANSACTION PER BLOCK
+=====================================
+
+Applying one canonical block must happen inside ONE PostgreSQL transaction.
+
+All of these operations belong to that same transaction:
+
+- block row
+- immutable transaction bodies
+- transaction_variants
+- block_transactions
+- transaction_inputs
+- witness items
+- transaction_outputs
+- output_addresses
+- output_participants
+- canonical UTXO state
+- address-cache recomputation
+- sync_state checkpoint
+
+The sync_state update must be the FINAL logical write.
+
+If anything fails before commit:
+
+  NOTHING from that block may persist.
+
+
+3. IDEMPOTENT BLOCK APPLICATION
+===============================
+
+Reapplying the exact same already-indexed block must be safe.
+
+Do not use blind additive operations.
+
+Use natural keys / semantic ON CONFLICT behavior.
+
+For immutable records:
+
+- existing identical data is acceptable
+- conflicting data for the same immutable identity must return an error
+
+Do NOT silently overwrite contradictory immutable blockchain data.
+
+Examples:
+
+same txid + identical body:
+  acceptable
+
+same txid + different version/locktime/body:
+  ERROR
+
+same wtxid + identical variant:
+  acceptable
+
+same wtxid + contradictory txid/metrics:
+  ERROR
+
+same block hash + contradictory header data:
+  ERROR
+
+
+4. TXID / WTXID PRESERVATION
+=============================
+
+Respect the reviewed schema exactly.
+
+transactions:
+  txid-based non-witness body
+
+transaction_variants:
+  wtxid-based full observed serialization metadata
+
+block_transactions:
+  exact txid/wtxid occurrence
+
+transaction_input_witness:
+  wtxid-specific witness stack
+
+Never key witness persistence by txid alone.
+
+A transaction without witness still gets a transaction_variants row with:
+
+  wtxid == txid
+
+
+5. RAW INPUT / OUTPUT PRESERVATION
+==================================
+
+Persist every vin and every vout one-for-one.
+
+Do not:
+
+- aggregate same-address inputs
+- aggregate outputs
+- drop zero-value outputs
+- drop OP_RETURN/nulldata
+- truncate scripts
+- truncate witness items
+
+Preserve raw BYTEA exactly.
+
+A P2QPK 17,088-byte signature must round-trip exactly.
+
+
+6. SCRIPT CLASSIFICATION OUTPUT
+===============================
+
+The store should accept the already-classified Phase-2A output model.
+
+Persist:
+
+- script_type
+- witness_version
+- witness_program
+- raw scriptPubKey
+- destination address when applicable
+- bare-multisig participants when applicable
+
+Respect:
+
+output_addresses
+  balance destination only
+
+output_participants
+  multisig search/display identities only
+
+Never use output_participants for monetary aggregation.
+
+
+7. CANONICAL UTXO APPLICATION
+=============================
+
+When applying a canonical block:
+
+For every new output:
+
+- create/update the appropriate utxo_state row
+- creation block must be this block
+
+For every non-coinbase input:
+
+- locate the previous canonical UTXO
+- ensure it exists and is currently unspent
+- mark it spent by THIS exact spending tx/vin/block
+
+A double-spend against the current canonical state must fail the entire
+block transaction.
+
+Do not invent missing previous outputs.
+
+For historical sequential sync, previous outputs should already exist.
+
+
+8. FEES
+=======
+
+For each non-coinbase transaction, once all prevout values are available:
+
+  fee = sum(inputs' previous output values) - sum(outputs)
+
+Use integer satoshis only.
+
+No float64.
+
+Reject negative computed fees as an internal/indexing inconsistency.
+
+Coinbase:
+
+  fee_satoshis = NULL
+
+Do NOT infer issued supply from coinbase total.
+
+The coinbase output total includes subsidy + transaction fees.
+
+
+9. ADDRESS CACHE — SET BASED ONLY
+=================================
+
+This is critical because it is where the old Eiquidus explorer corrupted
+balances after crash/replay.
+
+Never use additive:
+
+  balance = balance + ...
+  total_received += ...
+  $inc-style logic
+
+After canonical state changes, recompute every TOUCHED address from the
+source tables and SET the resulting absolute values.
+
+Use:
+
+  output_addresses
+
+never:
+
+  output_participants
+
+as the monetary-address relation.
+
+Recompute at minimum:
+
+- total_received_satoshis
+- total_sent_satoshis
+- balance_satoshis
+- tx_count
+- first_seen_height
+- last_seen_height
+
+Define the exact semantics in ARCHITECTURE.md and tests.
+
+
+10. CHECKPOINT
+==============
+
+Only after all block state and address caches are correct:
+
+update:
+
+  sync_state(name='main')
+
+to the block hash.
+
+The database trigger will derive height and verify that the block is
+canonical.
+
+This must be the final logical operation before commit.
+
+
+11. REORG STORE ENGINE
+======================
+
+Implement store-layer rollback/reorg operations using the frozen architecture.
+
+Do not fetch blocks from Core yet.
+
+The store operation should be testable with synthetic already-persisted
+fork data.
+
+For a rollback to common ancestor:
+
+- old canonical blocks above ancestor become canonical=false
+- orphaned_at is set
+
+Immutable audit data remains:
+
+- blocks
+- transactions
+- transaction_variants
+- block_transactions
+- inputs
+- witnesses
+- outputs
+
+Canonical derived state must be reconstructed correctly:
+
+- utxo_state
+- addresses
+- sync_state
+
+Do not delete immutable orphan history.
+
+After rollback, sync_state must reference the ancestor canonical block.
+
+Design the implementation so the future indexer can:
+
+1. detect fork
+2. ask store to rollback to ancestor
+3. apply replacement blocks normally
+
+
+12. REORG DEPTH POLICY
+======================
+
+Preserve the architecture policy:
+
+- reorg depth <= 100:
+    automatic store/indexer handling
+
+- reorg depth > 100:
+    future indexer must halt for operator intervention
+
+The STORE may expose enough information to calculate rollback depth, but do
+not build the live indexer policy loop in this phase.
+
+
+13. REQUIRED DATABASE TESTS
+===========================
+
+Use the existing isolated PostgreSQL test infrastructure.
+
+Add strong integration tests.
+
+At minimum prove:
+
+A. single block applies atomically
+
+B. exact same block replay is idempotent
+
+C. replay does not increase address balances/counts
+
+D. contradictory immutable block data is rejected
+
+E. contradictory txid body is rejected
+
+F. contradictory wtxid variant is rejected
+
+G. zero-value nulldata output survives
+
+H. 17,088-byte P2QPK witness survives through ApplyBlock
+
+I. two wtxid variants sharing one txid remain distinct
+
+J. normal spend marks exact previous UTXO spent
+
+K. attempting to spend an already-spent canonical UTXO rejects whole block
+
+L. nonexistent prevout rejects whole block
+
+M. fee is computed exactly in satoshis
+
+N. coinbase fee stays NULL
+
+O. multisig participants never multiply address balance
+
+P. intentional failure BEFORE checkpoint rolls back every write from block
+
+Q. intentional failure after some tx/output/UTXO work but before commit
+   leaves sync_state and all canonical data unchanged
+
+R. address cache after replay equals cache before replay exactly
+
+S. simple one-block reorg restores previously spent UTXO correctly
+
+T. multi-block reorg restores all canonical UTXOs correctly
+
+U. orphan block/tx/witness/output audit data remains queryable after rollback
+
+V. sync_state ends at the common ancestor after rollback
+
+W. replacement branch can then be applied normally
+
+X. after reorg + replacement, address balances equal a fresh recomputation
+   from canonical source tables
+
+
+14. REAL MAINNET FIXTURE CHECK
+==============================
+
+Do NOT build live indexing yet.
+
+However, after the synthetic store tests pass, it is acceptable to use a
+small number of already-known mainnet vectors from the Phase-2A tests to
+exercise the store boundary.
+
+Examples already documented include:
+
+- early P2PK block
+- P2PKH block
+- OP_RETURN block
+- P2WPKH transaction
+- real P2TR transaction at height 1,284,510
+
+Do not require a real mainnet P2QPK transaction; none existed at the reviewed
+baseline.
+
+P2QPK store coverage remains synthetic/source-derived until one exists.
+
+
+15. NO RPC TRANSLATOR YET
+=========================
+
+Do not expand the generic RPC client into the full Qogecoin RPC decoder in
+this PR.
+
+The store must consume canonical chain models, not raw map[string]any RPC
+objects.
+
+RPC decoding will be the next phase after the storage engine is reviewed.
+
+
+16. DOCUMENTATION
+=================
+
+Update docs/ARCHITECTURE.md only where necessary to document the IMPLEMENTED
+store behavior.
+
+Do not alter the frozen schema design.
+
+Document:
+
+- block transaction ordering
+- immutable conflict semantics
+- idempotent replay
+- fee computation
+- address-cache SET recomputation
+- rollback/reorg mechanics
+- checkpoint-last invariant
+
+
+17. QUALITY
+===========
+
+Run:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run PostgreSQL-backed store tests uncached.
+
+Check:
+
+- no secrets
+- no .env committed
+- no binaries
+- no modifications outside qoge-explorer
+
+
+18. COMMIT / PR
+===============
+
+Commit on:
+
+  phase2b-store-engine
+
+Suggested commit message:
+
+  feat: implement atomic PostgreSQL block store
+
+Push.
+
+Create PR:
+
+  Phase 2B.2: atomic PostgreSQL block store and reorg engine
+
+Base:
+  main
+
+Do NOT merge.
+
+Do NOT begin RPC/indexer work.
+
+Stop for independent review.
+
+
+FINAL REPORT
+============
+
+PHASE 2B.2 — STORE ENGINE
+=========================
+
+Branch:
+Commit:
+PR:
+
+STORE API
+---------
+...
+
+ATOMIC BLOCK APPLY
+------------------
+Transaction boundary:
+Checkpoint ordering:
+Failure rollback:
+
+IDEMPOTENCY
+-----------
+Replay behavior:
+Immutable conflict behavior:
+
+TXID / WTXID
+-------------
+Transaction body:
+Variant:
+Witness:
+
+UTXO
+----
+Creation:
+Spend:
+Double-spend handling:
+Missing-prevout handling:
+
+FEES
+----
+Computation:
+Coinbase:
+
+ADDRESS CACHE
+-------------
+Recomputation method:
+Multisig handling:
+Replay result:
+
+REORG
+-----
+Rollback method:
+Immutable orphan history:
+UTXO restoration:
+Address restoration:
+Checkpoint:
+
+P2QPK
+-----
+17,088-byte preservation:
+Variant handling:
+
+DATABASE TESTS
+--------------
+List each required test A-X with PASS/FAIL.
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+PostgreSQL tests:
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+Must say NONE.
+
+Stop.
+Do not merge.
+Do not begin RPC/indexer work.
+
+This keeps the next risk boundary very clean: first prove that a canonical block can be applied, replayed, crashed, and reorganized without corrupting PostgreSQL; only afterward connect that machinery to live Qogecoin Core RPC.
