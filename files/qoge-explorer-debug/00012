@@ -1,0 +1,123 @@
+● That's fine as-is (forward-looking, not stale). Now let's verify the doc's markdown structure is intact and run a final full quality gate pass.
+
+  Ran 1 shell command 
+
+● Section structure is clean. Now the final quality gate pass.
+
+  Ran 3 shell commands 
+
+● All clean. Now the full test suite and race detector, uncached.
+
+  Ran 2 shell commands 
+
+● All quality gates pass. Now let's check file scope, scan for secrets, and verify no unrelated repos were touched before committing.
+
+  Ran 1 shell command 
+
+● Exactly the expected files. Let's confirm no unrelated repos were touched and scan the diff for secrets.
+
+  Ran 1 shell command 
+
+● Same pre-existing untracked state as always — nothing changed outside the project.
+
+  Ran 2 shell commands 
+
+● Clean. Committing on the branch.
+
+  Committed 0878d45 
+
+● Now pushing and creating the PR.
+
+  Made 1 scratchpad edit +73, pushed to phase2b-store-engine, created PR #3, ran 2 shell commands 
+
+● Confirmed — zero diff in migrations/. All work items are complete. Producing the final report.
+
+  Ran 1 shell command 
+
+● PHASE 2B.2 — STORE ENGINE
+  =========================
+
+  Branch: phase2b-store-engine
+  Commit: 0878d4516fdaa3c3acce8e3972bba6a5633061ac
+  PR: https://github.com/QOGE/qoge-explorer/pull/3 (OPEN, base=main, not merged)
+
+  STORE API
+  ---------
+  Store{New, ApplyBlock, Tip, RollbackTo, GetUTXO} wrapping *pgxpool.Pool. Checkpoint{Height,Hash} and UTXO{...} are the two small read-model types. No ORM/generic repository — every SQL/table-ordering concern stays inside internal/store (store.go, apply.go, reorg.go).
+
+  ATOMIC BLOCK APPLY
+  ------------------
+  Transaction boundary: one pgx.Tx per ApplyBlock call (pool.Begin), passed to every helper; block header → per-tx body/variant/occurrence/inputs/witness/outputs/UTXO creation → per-tx UTXO spend marking → touched-address recompute → checkpoint.
+  Checkpoint ordering: sync_state UPDATE is the last statement before Commit; only advances (block.Height >= current indexed_height), never rewinds; sync_state_validate_checkpoint_trigger independently re-verifies canonicality.
+  Failure rollback: deferred tx.Rollback discards everything, including the block header row, on any error — proven by tests P/Q (mid-block failure leaves zero rows, zero checkpoint movement).
+
+  IDEMPOTENCY
+  -----------
+  Replay behavior: every immutable write uses INSERT...ON CONFLICT DO NOTHING + verify-or-error (insertOrVerifyIdempotent); identical replay is a safe no-op; UTXO spend UPDATE...WHERE spent=false is idempotent for the exact same spender.
+  Immutable conflict behavior: mismatched data for an already-stored identity (block hash/txid/wtxid/input/output/witness) returns ErrImmutableConflict, never a silent overwrite — proven by tests D, E, F.
+
+  TXID / WTXID
+  -------------
+  Transaction body: transactions, keyed by txid, immutable non-witness body.
+  Variant: transaction_variants, keyed by wtxid, size/vsize/weight.
+  Witness: transaction_input_witness, keyed by (wtxid, vin_index, item_index) — two variants of the same txid (via rollback + replacement) remain independently queryable, proven by test I.
+
+  UTXO
+  ----
+  Creation: utxo_state row inserted per output, creation_block_hash set, idempotent-verified on the creation identity only (never disturbs mutable spend fields).
+  Spend: checkPrevout (read-only check) + markSpent (UPDATE...WHERE spent=false) — two-phase so UTXO FKs (transaction_inputs/block_transactions) exist before the spend UPDATE runs.
+  Double-spend handling: ErrDoubleSpend, whole block rejected (test K).
+  Missing-prevout handling: ErrMissingPrevout, whole block rejected (test L); store never invents a missing output.
+
+  FEES
+  ----
+  Computation: sum(input values) - sum(output values), int64 satoshis only, ErrNegativeFee on inconsistency (test M).
+  Coinbase: fee_satoshis unconditionally NULL (test N).
+
+  ADDRESS CACHE
+  -------------
+  Recomputation method: recomputeAddress always SETs a fresh absolute aggregate from output_addresses/transaction_outputs/utxo_state (INSERT...ON CONFLICT DO UPDATE SET every column) — never an increment; deletes the row when zero remaining canonical activity.
+  Multisig handling: output_participants never read by recomputeAddress — structurally cannot multiply a balance (test O).
+  Replay result: cache after replay bit-for-bit equals cache before replay (tests C, R).
+
+  REORG
+  -----
+  Rollback method: RollbackTo(ctx, ancestorHash) — one tx; finds all currently-canonical blocks above ancestor height (unique-per-height invariant makes this exactly the orphan set); no Core RPC involved, testable against synthetic persisted fork data.
+  Immutable orphan history: blocks/transactions/transaction_variants/block_transactions/inputs/witness/outputs never deleted, only blocks.canonical flipped + orphaned_at set (test U).
+  UTXO restoration: creations-only-in-orphan-range deleted; spends-only-in-orphan-range restored to unspent (tests S, T).
+  Address restoration: every touched address recomputed from source tables; matches independent from-scratch aggregate after rollback+replacement (test X).
+  Checkpoint: sync_state set to ancestor as final write, trigger re-verified (test V); replacement branch then applies normally via ordinary ApplyBlock (test W).
+
+  P2QPK
+  -----
+  17,088-byte preservation: exact byte-for-byte round-trip through ApplyBlock into transaction_input_witness, confirmed by direct SQL readback (test H).
+  Variant handling: P2QPK witness attached to a spending input is variant-scoped (wtxid-keyed) like any other witness, no special-casing needed.
+
+  DATABASE TESTS
+  --------------
+  A: PASS  B: PASS  C: PASS  D: PASS  E: PASS  F: PASS  G: PASS  H: PASS
+  I: PASS  J: PASS  K: PASS  L: PASS  M: PASS  N: PASS  O: PASS  P: PASS
+  Q: PASS  R: PASS  S: PASS  T: PASS  U: PASS  V: PASS  W: PASS  X: PASS
+  (plus item 14's 5-vector real-mainnet-fixture exercise, all PASS)
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, all packages, uncached (-count=1)
+  go test -race: PASS, all packages, uncached
+  go build: clean
+  PostgreSQL tests: all internal/store tests PASS (schema invariants + migration mechanics + new store-engine tests), per-test isolated schemas, run uncached
+
+  FILES MODIFIED OUTSIDE PROJECT
+  ------------------------------
+  NONE
+
+  migrations/0001_initial.up.sql was not touched (confirmed via git diff main...phase2b-store-engine -- migrations/ — zero diff). PR #3 is open against main, not merged. Stopping here — no RPC/indexer work begun, per instructions.
+
+✻ Brewed for 7m 25s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ✘ Auto-update failed · Run claude doctor
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Stop for independent review.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
