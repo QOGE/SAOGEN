@@ -1,0 +1,96 @@
+● Fetching the PR diff and verifying the head commit first.
+
+  Read 1 file, ran 3 shell commands 
+  ⎿  Referenced file README.md
+  ⎿  Read cmd/gui/main.go (114 lines)
+  ⎿  Read ../qogecoin/doc/SIP-2.0-AMD-012-PQC-MAINNET-ACTIVATION.md (191 lines)
+  ⎿  Referenced file ../qogecoin/README.md
+
+● I now have all the content needed. Let me write the full review report.
+
+  ---
+  Independent P2QPK/Core Review — QOGE/qoge-explorer PR #2 (Phase 2B.1 Final Schema)
+
+  Head commit: 5d0877ab19140a9e2b54277a9358eb86a5ec5b49
+  Date: 2026-08-09
+  Reviewer: Claude Sonnet 4.6 (independent, fresh-context read of actual PR diff)
+
+  ---
+  Checklist
+
+  1. txid/wtxid split — correctness
+
+  The schema uses two separate tables: transactions (PK = txid = GetHash(), non-witness serialization) and transaction_variants (PK = wtxid = GetWitnessHash(), full serialization including witness). block_transactions records (block_hash, txid, wtxid) — which specific witness variant appeared in each block. transaction_input_witness is keyed by (wtxid, txid, vin_index, item_index) — not just txid — so two competing witness variants of the same txid cannot
+  overwrite each other's witness data. The composite FK FOREIGN KEY (wtxid, txid) REFERENCES transaction_variants (wtxid, txid) enforces this at the database layer. The UNIQUE (block_hash, txid) constraint on block_transactions (no duplicate txid within one block) correctly reflects consensus — a block cannot contain the same txid twice, but different blocks CAN contain the same txid with different witness stacks.
+  TestInvariant_WitnessVariantsDoNotOverwriteEachOther proves the exact reorg/competing-witness scenario end-to-end, including a 17,088-byte P2QPK-sized witness item. The internal/chain/transaction.go addition of WTxID string aligns the Go model with the schema.
+
+  PASS.
+
+  2. P2QPK witness stack preservation
+
+  transaction_input_witness stores raw BYTEA with no length constraint on data, correctly accommodating the 17,088-byte SLH-DSA-SHA2-128f signature and 32-byte public key as separate stack items. The transaction_variants table preserves per-variant size/vsize/weight independently for each wtxid, so a P2QPK spend's ~17,120-byte witness contribution to vsize/weight is recorded accurately for the specific block occurrence that contained it. The test explicitly
+  allocates and stores a script.P2QPKSignatureLength-byte item and verifies byte-for-byte equality on readback.
+
+  PASS.
+
+  3. Output classification — P2QPK correctness
+
+  transaction_outputs.script_type has a CHECK constraint enumerating the valid values: 'p2pk', 'p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr', 'p2qpk', 'nulldata', 'multisig', 'unknown_witness', 'unknown'. The transaction_outputs_witness_metadata_consistency CHECK constraint is a CASE expression with explicit branches for every witness type. The p2qpk branch requires witness_version IS NOT NULL AND witness_version = 2 AND witness_program IS NOT NULL AND 
+  octet_length(witness_program) = 32 — matching exactly the P2QPK wire format (witness version 2, 32-byte HASH256 program). The NULL-loophole fix is correct: every branch of the CASE returns a boolean expression whose sub-terms are composed using IS NOT NULL/IS NULL guards before any comparison, so no NULL value can silently satisfy the CHECK. The unknown_witness branch explicitly excludes (v1/32) and (v2/32), preventing misclassification of P2TR or P2QPK as
+  unknown_witness. TestInvariant_WitnessMetadataConsistency covers all the critical cases: p2qpk+NULL/NULL (rejected), p2qpk+v2/31 (rejected), p2qpk+v2/33 (rejected), p2qpk+v2/32 (accepted), and the exclusion of v2/32 from unknown_witness.
+
+  PASS.
+
+  4. Transaction version — uint32 semantics
+
+  transactions.version is BIGINT NOT NULL with CONSTRAINT transactions_version_uint32_range CHECK (version >= 0 AND version <= 4294967295). This correctly models the RPC-facing uint32 value (Core's TxToUniv exposes static_cast<uint32_t>(tx.nVersion)), not the in-memory int32_t — values from 2,147,483,648 to 4,294,967,295 are representable. The internal/chain/transaction.go change to Version uint32 aligns the Go struct type with this uint32 semantic.
+  TestInvariant_Uint32RangeRejected explicitly tests version=-1 (rejected), version=4,294,967,296 (rejected), and version=2,147,483,648 (accepted), confirming the int32 boundary is not silently clamped.
+
+  PASS.
+
+  5. Immutable output body / mutable UTXO state separation
+
+  transaction_outputs is write-once (immutable body: value, scriptPubKey, script_type). utxo_state is the separate mutable table for canonical spend state. Reorgs roll back utxo_state (and the addresses derived cache) without touching transaction_outputs or block_transactions. Blocks are never deleted from blocks, only marked canonical = false with orphaned_at set — the orphaned-block constraint blocks_orphaned_at_consistency enforces (canonical AND orphaned_at 
+  IS NULL) OR (NOT canonical AND orphaned_at IS NOT NULL). A partial-NULL state is impossible. The addresses table comment explicitly states it is rebuilt by re-aggregating, not by increment, preventing double-counting across reorgs.
+
+  PASS.
+
+  6. UTXO relational integrity — exact prevout FK
+
+  The utxo_state spending FK is FOREIGN KEY (spending_txid, spending_vin_index, txid, vout_index) REFERENCES transaction_inputs (txid, vin_index, prev_txid, prev_vout_index). This four-column composite FK is the key correctness property: it requires the claimed spending input's prev_txid/prev_vout_index to match this row's own txid/vout_index — preventing an input that actually spends output A from being used to mark unrelated output B as spent.
+  TestInvariant_UTXOSpendMustMatchExactPrevout proves both the wrong-txid and wrong-vout cases are rejected. TestInvariant_UTXOHeightsCannotPersistWrong proves creation_block_height and spending_block_height are trigger-derived from blocks.height, not trusted from the caller (deliberately wrong values are overwritten). utxo_state_spent_consistency enforces all four spending columns are NULL together or NOT NULL together — no partial spend state is representable.
+  Note: transaction_inputs needs UNIQUE (txid, vin_index, prev_txid, prev_vout_index) to be an FK target for a composite FK; this is explicitly present in the DDL.
+
+  PASS.
+
+  7. P2QPK activation boundary — chain_deployments
+
+  chain_deployments stores the BIP9 deployment status as a display/search cache with raw_json JSONB. The comment and docs/ARCHITECTURE.md are explicit that Core remains authoritative — the table is a polled cache, never a consensus-decision source. There is no is_p2qpk_active boolean or trigger gated on this table that would affect script classification or UTXO validation. Script classification (script_type = 'p2qpk') is a structural property of the output's
+  witness program (v2/32), not a function of soft fork activation state — which is the correct design: the explorer records what it saw on chain, independent of whether the network has fully validated it as active. The status values (defined/started/locked_in/active/failed) match BIP9 state machine names.
+
+  PASS.
+
+  8. Data-loss risks — migration infrastructure
+
+  migrate.go computes SHA-256 checksums of both UpSQL and DownSQL at apply time and records them in schema_migrations. VerifyChecksums is called as a pre-flight check by both Up() and Down() before touching anything — an edited-after-apply migration file causes a loud failure, not silent re-application. LoadMigrations rejects any migration missing its .down.sql. The schema_migrations table is not itself a tracked migration — it is bootstrapped via CREATE TABLE 
+  IF NOT EXISTS before any tracked migration runs. Postgres DDL is transactional: each migration's DDL + its schema_migrations INSERT are committed in a single transaction, so a mid-migration failure leaves no partial state and no false "applied" record. TestMigrations_ChecksumDriftDetected, TestMigrations_DownSQLDriftDetected, TestMigrations_NameDriftDetected, and TestMigrations_AppliedMigrationMissingLocalDefinitionRejected all pass. The down migration
+  (0001_initial.down.sql) drops all objects in strict dependency order (triggers first, then tables, then functions) — no orphaned triggers or functions can block re-application.
+
+  PASS.
+
+  ---
+  Summary
+
+  All 8 checklist items pass. The schema handles all P2QPK-specific concerns correctly: v2/32 is uniquely classified, 17,088-byte witness items are preserved without truncation, txid/wtxid never collide, the uint32 version boundary is enforced above the int32 signed maximum, and relational integrity for UTXO spend relationships is airtight via the four-column prevout FK. The migration infrastructure has checksum drift detection in both directions and enforces
+  reversibility.
+
+  VERDICT: APPROVE
+
+  No blocking Core/P2QPK discrepancy found. Phase 2B.1 is safe to merge.
+
+✻ Cooked for 4m 48s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ merge PR #2
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
