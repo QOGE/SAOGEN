@@ -1,0 +1,101 @@
+● Now running the full quality gate pass.
+
+  Ran 4 shell commands 
+
+● gofmt is clean (no output). Now vet and build.
+
+  Ran 2 shell commands 
+
+● Now the PostgreSQL-backed test suites, loading the test DB env first.
+
+  Ran 1 shell command 
+
+● Results were cached; forcing a clean re-run plus the race variant.
+
+  Ran 1 shell command 
+
+● All store tests pass fresh. Now the race variant and full uncached test across all packages.
+
+  Ran 2 shell commands 
+
+● All quality gates pass. Now committing on the branch and verifying scope before push.
+
+  Ran 1 shell command 
+
+● Exactly the expected file set, on the correct branch. Checking outside-project cleanliness and the diff content before staging.
+
+  Ran 2 shell commands 
+
+● Clean — no secrets, exactly the 7 expected files. Staging and committing.
+
+  Committed efc4b10, ran 1 shell command 
+
+● Now pushing to update PR #2 and confirming it stays open (not merged).
+
+  Pushed to phase2b-postgres-schema, ran 1 shell command 
+
+● PR #2 is OPEN, updated to the new commit, not merged. All work items are complete. Producing the final report.
+
+  Ran 1 shell command 
+
+● PHASE 2B.1 FINAL IDENTITY FIXES
+  ===============================
+  Commit: efc4b108c43ba0cdc3fe48298d28f2e62f7dd0ef (branch phase2b-postgres-schema)
+  PR head: efc4b108c43ba0cdc3fe48298d28f2e62f7dd0ef (PR #2, state OPEN, not merged)
+
+  TXID / WTXID MODEL
+  ------------------
+  transactions: Reduced to the immutable non-witness body only — txid PK, version, locktime, is_coinbase, fee_satoshis, indexed_at. size/vsize/weight removed (they describe an observed serialization, not the abstract body).
+  transaction_variants: New table — wtxid PK, txid FK → transactions(txid), size/vsize/weight, indexed_at, UNIQUE(wtxid, txid). One row per concrete witness serialization of a txid.
+  block_transactions: Now stores both txid and wtxid; FOREIGN KEY (wtxid, txid) REFERENCES transaction_variants(wtxid, txid). Kept PRIMARY KEY (block_hash, tx_index) and UNIQUE (block_hash, txid).
+  transaction_input_witness: Re-keyed PRIMARY KEY (wtxid, vin_index, item_index); FOREIGN KEY (wtxid, txid) REFERENCES transaction_variants(wtxid, txid); FOREIGN KEY (txid, vin_index) REFERENCES transaction_inputs(txid, vin_index). Two witness variants of the same txid no longer collide or overwrite.
+  chain.Transaction: Added WTxID string field (Core RPC "hash", GetWitnessHash()) alongside existing TxID (RPC "txid", GetHash()). Size/VSize/Weight deliberately stay on the single Go struct — the split is SQL-layer only.
+
+  WITNESS VARIANT TEST
+  --------------------
+  Same txid: T = hash64("sharedtxid"), one shared transaction_inputs row
+  WTxID A: hash64("variantw1") — witness item {0xde,0xad,0xbe,0xef}, variant size/vsize/weight 500/300/1200, linked to block "varblocka"
+  WTxID B: hash64("variantw2") — witness item 17,088-byte P2QPK-sized payload, variant size/vsize/weight 17600/500/2000, linked to block "varblockb"
+  Distinct witness preservation: Both block_transactions rows present for txid T, both txid fields equal T, wtxids distinct; each witness readback exact byte-for-byte match (4 bytes vs 17,088 bytes), neither variant overwrote the other
+  Variant size/weight preservation: Each transaction_variants row's size/vsize/weight readback matches only its own inserted values — TestInvariant_WitnessVariantsDoNotOverwriteEachOther PASS
+
+  UTXO EXACT PREVOUT
+  ------------------
+  Composite relation: Added UNIQUE (txid, vin_index, prev_txid, prev_vout_index) on transaction_inputs; utxo_state's FK changed to FOREIGN KEY (spending_txid, spending_vin_index, txid, vout_index) REFERENCES transaction_inputs (txid, vin_index, prev_txid, prev_vout_index)
+  Wrong-txid prevout test: input recorded as spending a different txid than the utxo_state row claims → REJECTED (TestInvariant_UTXOSpendMustMatchExactPrevout/input_exists_but_points_to_a_different_txid PASS)
+  Wrong-vout prevout test: input recorded as spending a different vout than the utxo_state row claims → REJECTED (.../input_exists_but_points_to_a_different_vout PASS)
+  Valid spend: unspent row still inserts and reads back spent=false correctly (.../unspent_row_still_works PASS)
+
+  UNKNOWN WITNESS METADATA
+  ------------------------
+  2..40 enforcement: unknown_witness and the witness-v0 form of unknown both now require octet_length(witness_program) BETWEEN 2 AND 40, matching ParseWitnessProgram's structural range
+  Known-type exclusion: unknown_witness additionally excludes NOT(version=1 AND length=32) [P2TR] and NOT(version=2 AND length=32) [P2QPK]; unknown's v0 form excludes length 20 and 32 (P2WPKH/P2WSH)
+  Tests: 9 new cases added to TestInvariant_WitnessMetadataConsistency (unknown_witness v1/32 reject, v2/32 reject, v2/31 accept, v3/32 accept, length 1 reject, length 41 reject; unknown v0/19 accept, v0/1 reject, v0/41 reject) — 25 total cases, all PASS
+
+  MIGRATION DRIFT
+  ---------------
+  Up checksum: schema_migrations.up_checksum (SHA-256 of UpSQL), verified before Up and Down
+  Down checksum: schema_migrations.down_checksum (SHA-256 of DownSQL), verified before Up and Down
+  Missing applied definition: VerifyChecksums/Up/Down now iterate the applied (DB-recorded) set and error if an applied version has no corresponding loaded local migration — append-only history enforced
+  Tests: TestMigrations_ChecksumDriftDetected, TestMigrations_NameDriftDetected, TestMigrations_DownSQLDriftDetected (new), TestMigrations_AppliedMigrationMissingLocalDefinitionRejected (new) — all PASS
+
+  QUALITY
+  -------
+  gofmt: clean (no output)
+  go vet: clean
+  go test: PASS, all packages (chain, script, store — store includes all PostgreSQL-backed invariant/migration tests, 67+ subtests, 0 failures), run uncached (-count=1)
+  go test -race: PASS, all packages, run uncached
+  go build: clean
+
+  FILES MODIFIED OUTSIDE PROJECT
+  ------------------------------
+  NONE
+
+  Pushed to origin/phase2b-postgres-schema; PR #2 updated and confirmed OPEN (not merged). Phase 2B.2 has not been started, per instructions.
+
+✻ Baked for 19m 9s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Kick off Phase 2B.2
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
