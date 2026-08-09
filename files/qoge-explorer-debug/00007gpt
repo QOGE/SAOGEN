@@ -1,0 +1,529 @@
+The fixes in 00007 are good: the P2QPK NULL loophole is closed, destination cardinality is enforced, the temporary-schema test isolation is much safer, UTXO heights are derived, and the new migration drift checks work as described. Claude reports all PostgreSQL and Go quality gates passing at cf503acc9f2c9a905274160ff5796135433c0a1d.
+
+I reviewed the actual updated PR #2 as well. I would still not merge yet, because the deeper relational review exposed one important transaction-identity issue that becomes especially relevant once we preserve P2QPK witness data.
+
+The major remaining issue: TXID is not enough to identify witness data
+
+Qogecoin Core maintains two different hashes for a witness transaction. GetHash() computes the traditional txid without witness, while GetWitnessHash() hashes the complete transaction including witness. Core's JSON output exposes them separately as:
+
+txid -> GetHash()
+hash -> GetWitnessHash()
+
+That means two transaction serializations can have the same txid but different witnesses and therefore different wtxids.
+
+The current schema cannot represent that faithfully. transactions is keyed only by txid and stores size, vsize, and weight; block_transactions identifies occurrences only by txid; and transaction_input_witness is also keyed only by (txid, vin_index, item_index).
+
+So consider competing blocks:
+
+Block A:
+  txid = T
+  wtxid = W1
+  witness = signature A
+
+Block B:
+  txid = T
+  wtxid = W2
+  witness = signature B
+
+Both share the same non-witness transaction body, but the database currently has room for only one witness stack and one set of size/weight values for T.
+
+That contradicts the new goal of retaining orphan blocks as a complete audit trail. It is particularly relevant to P2QPK because the 17,088-byte SLH-DSA signature is entirely witness data.
+
+Phase 2A's Go model also currently has only TxID; there is no WTxID. This should be corrected now, before RPC translation and indexing are written.
+
+I found three smaller relational gaps too
+
+The improved utxo_state proves that a spending input exists, but it does not yet prove that the input actually spends this particular UTXO. For example, input S:0 could spend output A:3, while utxo_state could incorrectly claim that S:0 spent B:7; all current FKs would still be satisfiable. We can enforce the exact prevout relationship with one composite FK.
+
+The new witness-metadata constraint is much better, but unknown_witness currently accepts any non-null program with version >0—including v1/32, which should be p2tr, v2/32, which should be p2qpk, and program lengths outside the witness-program 2–40 byte range. Similarly, the v0 unknown branch should restrict its preserved witness program to 2–40 bytes.
+
+Finally, the migration checksum mechanism checks only UpSQL. The code explicitly allows DownSQL to change unchecked, even though Down() will later execute that changed SQL. It also intentionally ignores an applied migration whose local definition has disappeared. For an append-only migration history, both should be treated as drift.
+
+Give Claude this final schema correction:
+
+Final schema review of PR #2 found one major witness-identity issue and
+three smaller relational-integrity gaps.
+
+Stay on:
+
+  phase2b-postgres-schema
+
+Do NOT merge PR #2.
+Do NOT start Phase 2B.2.
+
+Current reviewed head:
+
+  cf503acc9f2c9a905274160ff5796135433c0a1d
+
+
+1. ADD WTXID / WITNESS-VARIANT MODEL
+====================================
+
+This is blocking.
+
+Qogecoin Core distinguishes:
+
+  txid = GetHash()
+       = serialization hash WITHOUT witness
+
+  hash = GetWitnessHash()
+       = full serialization hash INCLUDING witness
+       = wtxid
+
+See Core TxToUniv:
+
+  "txid" -> GetHash()
+  "hash" -> GetWitnessHash()
+
+Therefore different valid witness serializations can share the same txid
+while having different wtxids.
+
+The current schema cannot preserve that:
+
+- transactions is keyed only by txid
+- size/vsize/weight live on transactions
+- block_transactions references only txid
+- transaction_input_witness is keyed only by txid/vin/item
+
+That means two competing blocks containing the same txid but different
+witnesses cannot both be represented faithfully.
+
+Correct this before schema freeze.
+
+
+PREFERRED MODEL
+---------------
+
+Keep:
+
+  transactions
+
+as the immutable NON-WITNESS transaction identity/body:
+
+  txid PRIMARY KEY
+  version
+  locktime
+  is_coinbase
+  fee_satoshis
+  indexed_at
+
+Inputs and outputs remain keyed by txid because they are part of the txid
+serialization.
+
+Move witness-dependent metrics out of transactions:
+
+  size
+  vsize
+  weight
+
+Add a new table, e.g.:
+
+  transaction_variants
+
+with:
+
+  wtxid TEXT PRIMARY KEY
+  txid TEXT NOT NULL REFERENCES transactions(txid)
+  size INT NOT NULL
+  vsize INT NOT NULL
+  weight INT NOT NULL
+  indexed_at ...
+
+and:
+
+  UNIQUE (wtxid, txid)
+
+For a transaction without witness:
+
+  wtxid == txid
+
+which is fine — it still has one variant row.
+
+
+BLOCK OCCURRENCES
+-----------------
+
+block_transactions must identify the actual serialization that appeared
+in that block.
+
+Store both:
+
+  txid
+  wtxid
+
+and enforce:
+
+  FOREIGN KEY (wtxid, txid)
+    REFERENCES transaction_variants(wtxid, txid)
+
+Keep:
+
+  PRIMARY KEY (block_hash, tx_index)
+
+and the existing useful:
+
+  UNIQUE (block_hash, txid)
+
+if it is consistent with Core-valid chain history.
+
+
+WITNESS STORAGE
+---------------
+
+transaction_input_witness must be variant-specific.
+
+Do NOT key witness data solely by txid.
+
+Use something equivalent to:
+
+  wtxid
+  txid
+  vin_index
+  item_index
+  data BYTEA
+
+with:
+
+  PRIMARY KEY (wtxid, vin_index, item_index)
+
+  FOREIGN KEY (wtxid, txid)
+    REFERENCES transaction_variants(wtxid, txid)
+
+  FOREIGN KEY (txid, vin_index)
+    REFERENCES transaction_inputs(txid, vin_index)
+
+This guarantees witness item N belongs both to:
+- the correct full transaction serialization
+- an actual vin of the underlying txid transaction body.
+
+
+GO CHAIN MODEL
+--------------
+
+Update internal/chain.Transaction to carry:
+
+  TxID
+  WTxID
+
+Core RPC's verbose field named:
+
+  "hash"
+
+maps to WTxID.
+
+Keep Size/VSize/Weight on the Go Transaction domain object because that
+object represents one observed full serialization/variant.
+
+The SQL normalization does not require splitting the in-memory object.
+
+
+TESTS
+-----
+
+Add a decisive database test:
+
+Create one txid T.
+
+Create two witness variants:
+
+  W1 -> T
+  W2 -> T
+
+with distinct witness bytes.
+
+Associate:
+
+  block A -> T/W1
+  block B -> T/W2
+
+Read both back and prove:
+
+- both block occurrences exist
+- both share txid T
+- wtxids differ
+- witness stack for W1 is preserved exactly
+- witness stack for W2 is preserved exactly
+- neither overwrites the other
+
+Use large synthetic witness fixtures if useful, including a 17,088-byte
+P2QPK-sized item.
+
+Also verify that variant-specific Size/VSize/Weight values cannot overwrite
+each other.
+
+
+2. MAKE UTXO SPEND FK PROVE THE EXACT PREVOUT
+=============================================
+
+Current utxo_state proves:
+
+  spending_txid/spending_vin_index exists
+
+but does NOT prove that that input's:
+
+  prev_txid
+  prev_vout_index
+
+equals this utxo_state row's:
+
+  txid
+  vout_index
+
+So an existing input that spends output A could incorrectly be used to mark
+output B as spent.
+
+Make that impossible in PostgreSQL.
+
+One clean approach:
+
+Add a UNIQUE constraint suitable for FK reference on transaction_inputs:
+
+  UNIQUE (
+    txid,
+    vin_index,
+    prev_txid,
+    prev_vout_index
+  )
+
+Then make utxo_state's spent relationship include the actual prevout:
+
+  FOREIGN KEY (
+    spending_txid,
+    spending_vin_index,
+    txid,
+    vout_index
+  )
+  REFERENCES transaction_inputs (
+    txid,
+    vin_index,
+    prev_txid,
+    prev_vout_index
+  )
+
+The existing spent/unspent NULL consistency means MATCH SIMPLE remains fine.
+
+The simpler:
+
+  FOREIGN KEY (spending_txid, spending_vin_index)
+
+becomes redundant and may be removed if the four-column FK fully supersedes
+it.
+
+Tests:
+
+- spending input exists and points to this exact output -> PASS
+- spending input exists but points to another txid -> REJECT
+- spending input exists but points to another vout -> REJECT
+- unspent row still works
+
+
+3. TIGHTEN UNKNOWN WITNESS METADATA
+===================================
+
+The current metadata CASE correctly fixes the P2QPK NULL loophole, but the
+unknown branches are still too permissive relative to ParseWitnessProgram.
+
+A structurally valid witness program length is:
+
+  2..40 bytes
+
+For:
+
+  unknown_witness
+
+require:
+
+  witness_version > 0
+  witness_program NOT NULL
+  octet_length(program) BETWEEN 2 AND 40
+
+AND it must NOT match a known explorer classification:
+
+  NOT (version = 1 AND length = 32)  -- P2TR
+  NOT (version = 2 AND length = 32)  -- P2QPK
+
+For:
+
+  unknown
+
+the witness-v0 metadata form should require:
+
+  version = 0
+  length BETWEEN 2 AND 40
+  length NOT IN (20, 32)
+
+Otherwise an UNKNOWN script that isn't structurally a witness program should
+have NULL witness metadata.
+
+Tests should include:
+
+unknown_witness:
+  v1/32 -> REJECT
+  v2/32 -> REJECT
+  v2/31 -> PASS
+  v3/32 -> PASS
+  program length 1 -> REJECT
+  program length 41 -> REJECT
+
+unknown:
+  NULL/NULL -> PASS
+  v0/19 -> PASS
+  v0/20 -> REJECT
+  v0/32 -> REJECT
+  v0/1 -> REJECT
+  v0/41 -> REJECT
+
+
+4. COMPLETE MIGRATION DRIFT PROTECTION
+======================================
+
+Current checksum records only UpSQL.
+
+But Down() later executes DownSQL, so silently changing DownSQL after
+application is also dangerous.
+
+Protect BOTH migration directions.
+
+Prefer either:
+
+  up_checksum
+  down_checksum
+
+or one deterministic checksum covering both UpSQL and DownSQL with an
+unambiguous separator/encoding.
+
+Verify both before Up or Down proceeds.
+
+Also change VerifyChecksums so an applied migration with NO corresponding
+loaded local migration definition is an error.
+
+Migration history is append-only. Deleting an already-applied migration
+pair from the repository must not silently become acceptable just because a
+later migration still exists.
+
+Tests:
+
+- mutate UpSQL after apply -> REJECT
+- mutate DownSQL after apply -> REJECT
+- rename applied migration -> REJECT
+- applied migration absent from loaded definitions -> REJECT
+
+
+5. UPDATE ARCHITECTURE
+======================
+
+Update docs/ARCHITECTURE.md so it clearly distinguishes:
+
+  txid
+    non-witness transaction identity
+
+  wtxid
+    complete serialized transaction including witness
+
+  transaction
+    non-witness body
+
+  transaction variant
+    one concrete witness serialization
+
+  block occurrence
+    the exact txid/wtxid variant appearing at a block position
+
+Explicitly document why this matters for orphan/reorg audit.
+
+Mention Core RPC terminology:
+
+  RPC "txid" = txid
+  RPC "hash" = wtxid
+
+
+6. QUALITY
+==========
+
+Run all existing and new PostgreSQL-backed tests plus:
+
+  gofmt -l .
+  go vet ./...
+  go test ./...
+  go test -race ./...
+  go build ./...
+
+No changes outside qoge-explorer.
+
+
+7. COMMIT
+=========
+
+Commit on the same branch.
+
+Suggested commit message:
+
+  fix: preserve witness transaction variants and strengthen UTXO integrity
+
+Push normally so PR #2 updates.
+
+Do NOT merge.
+
+Report:
+
+PHASE 2B.1 FINAL IDENTITY FIXES
+===============================
+
+Commit:
+PR head:
+
+TXID / WTXID MODEL
+------------------
+transactions:
+transaction_variants:
+block_transactions:
+transaction_input_witness:
+chain.Transaction:
+
+WITNESS VARIANT TEST
+--------------------
+Same txid:
+WTxID A:
+WTxID B:
+Distinct witness preservation:
+Variant size/weight preservation:
+
+UTXO EXACT PREVOUT
+------------------
+Composite relation:
+Wrong-txid prevout test:
+Wrong-vout prevout test:
+Valid spend:
+
+UNKNOWN WITNESS METADATA
+------------------------
+2..40 enforcement:
+Known-type exclusion:
+Tests:
+
+MIGRATION DRIFT
+---------------
+Up checksum:
+Down checksum:
+Missing applied definition:
+Tests:
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+Must say NONE.
+
+Stop. Do not merge and do not begin Phase 2B.2.
+
+The first issue is the significant one. Core itself makes the distinction unavoidable: txid explicitly hashes the serialization with SERIALIZE_TRANSACTION_NO_WITNESS, while the witness hash uses the complete serialization. Once we promise to retain orphan history and raw P2QPK witnesses, wtxid has to be a first-class database identity.
+
+The temporary-schema safety redesign, one-address-per-output invariant, P2QPK NULL fix, height derivation, and numeric constraints from this round all look good and should be kept.
+
+After this identity fix, I would send PR #2 once more to the P2QPK-development Claude specifically to review the txid/wtxid/witness model, because that now touches the exact boundary between Core transaction serialization and the explorer's database representation.
