@@ -1,0 +1,85 @@
+● Fetching the PR diff and all changed files now.
+
+  Read 1 file, ran 4 shell commands 
+
+● Full diff read (2,408 lines). Working through each checklist item against the actual code.
+
+  ---
+  P2QPK CONSENSUS REVIEW
+  ======================
+
+  PR head reviewed: 30944c6094daf84934e97d8c9962556f88d31f81
+  Verdict: APPROVE
+
+  Consensus discrepancies: None.
+
+  P2QPK discrepancies: None.
+
+  Witness classification discrepancies: None.
+
+  Legacy-script discrepancies: None.
+
+  Data-loss risks: None.
+
+  Architecture concerns: None blocking.
+
+  Detailed findings by checklist item:
+
+  1. P2QPK
+
+  - Witness version 2: P2QPKWitnessVersion = 2 in types.go; classify.go gates on wp.Version == P2QPKWitnessVersion. Correct.
+  - 32-byte program: P2QPKProgramLength = 32. Correct.
+  - Program is HASH256(pubkey), not raw pubkey: types.go makes this explicit in the constant comment: "The program is HASH256(pubkey), a commitment — NOT the raw public key — but happens to also be 32 bytes." The distinction between the 32-byte program commitment and the 32-byte P2QPKPublicKeyLength (the key revealed at spend time in the witness stack) is maintained correctly throughout.
+  - Cannot accidentally classify P2TR: The switch in classify.go resolves v1/32 to TypeP2TR before the v2/32 P2QPK case is ever reached. The real block-1284510 Taproot vector (51202e44fe...) is explicitly tested in TestClassify_RealTaproot_IsNeverP2QPK — it classifies as TypeP2TR, not TypeP2QPK.
+  - 17,088-byte signature / 32-byte pubkey constants: P2QPKSignatureLength = 17088, P2QPKPublicKeyLength = 32. Exact match with FIPS 205 SLH-DSA-SHA2-128f ("f" parameter set) and the values in QOGE/symbiont-wallet. Zero disagreements.
+
+  2. Witness classification
+
+  The switch in classify.go (after ParseWitnessProgram succeeds) is evaluated top-to-bottom with no fallthrough; every case is unambiguous:
+
+  ┌───────────┬────────────────────┬───────────────────────────────────────────┐
+  │ Condition │       Result       │               Matches Core                │
+  ├───────────┼────────────────────┼───────────────────────────────────────────┤
+  │ v0/20     │ TypeP2WPKH         │ ✅ BIP141                                 │
+  ├───────────┼────────────────────┼───────────────────────────────────────────┤
+  │ v0/32     │ TypeP2WSH          │ ✅ BIP141                                 │
+  ├───────────┼────────────────────┼───────────────────────────────────────────┤
+  │ v1/32     │ TypeP2TR           │ ✅ BIP341 WITNESS_V1_TAPROOT              │
+  ├───────────┼────────────────────┼───────────────────────────────────────────┤
+  │ v2/32     │ TypeP2QPK          │ ✅ SIP-02                                 │
+  ├───────────┼────────────────────┼───────────────────────────────────────────┤
+  │ v0/other  │ TypeUnknown        │ ✅ Core: NONSTANDARD, not WITNESS_UNKNOWN │
+  ├───────────┼────────────────────┼───────────────────────────────────────────┤
+  │ v≥1/other │ TypeUnknownWitness │ ✅ Core: WITNESS_UNKNOWN                  │
+  └───────────┴────────────────────┴───────────────────────────────────────────┘
+
+  The v0/other → TypeUnknown mapping is the subtle Core-correct behavior (v0 is a fully-defined BIP141 version; an off-length v0 program is NONSTANDARD in Solver(), not WITNESS_UNKNOWN). The code comment confirms it was verified from source (src/script/standard.cpp), and TestClassify_WitnessV0Fallback exercises lengths 19, 21, 31, 33.
+
+  3. Legacy scripts
+
+  - P2PK / MatchPayToPubkey: matchP2PK + isPubKeyPush mirrors Core's MatchPayToPubkey + CPubKey::ValidSize exactly — compressed (0x02/0x03, 33 bytes) and uncompressed/hybrid (0x04/0x06/0x07, 65 bytes), prefix-validated, not just length-checked. The "right length, wrong prefix" test cases in TestMatchP2PK (0x05 prefix scripts that must NOT match) close the gap explicitly.
+  - Multisig / MatchMultisig + GetScriptNumber: matchMultisig + multisigScriptNumber correctly mirrors Core. maxPubKeysPerMultisig = 20 matches Core's MAX_PUBKEYS_PER_MULTISIG. The minimality rule is correctly scoped — only m/n number encodings require it (via multisigScriptNumber), not pubkey pushes (per Core's GetOp-level behavior), and the TestMatchMultisig/pubkey_pushed_via_OP_PUSHDATA4 test explicitly verifies this distinction.
+  - PUSHDATA handling: nextToken covers OP_PUSHDATA1/2/4 with full bounds checking (including the signed-width guard on OP_PUSHDATA4). No classification discrepancy from PUSHDATA handling introduced.
+
+  4. Chain model
+
+  - WitnessStack preserves P2QPK spends byte-for-byte: WitnessStack = [][]byte — each item is a raw []byte with no size limit enforced at the model layer. The witness.go comment explicitly documents the P2QPK spend stack order: [signature (17,088 bytes), pubkey (32 bytes)], matching Core's txinwitness field order and SIP-02.
+  - No ~17 KB data loss: Nothing in the model caps or truncates witness items. int fields for Size/VSize/Weight hold up to ~2 billion; a 17,088-byte witness item cannot cause overflow there.
+  - Transaction size/vsize/weight: All three present as separate int fields on Transaction, matching Core's verbose RPC output (confirmed by real-vector test at block 1,000,000: Size=196, Weight=784).
+
+  5. Architecture
+
+  - Phase 2A is purely a data model and structural classifier. No consensus validation, no signature verification, no liboqs/CGo dependency. types.go says so explicitly; Block, Transaction, etc. carry no validation logic.
+  - Difficulty float64 is correctly flagged "display only; never used for consensus decisions."
+  - The two-table multisig schema correction (output_addresses = destination rows only; output_participants = participant search/display only, never joined into balance math) is the right fix before Phase 2B locks the schema. Fixing it now is significantly easier than after PostgreSQL persistence is wired.
+
+  ---
+  No blocking discrepancy found. Phase 2A is safe to merge from the P2QPK/Core perspective.
+
+✻ Baked for 2m 13s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
+
