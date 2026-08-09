@@ -1,0 +1,464 @@
+I reviewed 00012 and the actual PR #3 code, not just Claude’s summary. The implementation is a strong first store-engine pass: the PostgreSQL transaction boundary is clean, address caches are SET-based, txid/wtxid separation is preserved, P2QPK witness storage remains byte-exact, and the reorg path keeps immutable orphan history. Claude also reports all A–X tests and the uncached quality gates passing.
+
+GitHub currently shows PR #3 open, unmerged, non-draft, and mergeable at the expected single head commit 0878d4516fdaa3c3acce8e3972bba6a5633061ac, based directly on the merged Phase 2B.1 baseline.
+
+I would not merge yet. I found four store-level correctness gaps that the current tests don't exercise.
+
+ApplyBlock can corrupt canonical state by applying an old orphaned block below the current tip. It only reads the current checkpoint height; it does not require the incoming block to extend the current tip, and it only writes the checkpoint when block.Height >= currentCheckpointHeight. That creates a dangerous case: apply A1, roll it back, apply replacement B1/B2, then call ApplyBlock(A1) again. A1 is now orphaned and below the B2 checkpoint. applyBlockHeader sees the already-existing header and accepts it without checking/promoting canonical; its outputs can be recreated in utxo_state, address caches recomputed, and because its height is below the checkpoint the final checkpoint validation is skipped entirely. The transaction can commit canonical UTXO state belonging to an orphan block. The same missing tip-continuity rule also allows arbitrary forward jumps if their parent happens to exist. ApplyBlock should accept only an exact replay of the current tip or the immediate next child of the tip.
+A header-only or partial block can currently be marked fully indexed. The domain model explicitly allows Transactions to be nil while TxCount remains populated, because header-style RPC data may know the count without carrying bodies. But ApplyBlock loops over whatever transactions happen to be present and then advances sync_state; it never checks len(block.Transactions) == block.TxCount. A block claiming 200 transactions with zero supplied bodies could therefore become the durable checkpoint. The store boundary must reject incomplete blocks before inserting anything.
+The claimed immutable-body protection is row-by-row, not whole-object complete. insertOrVerifyIdempotent only proves a specific natural-key row is identical if that row already exists. Inputs, witness items, and outputs are each independently inserted by index. Therefore the same txid could later be supplied with an extra input/output index that did not previously exist, and that new row would simply be inserted. Conversely, an incoming representation that silently omits an existing input/output/witness item is never detected. The same problem exists for witness stack completeness under one wtxid. This contradicts the stated invariant that “same txid + different body” and “same wtxid + different witness” must raise ErrImmutableConflict. We need whole-set cardinality/index verification after persistence, with rollback on mismatch.
+Canonical mutations are not serialized, and markSpent ignores whether its guarded UPDATE actually changed a row. ApplyBlock reads sync_state without FOR UPDATE, while RollbackTo also performs its canonical-state rewrite without locking that row first. checkPrevout reads an unspent row, then markSpent later runs UPDATE ... WHERE spent=false, but does not inspect RowsAffected. With concurrent store users, two operations can reason from stale canonical state. A SELECT ... FOR UPDATE on sync_state('main') at the start of every Apply/Rollback gives us a simple global canonical-state mutex across processes, and markSpent should still verify the update result.
+
+There is also one reorg capability gap tied to item 1: a previously orphaned block cannot become canonical again. RollbackTo deliberately leaves the block row with canonical=false. If that exact branch later wins again, applyBlockHeader verifies the immutable header but never restores canonical=true; when that block is the next valid tip, the final checkpoint trigger rejects it. A verified orphan block needs to be safely re-promotable when it is the immediate child of the current canonical tip.
+
+Give Claude this follow-up:
+
+Independent review of PR #3 found four blocking store-engine integrity gaps.
+
+Stay on:
+
+  phase2b-store-engine
+
+Current reviewed head:
+
+  0878d4516fdaa3c3acce8e3972bba6a5633061ac
+
+Do NOT merge PR #3.
+Do NOT begin RPC/indexer work.
+Do NOT modify migrations/0001_initial.*.
+
+Make one focused review-fix commit on the existing PR.
+
+
+1. ENFORCE CANONICAL TIP CONTINUITY
+===================================
+
+ApplyBlock currently only compares block.Height with the checkpoint height.
+
+That is not sufficient.
+
+A canonical state mutation must be serialized around sync_state('main') and
+the incoming block must have an explicit relationship to the current tip.
+
+At the start of ApplyBlock, inside its pgx transaction:
+
+  SELECT indexed_height, indexed_block_hash
+  FROM sync_state
+  WHERE name='main'
+  FOR UPDATE
+
+This row lock is the canonical-chain mutation lock and must also be acquired
+by RollbackTo before it changes canonical state.
+
+For an initialized store, ApplyBlock should accept exactly:
+
+A. exact current-tip replay:
+
+   block.Hash == checkpoint.Hash
+   block.Height == checkpoint.Height
+
+or
+
+B. immediate canonical append:
+
+   block.Height == checkpoint.Height + 1
+   block.PreviousHash == checkpoint.Hash
+
+Anything else should return a new sentinel such as:
+
+  ErrNonSequentialBlock
+
+and MUST leave the database unchanged.
+
+Do not allow a lower historical block to mutate canonical UTXO/address
+state merely because its height is below the checkpoint.
+
+For an uninitialized checkpoint (-1/NULL), preserve whatever intentional
+bootstrap policy is needed for the existing isolated fixture tests, but
+document it explicitly. Production historical sync will start from genesis.
+
+Add decisive tests:
+
+- tip replay succeeds
+- immediate child succeeds
+- height jump rejected
+- wrong prev_hash rejected
+- old canonical block below tip rejected
+- OLD ORPHAN below current replacement tip rejected and cannot recreate
+  utxo_state/address state
+
+
+2. COMPLETE-BLOCK REQUIREMENT
+=============================
+
+chain.Block intentionally permits:
+
+  TxCount > 0
+  Transactions == nil
+
+for header/lightweight data.
+
+ApplyBlock is NOT a header persistence API. It represents a fully indexed
+canonical block.
+
+Before any database write require:
+
+  len(block.Transactions) == block.TxCount
+
+Reject mismatch with a clear sentinel/error, e.g.:
+
+  ErrIncompleteBlock
+
+This must happen before applyBlockHeader.
+
+Tests:
+
+- TxCount=1, Transactions=nil -> rejected, zero DB writes
+- TxCount=2, only one Transaction supplied -> rejected
+- TxCount exactly equals full transaction list -> accepted
+- checkpoint does not move on incomplete block
+
+
+3. VERIFY COMPLETE IMMUTABLE CHILD SETS
+=======================================
+
+Current insertOrVerifyIdempotent protects individual natural-key rows, but
+does not prove the entire transaction body / witness variant is complete.
+
+Example currently possible:
+
+first observation of txid T:
+  outputs = [vout 0]
+
+later observation using the same txid T:
+  outputs = [vout 0, vout 1]
+
+vout 1 has a new natural key, so it can simply be inserted even though the
+same txid now describes a different non-witness body.
+
+Likewise an incoming replay can omit an existing row without detection.
+
+Close this for:
+
+- transaction_inputs per txid
+- transaction_outputs per txid
+- transaction_input_witness per wtxid
+- block_transactions per block_hash
+
+After applying the supplied child rows, verify the persisted exact set
+matches the supplied object:
+
+Block:
+  count(block_transactions for block_hash) == len(block.Transactions)
+  and therefore == block.TxCount
+
+Transaction body:
+  count(transaction_inputs for txid) == len(txn.Inputs)
+  count(transaction_outputs for txid) == len(txn.Outputs)
+
+Also verify the expected vin/vout index sets, not just count, so replacing
+index 1 with index 2 cannot pass.
+
+Prefer enforcing canonical model indices:
+
+  txn.Inputs[i].Index == uint32(i)
+  txn.Outputs[i].Index == uint32(i)
+
+if that matches the existing Phase-2A model/Core array semantics.
+
+Witness variant:
+  the exact persisted set of
+    (vin_index, item_index)
+  for wtxid
+  must equal the supplied witness stack shape.
+
+This must detect:
+
+- extra input
+- omitted input
+- extra output
+- omitted output
+- added witness item
+- omitted witness item
+- witness item moved to another vin/index
+
+All such cases must return ErrImmutableConflict and roll back every write
+attempted by that ApplyBlock.
+
+Do NOT compute or validate txid/wtxid cryptographically in Store.
+This is representation-integrity checking, not consensus validation.
+
+Also review output_addresses/output_participants completeness:
+
+- one destination row iff the canonical Output supplies Address
+- multisig participant persistence should not silently accept an
+  inconsistent PubKeys / ParticipantAddresses shape
+
+If ParticipantAddresses is documented as parallel to PubKeys, require the
+relationship explicitly rather than silently skipping missing entries.
+
+
+4. SAFE ORPHAN BLOCK RE-PROMOTION
+=================================
+
+RollbackTo intentionally preserves immutable block rows with:
+
+  canonical=false
+  orphaned_at != NULL
+
+A previously orphaned branch can theoretically become canonical again later.
+
+If ApplyBlock is called for an ALREADY-PERSISTED orphan block and that block
+is now the immediate valid child of the current canonical tip:
+
+1. verify the entire immutable header exactly
+2. promote:
+
+     canonical = true
+     orphaned_at = NULL
+
+3. rebuild/apply its canonical UTXO/address state normally
+4. checkpoint it normally
+
+The unique canonical-height index remains a final DB guard.
+
+Do not promote an arbitrary orphan:
+it must satisfy the same immediate-child continuity rule from item 1.
+
+Tests:
+
+- apply A0 -> A1
+- RollbackTo(A0), proving A1 canonical=false
+- ApplyBlock(A1) again
+- A1 becomes canonical=true
+- orphaned_at becomes NULL
+- UTXOs/addresses restored correctly
+- checkpoint becomes A1
+
+Also test:
+
+- after A0 -> B1 -> B2 is canonical,
+  attempting ApplyBlock(A1) directly is rejected because A1 is not the
+  immediate child of the current tip
+- canonical derived state remains exactly unchanged
+
+
+5. SERIALIZE CANONICAL MUTATIONS / CLOSE SPEND TOCTOU
+=====================================================
+
+Use the sync_state('main') FOR UPDATE lock as a DB-wide canonical mutation
+lock in BOTH:
+
+  ApplyBlock
+  RollbackTo
+
+Acquire it near the beginning of each transaction and hold it until commit.
+
+This protects multiple Store instances/processes, not just goroutines in one
+process.
+
+Also harden markSpent.
+
+Current pattern:
+
+  checkPrevout -> UPDATE ... WHERE spent=false
+
+must not assume the UPDATE succeeded simply because checkPrevout previously
+saw spent=false.
+
+Inspect RowsAffected.
+
+If exactly 1:
+  success.
+
+If 0:
+  re-read the current spender.
+  - exact same txid/vin/block = idempotent replay
+  - otherwise return ErrDoubleSpend / state-conflict error
+
+Optionally SELECT/FOR UPDATE the specific utxo_state row during prevout
+resolution as additional defense, but retain the global canonical mutation
+lock because RollbackTo and checkpoint changes also need serialization.
+
+Add concurrency-oriented tests where practical proving:
+
+- two canonical mutators cannot interleave past the checkpoint lock
+- RollbackTo and ApplyBlock serialize
+- a failed/stale spend cannot silently succeed after a zero-row UPDATE
+
+
+6. OPTIONAL SMALL HARDENING
+===========================
+
+While touching fee calculation, avoid silent int64 accumulator overflow.
+
+Use checked addition for inputSum/outputSum, returning a clear internal
+representation error on overflow.
+
+Valid QOGE mainnet values are far below int64 capacity, but silent wraparound
+should still be structurally impossible in Store tests/fixtures.
+
+This does NOT require a schema change.
+
+
+7. EXISTING REQUIREMENTS MUST REMAIN TRUE
+=========================================
+
+Preserve all current passing behavior:
+
+- exactly one DB transaction per block
+- checkpoint is final logical write
+- replay is idempotent
+- no additive address-cache updates
+- txid/wtxid separation
+- 17,088-byte P2QPK witness byte-exact
+- exact-prevout UTXO FK behavior
+- fees in integer satoshis
+- coinbase fee NULL
+- orphan immutable audit history retained
+- replacement branches apply normally
+- migrations/0001_initial.* untouched
+
+Do not weaken any existing A-X test.
+
+
+8. NEW REGRESSION TESTS
+=======================
+
+Add explicit tests for at least:
+
+A. incomplete/header-only block rejected
+B. tx count/list mismatch rejected
+C. non-sequential height rejected
+D. wrong prevhash rejected
+E. old orphan below current tip cannot mutate state
+F. previously orphaned immediate child can be re-promoted
+G. same txid + added input rejected
+H. same txid + omitted input rejected
+I. same txid + added output rejected
+J. same txid + omitted output rejected
+K. same wtxid + added witness item rejected
+L. same wtxid + omitted witness item rejected
+M. changed vin/vout index set rejected
+N. canonical mutation lock protects concurrent Apply/Rollback
+O. zero-row markSpent cannot silently succeed
+
+All failures must leave:
+- canonical blocks
+- utxo_state
+- addresses
+- sync_state
+
+exactly as they were before the failed ApplyBlock.
+
+
+9. QUALITY
+==========
+
+Run uncached:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run all PostgreSQL-backed tests.
+
+Verify again:
+
+  git diff main...HEAD -- migrations/
+
+must show ZERO migration changes.
+
+No files outside qoge-explorer modified.
+
+
+10. COMMIT / PUSH
+=================
+
+Commit on the same branch.
+
+Suggested commit message:
+
+  fix: enforce canonical store continuity and immutable completeness
+
+Push normally so PR #3 updates.
+
+Do NOT merge.
+
+
+REPORT
+======
+
+PHASE 2B.2 REVIEW FIXES
+=======================
+
+Commit:
+PR head:
+
+CANONICAL CONTINUITY
+--------------------
+Tip lock:
+Replay rule:
+Append rule:
+Rejected stale/orphan rule:
+
+COMPLETE BLOCK
+--------------
+TxCount/list enforcement:
+Header-only test:
+
+IMMUTABLE COMPLETENESS
+----------------------
+Inputs:
+Outputs:
+Witness:
+Block occurrences:
+Index-set enforcement:
+
+ORPHAN RE-PROMOTION
+-------------------
+Reactivation behavior:
+Tests:
+
+CONCURRENCY
+-----------
+Canonical mutation serialization:
+markSpent RowsAffected handling:
+Concurrency tests:
+
+P2QPK
+-----
+17,088-byte preservation:
+txid/wtxid behavior:
+
+DATABASE TESTS
+--------------
+Existing A-X:
+New regression tests:
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+PostgreSQL:
+
+MIGRATION DIFF
+--------------
+Must say ZERO.
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+Must say NONE.
+
+Stop for another independent review.
+
+The first two findings are the ones I consider most urgent. The current code’s “lower-height blocks don't move the checkpoint” behavior sounds harmless, but because ApplyBlock also changes utxo_state and address caches, it creates a real path for orphan-derived canonical state to be committed without ever passing the checkpoint's canonical-block trigger.
+
+Likewise, the chain.Block model deliberately distinguishes TxCount from the optional full transaction slice, so the store must explicitly refuse a partial block; otherwise a header-level object can become a “fully indexed” checkpoint.
+
+Once these are fixed, the design should be considerably stronger before we connect it to live Core RPC.
