@@ -1,0 +1,431 @@
+I reviewed Claude’s Phase 2B.1 report and the actual PR #2 schema/migration code. The overall redesign is much better than the original Phase-1 sketch: transaction occurrence is separated from transaction identity, immutable outputs are separated from canonical UTXO state, raw witness/scripts use BYTEA, and the multisig accounting split is now database-backed. Claude’s reported migration and DB tests all passed. GitHub currently shows PR #2 open and mergeable at head 562eeaf891d4fcdc5900c977f7e1e80babb41ed8.
+
+I would not merge yet, though. I found four issues worth correcting while the schema is still empty.
+
+1. The P2QPK SQL constraint has a NULL loophole
+
+This is the most concrete bug. The migration says:
+
+CHECK (
+    script_type <> 'p2qpk'
+    OR (witness_version = 2 AND octet_length(witness_program) = 32)
+)
+
+But PostgreSQL CHECK constraints accept an expression evaluating to TRUE or NULL. Therefore this row is currently allowed:
+
+script_type     = p2qpk
+witness_version = NULL
+witness_program = NULL
+
+The separate presence constraint also allows both witness fields to be NULL. So the claimed structural P2QPK invariant is not actually enforced for that case.
+
+This needs an explicit IS TRUE, IS NOT NULL, or equivalent formulation, plus negative tests.
+
+I'd actually use this opportunity to make all recognized witness metadata internally consistent, not only P2QPK:
+
+p2wpkh -> v0/20
+p2wsh  -> v0/32
+p2tr   -> v1/32
+p2qpk  -> v2/32
+
+That is structural metadata consistency, not consensus validation.
+
+2. output_addresses says “zero or one” but permits many
+
+The schema documentation explicitly says zero or one balance-accounting destination per output, but the primary key is:
+
+PRIMARY KEY (txid, vout_index, address)
+
+So three different addresses can all be attached to the same ordinary output.
+
+That recreates a variant of the balance-multiplication problem we were trying to eliminate. The multisig trigger prevents it specifically for multisig, but nothing prevents multiple destinations for P2PKH/P2WPKH/P2QPK/etc.
+
+Add:
+
+UNIQUE (txid, vout_index)
+
+or simply make (txid, vout_index) the primary key.
+
+3. utxo_state can contradict the immutable chain data
+
+The new separation is conceptually right, but the canonical-state table still accepts inconsistent relationships. It can currently say:
+
+output TX A was created in block X
+
+even if TX A never occurred in block X.
+
+It can likewise say a spend was made by a nonexistent input, or that a spending transaction occurred in a block that never contained it. And creation_block_height / spending_block_height are caller-provided values that can disagree with the block hashes.
+
+We already solved exactly this class of problem for block_transactions.block_height by deriving it from the referenced block. We should do the same here.
+
+The database can enforce:
+
+(creation_block_hash, txid)
+    -> block_transactions(block_hash, txid)
+
+(spending_txid, spending_vin_index)
+    -> transaction_inputs(txid, vin_index)
+
+(spending_block_hash, spending_txid)
+    -> block_transactions(block_hash, txid)
+
+And either derive the two height fields from blocks, or remove them and join when needed. I prefer deriving them with a trigger if we want the denormalized query performance.
+
+This is particularly important because utxo_state is going to become the heart of reorg correctness.
+
+4. The database tests have a dangerous destructive footgun
+
+This code worries me more operationally than anything else:
+
+pool.Exec(ctx, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+
+It runs against whatever QOGE_TEST_DATABASE_URL points to.
+
+One typo in an environment variable could destroy the explorer's real database—or any other database whose credentials were accidentally supplied.
+
+For tests, I'd strongly prefer a fresh temporary PostgreSQL schema per test/run, then drop only that generated schema afterward. At minimum there needs to be a hard safety interlock verifying this is an explicitly designated test database before any destructive reset.
+
+One migration-foundation improvement
+
+The custom migration runner is clean and small, but schema_migrations currently records only version, name, and timestamp. Once a migration is applied, editing its .up.sql later goes completely undetected: Up() just sees the version and skips it.
+
+Since we're intentionally writing our own migration system, I recommend recording a SHA-256 checksum of the migration SQL and refusing to proceed if an applied migration's current file differs from the recorded checksum. This is cheap now and prevents very confusing schema drift years later.
+
+I don't consider migration concurrency/advisory locking blocking yet because this will initially be a single-operator deployment, but checksums are worth adding now.
+
+Give Claude this follow-up:
+
+Independent review of PR #2 found several schema/invariant issues to correct.
+
+Stay on:
+
+  phase2b-postgres-schema
+
+Do NOT merge PR #2.
+Do NOT begin Phase 2B.2.
+
+Make one focused review-fix commit on the existing PR.
+
+
+1. FIX THE P2QPK CHECK NULL LOOPHOLE
+===================================
+
+Current constraint:
+
+  script_type <> 'p2qpk'
+  OR (witness_version = 2 AND octet_length(witness_program) = 32)
+
+is not sufficient in PostgreSQL because CHECK constraints accept NULL.
+
+Therefore:
+
+  script_type='p2qpk'
+  witness_version=NULL
+  witness_program=NULL
+
+can currently pass:
+- witness presence consistency accepts both NULL
+- P2QPK expression evaluates NULL
+- PostgreSQL CHECK accepts NULL
+
+Fix this explicitly.
+
+Add tests proving all of these are rejected:
+
+- p2qpk + NULL/NULL
+- p2qpk + v1/32
+- p2qpk + v2/31
+- p2qpk + v2/33
+
+and v2/32 succeeds.
+
+While doing this, preferably enforce structural metadata consistency for all
+known witness types:
+
+  p2wpkh -> witness v0 / 20 bytes
+  p2wsh  -> witness v0 / 32 bytes
+  p2tr   -> witness v1 / 32 bytes
+  p2qpk  -> witness v2 / 32 bytes
+
+Legacy non-witness types should not carry witness metadata.
+
+unknown_witness should carry a nonzero witness version.
+
+Do not parse/execute scripts in PostgreSQL.
+This is metadata consistency only, not consensus validation.
+
+
+2. ENFORCE ZERO-OR-ONE DESTINATION ADDRESS
+==========================================
+
+ARCHITECTURE.md says output_addresses contains zero or one destination row
+per currently-supported output.
+
+But:
+
+  PRIMARY KEY (txid, vout_index, address)
+
+currently permits multiple different destination addresses for the same
+output.
+
+That could multiply balance accounting even for non-multisig outputs.
+
+Enforce:
+
+  UNIQUE (txid, vout_index)
+
+or make:
+
+  PRIMARY KEY (txid, vout_index)
+
+with address as ordinary NOT NULL data.
+
+Add a test:
+
+- insert first destination for a normal P2PKH/P2WPKH output -> PASS
+- insert second different destination for same txid:vout -> REJECTED
+
+
+3. STRENGTHEN UTXO_STATE RELATIONAL INTEGRITY
+=============================================
+
+utxo_state currently contains:
+
+  creation_block_hash
+  creation_block_height
+  spending_txid
+  spending_vin_index
+  spending_block_hash
+  spending_block_height
+
+but does not prove those values describe real transaction occurrences.
+
+Add relational guarantees where practical.
+
+Creation:
+
+  FOREIGN KEY (creation_block_hash, txid)
+    REFERENCES block_transactions (block_hash, txid)
+
+This guarantees the transaction that created the output really occurred in
+the claimed creation block.
+
+Spend:
+
+  FOREIGN KEY (spending_txid, spending_vin_index)
+    REFERENCES transaction_inputs (txid, vin_index)
+
+and:
+
+  FOREIGN KEY (spending_block_hash, spending_txid)
+    REFERENCES block_transactions (block_hash, txid)
+
+This guarantees:
+- the claimed spending input exists
+- the claimed spending transaction actually occurred in the claimed block
+
+Nullable composite FKs are fine for unspent rows; the existing spent-state
+constraint already requires every spending field when spent=true.
+
+Also eliminate caller-controlled height drift.
+
+Either:
+
+A. derive creation_block_height and spending_block_height from blocks via
+   a BEFORE INSERT/UPDATE trigger
+
+or:
+
+B. remove the denormalized height columns entirely and obtain heights through
+   joins.
+
+If retaining the columns, I prefer A because they are useful for range
+queries, but they must be mechanically derived rather than trusted from the
+caller.
+
+Add tests proving:
+- wrong creation block for txid -> rejected
+- nonexistent spending input -> rejected
+- spending tx not contained by claimed spending block -> rejected
+- supplied wrong heights cannot persist
+- valid spend relationship succeeds
+
+
+4. MAKE DATABASE TEST RESET SAFE
+================================
+
+Current tests execute:
+
+  DROP SCHEMA public CASCADE;
+  CREATE SCHEMA public;
+
+against QOGE_TEST_DATABASE_URL.
+
+This is too dangerous: an accidentally misconfigured environment variable
+could destroy a real database.
+
+Prefer creating a uniquely named temporary schema for each test/test run:
+
+  qoge_test_<unique>
+
+Set that schema as search_path for the test pool, run migrations there, and
+drop ONLY that generated schema during cleanup.
+
+Do not DROP SCHEMA public in tests.
+
+If there is a technical reason not to use temporary schemas, implement an
+equally strong hard safety interlock before any destructive operation.
+
+Add/adjust tests as necessary.
+
+
+5. ADD MIGRATION CHECKSUM DRIFT DETECTION
+=========================================
+
+schema_migrations currently records:
+
+  version
+  name
+  applied_at
+
+If an already-applied .up.sql file is later edited, the custom runner silently
+treats the same version as already applied.
+
+Add a deterministic SHA-256 checksum of the migration's UpSQL.
+
+Store it with the applied migration.
+
+Before Up or Down proceeds, compare every already-applied migration for which
+a local definition exists against its recorded checksum.
+
+If the SQL changed after application, fail loudly with an error describing
+the migration version.
+
+Add a unit/database test:
+
+1. apply migration
+2. alter the loaded migration SQL in memory
+3. Up or validation must reject it as checksum drift
+
+Also detect a same-version/name mismatch if not already covered.
+
+No need to add a large third-party migration dependency.
+
+
+6. SMALL NUMERIC INVARIANTS
+===========================
+
+Since this is the final schema pass, also align obvious uint32-backed chain
+fields with the Phase-2A Go model:
+
+  blocks.nonce
+  transactions.locktime
+  transaction_inputs.sequence
+
+Require each to be within:
+
+  0 .. 4294967295
+
+Also:
+
+  fee_satoshis IS NULL OR fee_satoshis >= 0
+
+and coinbase transactions must not have a fee value.
+
+Do not add relay-policy constraints or anything that could reject valid
+historical/nonstandard scripts.
+
+
+7. QUALITY / MIGRATION TESTS
+============================
+
+Re-run:
+
+  gofmt -l .
+  go vet ./...
+  go test ./...
+  go test -race ./...
+  go build ./...
+
+Run all PostgreSQL-backed tests.
+
+Specifically report:
+
+P2QPK NULL loophole:
+Witness metadata invariants:
+One-address-per-output:
+UTXO creation occurrence FK:
+UTXO spending input FK:
+UTXO spending block occurrence FK:
+UTXO height derivation:
+Test DB destructive-reset safety:
+Migration checksum drift:
+uint32 range constraints:
+
+
+8. COMMIT
+=========
+
+Commit on the existing branch:
+
+  phase2b-postgres-schema
+
+Suggested message:
+
+  fix: harden PostgreSQL relational invariants
+
+Push normally so PR #2 updates automatically.
+
+Do NOT merge.
+
+Finish with:
+
+PHASE 2B.1 REVIEW FIXES
+=======================
+
+Commit:
+PR head:
+
+P2QPK STRUCTURAL CHECK
+----------------------
+...
+
+DESTINATION CARDINALITY
+-----------------------
+...
+
+UTXO RELATIONAL INTEGRITY
+-------------------------
+...
+
+TEST DATABASE SAFETY
+--------------------
+...
+
+MIGRATION DRIFT PROTECTION
+--------------------------
+...
+
+NUMERIC INVARIANTS
+------------------
+...
+
+DATABASE TESTS
+--------------
+...
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+Must say NONE.
+
+Stop for final schema review.
+
+The underlying architecture is now solid; these are mostly about making PostgreSQL actually enforce the guarantees the document says it enforces. In particular, the P2QPK NULL behavior and destructive test reset are definite bugs rather than stylistic preferences. After those are fixed, I expect Phase 2B.1 to be very close to merge-ready.
