@@ -1,0 +1,31 @@
+
+● All quality gates pass. Now the pre-commit review and commit.
+  
+  Ran 1 shell command 
+
+● Confirmed clean elsewhere.
+  
+  Committed 30944c6, pushed to phase2-chain-script, ran 2 shell commands 
+
+● PR #1 updated to the new commit and remains open (not merged).
+  
+  Report
+
+  - P2PK invalid-prefix behavior: matchP2PK now calls isPubKeyPush on the extracted key (the same check matchMultisig already used), matching Core's MatchPayToPubkey → CPubKey::ValidSize. A 33-byte push with prefix 0x05, or a 65-byte push with prefix 0x05/0x08, no longer classifies as P2PK — falls to unknown
+  instead. Real block-1 and block-5000 P2PK vectors (both genuinely 0x02-prefixed) re-asserted explicitly and still pass.
+  - PUSHDATA4 behavior: nextToken now decodes OP_PUSHDATA4 with the same bounds-checked pattern already used in isPushOnly (4-byte little-endian length prefix, checked for both the length-bytes region and the payload region before slicing). Previously it silently fell through to "plain single-byte opcode,"
+  which would have corrupted any later multisig parse containing a PUSHDATA4-pushed pubkey.
+  - Tests added: 3 invalid-prefix negative cases for P2PK; TestNextToken_PushData4 (valid decode + 4 truncated/malformed variants, all ok=false); TestNextToken_NeverPanics; a new matchMultisig subtest proving a PUSHDATA4-pushed pubkey tokenizes and classifies identically to a direct push. One pre-existing
+  fixture (internal/script/classify_test.go's TestClassify_AllRequiredTypes/P2PK) used a synthetic key with an invalid prefix byte and had to be corrected to a valid one — caught immediately by the new isPubKeyPush check in matchP2PK, confirming the fix is live.
+  - Quality gates: gofmt -l . clean, go vet ./... clean, go test ./... PASS, go test -race ./... PASS, go build ./... clean.
+  - Commit: 30944c6094daf84934e97d8c9962556f88d31f81
+  - PR head: https://github.com/QOGE/qoge-explorer/pull/1 (updated to 30944c6, OPEN, not merged)
+
+  No files modified outside qoge-explorer (eiquidus, qogecoin, symbiont-wallet all confirmed clean). Still on phase2-chain-script, main untouched. Stopping here for final review.
+
+✻ Brewed for 2m 37s
+                        
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Merge the PR
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
