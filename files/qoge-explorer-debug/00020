@@ -1,0 +1,114 @@
+● I'll resume the merge process for PR #4. Starting with pre-merge verification.
+
+  Ran 1 shell command 
+
+● Matches exactly: OPEN, MERGEABLE, not draft, base=main, head SHA matches d0f5b4b2cb5b0100c170229be426297932ed7430. Now verifying the phase boundary — zero changes to migrations/store/chain/script.
+
+  Ran 1 shell command 
+
+● All four are empty. Phase boundary respected. Proceeding to merge with a normal merge commit.
+
+  Ran 2 shell commands 
+
+● PR #4 merged via commit 2c17c500d1aefbb5e5dbd009da3dd4ce442c8655. Let's confirm it's a genuine 2-parent merge commit.
+
+  Ran 1 shell command 
+
+● Confirmed: two parents (cfdbaa6 = prior main, d0f5b4b = reviewed PR head) — genuine merge commit, full history preserved. Now updating local main.
+
+  Ran 1 shell command 
+
+● Working tree clean. Switching to main and fast-forwarding.
+
+  Ran 2 shell commands 
+
+● Local main and origin/main match exactly at 2c17c50. Now running the full post-merge quality gate.
+
+  Ran 1 shell command 
+
+● Clean. Now the full test suite and race variant, uncached, against the merged main baseline.
+
+  Ran 2 shell commands 
+
+● All clean under -race too. Now the opt-in live RPC integration suite against the local node.
+
+  Ran 1 shell command 
+
+● All live RPC tests pass against the merged main baseline. Let's now run the specific named-behavior checks to confirm each item in the required verification list.
+
+  Ran 1 shell command 
+
+● All confirmed PASS. Now the final housekeeping checks: phase2c-rpc-decoder branch preserved, no files outside project touched.
+
+  Ran 1 shell command 
+
+● phase2c-rpc-decoder branch preserved on both local and remote. Outside-project directories show only their pre-existing, unrelated untracked build artifacts. Delivering the final report.
+
+  PHASE 2C.1 MERGE
+  ================
+
+  PR: https://github.com/QOGE/qoge-explorer/pull/4
+  Reviewed head: d0f5b4b2cb5b0100c170229be426297932ed7430
+  Merge method: normal merge commit (--merge, not squash, not rebase)
+  Merge commit: 2c17c500d1aefbb5e5dbd009da3dd4ce442c8655 (parents: cfdbaa642b248e89500cc35a32c0f22cf9d79b59 = prior main, d0f5b4b2cb5b0100c170229be426297932ed7430 = reviewed PR head — confirmed 2-parent merge commit, full commit history preserved, including both the original decoder implementation commit and the strict-wire review-fix commit)
+
+  MAIN
+  ----
+  Local main HEAD:  2c17c500d1aefbb5e5dbd009da3dd4ce442c8655
+  origin/main HEAD: 2c17c500d1aefbb5e5dbd009da3dd4ce442c8655
+  Match: YES (fast-forwarded cleanly, cfdbaa6..2c17c50)
+
+  PR STATE
+  --------
+  State: MERGED
+  Merged: yes (mergedAt 2026-08-10T13:39:27Z, mergedBy QOGE)
+
+  POST-MERGE QUALITY
+  ------------------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, all packages, uncached (-count=1)
+  go test -race: PASS, all packages, uncached
+  go build: clean
+  PostgreSQL tests: all internal/decode and internal/store tests PASS (per-test isolated schemas)
+  Live RPC tests: all 4 opt-in tests PASS against the local reference node (QOGE_RPC_INTEGRATION=1) — no credentials printed
+
+  RPC DECODER BASELINE
+  --------------------
+  Required-field presence: PASS (TestDecodeBlock_MissingRequiredFieldsRejected, TestDecodeTransaction_MissingRequiredFieldsRejected, TestDecodeInput_MissingRequiredFieldsRejected — missing height/nonce/version/locktime/vout/sequence etc. all correctly rejected rather than silently defaulting to a legitimate-looking zero)
+  Exact amount conversion: PASS (TestDecodeAmount_Valid/Rejected/NeverRounds/MaxRepresentablePrecision — no float64 path, exact 8-decimal satoshi conversion, overflow/negative/over-precision all rejected)
+  Empty script handling: PASS (TestDecodeOutput_EmptyScriptPubKeyHexAccepted — present hex="" accepted, classifies TypeUnknown; TestDecodeOutput_MissingScriptPubKeyObjectRejected and TestDecodeOutput_ScriptPubKeyMissingHexMemberRejected — both correctly rejected)
+  VIN exclusivity: PASS (TestDecodeInput_ContradictoryWireShapesRejected — 6 contradictory-shape cases rejected; TestDecodeInput_OrdinaryPureWitnessEmptyScriptSigPreserved — empty pure-witness scriptSig still accepted)
+  Genesis prevhash: PASS (TestDecodeBlock_GenesisRelation — genesis requires previousblockhash absent, non-genesis requires it present and valid, negative height rejected)
+  txid/wtxid: PASS (TestDecodeTransaction_TxIDWTxIDPreservedNotDerived — Core's txid/hash fields preserved verbatim, never derived)
+  Structural classification: PASS (TestDecodeOutput_RPCTypeNeverDrivesClassification — a lying RPC type is ignored; TestDecodeOutput_UnknownWitnessNeverUpgradedToP2QPK and TestDecodeOutput_RealVector_P2TR — v1/32 and v3/32 never misclassified as P2QPK)
+  P2PK resolver: PASS (TestDecodeOutput_P2PKResolvesAddressViaResolver — resolved address populated, ScriptType stays p2pk)
+  Multisig resolver: PASS (TestDecodeOutput_MultisigResolvesEveryParticipant — every participant resolved, positional, parallel to PubKeys)
+  P2TR separation: PASS (explicitly not P2QPK, confirmed above)
+  P2QPK v2/32: PASS (TestDecodeOutput_P2QPKSyntheticVector — structural classification, address copied as-is from Core's synthetic witness_unknown field, never derived)
+  P2QPK 17,088-byte witness: PASS (TestDecodeInput_P2QPKWitnessSpendVector — byte-exact, both unit-level and through the full pipeline)
+  Decoder -> Store pipeline: PASS (TestDecodeBlock_ThroughStore_PipelineTest — decoded block passes Store's shape requirements; P2PK resolved address reaches output_addresses; OP_RETURN persists in transaction_outputs but GetUTXO is nil; present-but-empty-script output persists and receives an ordinary utxo_state row; 17,088-byte + 32-byte witness reaches transaction_input_witness byte-exact)
+
+  PHASE BOUNDARY DIFFS
+  --------------------
+  migrations/: ZERO
+  internal/store/: ZERO
+  internal/chain/: ZERO
+  internal/script/: ZERO
+
+  WORKING TREE
+  ------------
+  Status: clean, on branch main, up to date with origin/main
+
+  FILES MODIFIED OUTSIDE PROJECT
+  ------------------------------
+  NONE (qogecoin/symbiont-wallet checkouts show only their pre-existing, unrelated untracked build artifacts)
+
+  Phase 2C.1 is merged to main. phase2c-rpc-decoder branch preserved (not deleted) as instructed. Stopping here — not beginning Phase 2C.2 (sync loop, polling, live fork detection, or a production Store.ApplyBlock caller).
+
+✻ Churned for 4m 10s
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Begin Phase 2C.2 of QOGE Go Explorer
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
