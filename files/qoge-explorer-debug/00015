@@ -1,0 +1,87 @@
+● Now let's run the quality gate and full test suite.
+
+  Ran 3 shell commands 
+
+● Now let's run the full test suite and race variant.
+
+  Ran 2 shell commands 
+
+● All new tests pass, including test M with the fixed fixture. Now the full suite:
+
+  Ran 1 shell command 
+
+● All packages pass. Now the race variant:
+
+  Ran 1 shell command 
+
+● All clean, including under -race. Now let's verify migration diff, file scope, and check for secrets before committing.
+
+  Ran 1 shell command 
+
+● Migration diff zero; exactly the expected 3 files changed. Let's check for secrets and confirm other repos untouched.
+
+  Ran 1 shell command 
+
+● Clean. Now let's commit and push.
+
+  Committed 6d745ee, pushed to phase2b-store-engine, ran 2 shell commands 
+
+● PR #3 confirmed OPEN with head now at 6d745ee. Delivering the final report:
+
+  PHASE 2B.2 FINAL MODEL INTEGRITY
+  ================================
+
+  Commit: 6d745ee25cce3ef7e746292178608e31b51866ed
+  PR head: 6d745ee25cce3ef7e746292178608e31b51866ed (PR #3, state OPEN, not merged)
+
+  TRANSACTION COMPLETENESS
+  ------------------------
+  Empty vin: validateBlockShape now rejects len(txn.Inputs) == 0 with ErrInvalidTransactionShape, before any write — mirrors Core's CheckTransaction bad-txns-vin-empty (shape only, not consensus validation).
+  Empty vout: same, len(txn.Outputs) == 0 → ErrInvalidTransactionShape (bad-txns-vout-empty).
+  Tests: TestApplyBlock_TransactionCompleteness — coinbase with zero outputs (rejected, zero writes, checkpoint unmoved) — PASS; non-coinbase with zero inputs (rejected, zero writes, checkpoint unmoved) — PASS; normal vin/vout (accepted) — PASS.
+
+  INPUT REPRESENTATION
+  --------------------
+  Coinbase: PreviousOut == nil now requires len(Coinbase) > 0 AND len(ScriptSig) == 0, enforced per-input before any write.
+  Non-coinbase: PreviousOut != nil now requires len(Coinbase) == 0; ScriptSig is never required non-empty.
+  Pure witness: an empty ScriptSig on a non-coinbase input is explicitly never rejected by itself.
+  Tests: TestApplyBlock_InputFieldExclusivity — normal coinbase (PASS); coinbase with non-empty ScriptSig (REJECT, PASS); coinbase with missing/empty Coinbase bytes (REJECT, PASS); non-coinbase with Coinbase bytes populated (REJECT, PASS — closes the exact gap flagged: this case was previously silently accepted since applyInput never inspected Coinbase when PreviousOut != nil); pure-witness non-coinbase with empty ScriptSig (PASS).
+
+  QOGE GENESIS FIXTURE
+  --------------------
+  Version: corrected to 1.
+  Reward: corrected to 10,000,000,000 satoshis (100 QOGE).
+  ScriptPubKey: corrected to the real genesis bare-P2PK form (<push 65> <pubkey 042f87f8...61594> OP_CHECKSIG), round-tripped through the real script.Classify pipeline and confirmed to classify as script.TypeP2PK.
+  Fixture accuracy: block hash, txid, version, reward, and scriptPubKey are all source-derived from the real values reported; the coinbase input's raw script bytes remain a clearly-commented synthetic placeholder (no offline historical block source available to verify them against). Doc comment on the test (and docs/ARCHITECTURE.md) now explicitly describes it as a "source-derived genesis identity/UTXO-semantics fixture," not a claim of full byte-exact
+  reproduction. TestApplyBlock_GenesisCoinbaseUnspendable — PASS.
+
+  P2QPK
+  -----
+  17,088-byte test: TestApplyBlock_P2QPKWitnessPreservation — unchanged, PASS.
+  txid/wtxid test: TestApplyBlock_WtxidVariantsRemainDistinct — unchanged, PASS.
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, all packages, uncached (-count=1)
+  go test -race: PASS, all packages, uncached
+  go build: clean
+  PostgreSQL: all internal/store tests PASS (per-test isolated schemas), including one existing fixture correction (TestApplyBlock_ImmutableChildSetCompleteness/M needed a non-nil Outputs slice added — it had relied on Outputs staying incidentally nil, which the new empty-vout check would otherwise catch before the positional-index check the test actually exercises; assertion unchanged, still ErrImmutableConflict)
+
+  MIGRATION DIFF
+  --------------
+  ZERO
+
+  FILES MODIFIED OUTSIDE PROJECT
+  ------------------------------
+  NONE
+
+  Pushed to origin/phase2b-store-engine; PR #3 confirmed OPEN, not merged. Stopping here as instructed.
+
+✻ Sautéed for 9m 49s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Merge PR #3
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
