@@ -1,0 +1,64 @@
+● Fetching the PR #3 diff from GitHub now.
+
+  Ran 2 shell commands 
+
+● Head SHA confirmed: 6d745ee25cce3ef7e746292178608e31b51866ed. Reading the diff.
+  
+  Read 1 file 
+
+● REPORT ONLY
+
+  ---
+  P2QPK / CORE FINAL STORE REVIEW
+
+  PR head reviewed: 6d745ee25cce3ef7e746292178608e31b51866ed
+  Verdict: APPROVE
+
+  ---
+  Atomic ApplyBlock: PASS. Single pool.Begin / defer tx.Rollback / tx.Commit wraps all work. UPDATE sync_state SET indexed_block_hash = $1 is the final write before Commit — any earlier failure rolls back the whole block application. RollbackTo uses the identical pattern.
+
+  Canonical continuity: PASS. checkCanonicalContinuity enforces: exact replay (same hash + height), or immediate child (height = checkpoint+1, PreviousHash = checkpoint.Hash). Everything else → ErrNonSequentialBlock. Verified against continuity_test.go: past block, gap block, wrong-parent,
+  height-mismatch all rejected; idempotent replay and immediate child both accepted.
+
+  Concurrency locking: PASS. lockCheckpoint issues SELECT ... FROM sync_state WHERE name = 'main' FOR UPDATE as the first statement inside every canonical-mutation transaction (both ApplyBlock and RollbackTo). The Postgres row lock is held until COMMIT or ROLLBACK, serializing competing goroutines
+  and competing OS processes sharing the same DB. Loser receives ErrNonSequentialBlock (continuity check), not a raw DB constraint error — clean public API boundary.
+
+  Block shape validation (validateBlockShape): PASS. Checks: len(Transactions) == block.TxCount (else ErrIncompleteBlock); block has ≥ 1 transaction; every tx has ≥ 1 input and ≥ 1 output; input field exclusivity (PreviousOut != nil XOR len(Coinbase) > 0, ScriptSig must be empty for coinbase
+  inputs); IsCoinbase flag must match structural definition (len(vin)==1 && vin[0].PreviousOut==nil); tx[0] must be coinbase; no tx[i>0] may be coinbase. Mirrors Core's IsCoinBase() and block structural rules exactly.
+
+  Genesis exclusion: PASS. applyOutput guards the utxo_state INSERT with !isGenesis && !script.IsUnspendable(out.ScriptPubKey). Genesis block outputs (height == 0) never receive a utxo_state row. Validated by TestApplyBlock_GenesisCoinbaseUnspendable using the real QOGE genesis block hash
+  (78cf9e38...), txid (a0bc9829...), and reward (10,000,000,000 satoshis / 100 QOGE); GetUTXO returns nil for the genesis coinbase output.
+
+  IsUnspendable: PASS. Matches Core's CScript::IsUnspendable() exactly: (len(pkScript) > 0 && pkScript[0] == OP_RETURN) || len(pkScript) > 10000. MaxScriptSize = 10000 matches Core's constant. Eight-case unit test covers nil, empty, P2PKH, bare OP_RETURN, OP_RETURN with payload, length-boundary
+  10000 (spendable), length 10001 (unspendable), and P2QPK (spendable).
+
+  txid/wtxid identity split: PASS. transactions keyed by txid; transaction_variants keyed by wtxid; transaction_input_witness keyed by (wtxid, vin_index, item_index). Witness identity invariant enforced: (txn.WTxID == txn.TxID) == hasWitness → ErrWitnessIdentityMismatch if violated (witnessed tx
+  must have wtxid ≠ txid; non-witnessed tx must have wtxid == txid). Non-witness tx (wtxid == txid) stores no transaction_variants row. Correct per Bitcoin/Qogecoin segwit design.
+
+  P2QPK witness storage: PASS. transaction_input_witness.witness_data is BYTEA (no length cap in schema). TestApplyBlock_P2QPKWitnessPreservation stores and reads back a 17,088-byte signature (item 0) and 32-byte pubkey (item 1) with bytes.Equal byte-for-byte verification. Two separate variants
+  (txid row in transactions, wtxid row in transaction_variants) stored and verified independently. No truncation, no off-by-one on item_index. Constants script.P2QPKSignatureLength = 17088 and script.P2QPKPublicKeyLength = 32 match SLH-DSA-SHA2-128f / SIP-QOGE-PQC-02 exactly.
+
+  UTXO spend (checkPrevout / markSpent): PASS. checkPrevout: SELECT ... FROM utxo_state WHERE txid=$1 AND vout_index=$2 — no row → ErrMissingPrevout; returns the output's address for fee accounting. markSpent: UPDATE utxo_state SET spent=true, ... WHERE txid=$4 AND vout_index=$5 AND spent=false. On
+  RowsAffected() == 0: re-reads the row; if spending_txid matches this call → idempotent (no error); if different spender → ErrDoubleSpend. Correctly distinguishes idempotent replay from an actual double-spend conflict.
+
+  Fee computation: PASS. addChecked(a, b int64) performs overflow-safe int64 addition: if b > 0 && a > math.MaxInt64-b, returns ErrAmountOverflow. Coinbase transaction: fee stored as NULL (no prevout, no computation). Non-coinbase: fee = sum(input values) - sum(output values); negative result →
+  ErrNegativeFee (internal inconsistency, not a valid chain state). Integer satoshis throughout; no float arithmetic.
+
+  Address accounting / cache semantics: PASS. recomputeAddress is a pure SET computation: reads output_addresses (never output_participants), computes absolute balance/tx_count/first_seen/last_seen from scratch via single SQL query with CTEs, then UPSERTs the address_history row. If the computed
+  tx_count is zero (address touched by reorg but all UTXOs removed), the row is deleted. Applied to every address in touched map at the end of both ApplyBlock and RollbackTo — never increments, always overwrites. Correct SET semantics; no running-total drift.
+
+  Reorg (RollbackTo): PASS. Single transaction; lockCheckpoint first. Ancestor validated: SELECT height FROM blocks WHERE hash=$1 AND canonical — non-existent or non-canonical ancestor → ErrAncestorNotFound. Orphan hashes collected ascending by height. Step 1: DELETE FROM utxo_state WHERE 
+  creation_block_hash = ANY($1) — removes UTXO state for outputs created in orphaned blocks, returns affected addresses. Step 2: UPDATE utxo_state SET spent=false, ... WHERE spending_block_hash = ANY($1) — restores spends made by orphaned transactions (no-op for rows already deleted in step 1). Step
+  3: UPDATE blocks SET canonical=false, orphaned_at=now() — audit history preserved, nothing deleted. Touched addresses recomputed. Final write: UPDATE sync_state SET indexed_block_hash=$1 — trigger re-verifies ancestor is canonical. tx.Commit. Immutable audit trail (transactions, inputs, outputs,
+  witness) fully preserved across reorgs.
+
+  ---
+  No blocking Core/P2QPK discrepancy found. Phase 2B.2 is safe to merge.
+
+✻ Sautéed for 5m 15s
+                                                                                                                                                                                                                                                                                      
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
+
