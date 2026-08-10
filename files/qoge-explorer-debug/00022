@@ -1,0 +1,119 @@
+● Now let's run the complete deterministic suite (including -race) and the P2QPK test to confirm nothing regressed.
+
+  Ran 1 shell command 
+
+● All pass. Now -race, full repo test, vet, build, and phase-boundary diff checks.
+
+  Ran 1 shell command 
+
+● Now let's re-run the opt-in live integration suites.
+
+  Ran 1 shell command 
+
+● All pass, no credentials printed. Now let's smoke-test the index CLI command with the passed-through logger to confirm the fix.
+
+  Ran 2 shell commands 
+
+● JSON logging with debug level now correctly honors QOGE_LOG_LEVEL/QOGE_LOG_JSON — confirming fix 9. Let's clean up the smoke database and check the tail of the log for clean shutdown.
+
+  Ran 1 shell command 
+
+● Clean shutdown confirmed. Now let's verify the phase-boundary diffs stay within scope, then commit.
+
+  Ran 1 shell command 
+
+● All changes are within internal/indexer/* and cmd/qoge-explorer/main.go — exactly the allowed scope. Let's verify the frozen-file diffs are still zero and stage/commit.
+
+  Ran 1 shell command 
+
+● All zero, and Store.CanonicalBlockHash untouched by this fix as required. Let's commit and push.
+
+  Committed 3a465b7, pushed to phase2c-sync-indexer, ran 2 shell commands 
+
+● Everything checks out. All frozen files remain zero-diff across the whole PR, and this fix stayed entirely within internal/indexer/* and cmd/qoge-explorer/main.go.
+
+  REPORT
+
+  PHASE 2C.2 REVIEW FIXES
+
+  Commit: 3a465b77d0b821c31e11ca8dbec78a632c072631
+  PR head: https://github.com/QOGE/qoge-explorer/pull/5 (updated, still open, not merged)
+
+  POST-RECONCILE REORG
+  - ErrNonSequential handling: diagnoseNonSequential (race.go) — checks local checkpoint drift (rule A), then Core's current hash at the parent height (rule B/C), classifying as ErrRemoteChainMoved only when explained by a real canonical-context change
+  - Stable malformed-child behavior: falls through to a terminal, wrapped error when Core/local are provably stable and the fetched block's parent still contradicts them
+  - Tests: U (reorg between reconcile and next fetch), Y (stable Core + contradictory parent stays terminal) — both PASS
+
+  TIP RETREAT
+  - GetBlockHash disappearance: classifyHashUnavailable re-reads GetBlockCount; classifies as ErrRemoteChainMoved only if Core's fresh height is now below the requested height, else preserves the original RPC error
+  - Immediate reconciliation: yes — syncToTipLocked now continues the moment local.Height > target is observed, never waiting for the poll interval
+  - Tests: V (retreat between reconcile and target read), W (requested height disappears mid-apply) — both PASS
+
+  CAUGHT-UP VERIFICATION
+  - local > remote: handled (fix 4A), restarts reconciliation immediately
+  - same-height hash recheck: confirmCaughtUp re-reads GetBlockHash(local.Height) immediately before returning "caught up"; a mismatch restarts reconciliation instead of returning stale success
+  - Tests: X (same-height reorg caught only at final confirmation) — PASS
+
+  ANCESTOR SEARCH
+  - Remote retreat handling: every GetBlockHash call inside reorg's ancestor loop and the ancestor recheck now routes through classifyHashUnavailable
+  - Stable ancestor recheck: unchanged, still required before RollbackTo
+  - Local tip recheck: added — Store.Tip() is re-read immediately before RollbackTo and compared against the checkpoint the depth calculation used; a mismatch discards the decision via ErrRemoteChainMoved
+
+  DEPTH POLICY
+  - 100: automatic — unchanged, still PASS
+  - 101: halt — unchanged, still PASS
+  - No ancestor: halt — unchanged, still PASS
+
+  LOGGER
+  - Configured logger passed: yes — runIndex now takes *slog.Logger directly and passes it into indexer.New instead of nil
+  - JSON/level respected: verified via manual smoke test (QOGE_LOG_JSON=true QOGE_LOG_LEVEL=debug produced structured JSON debug-level "applied block" lines)
+
+  P2QPK
+  - 17,088 bytes: byte-exact — PASS (unchanged)
+  - 32 bytes: byte-exact — PASS (unchanged)
+  - Indexer → Store: PASS, re-verified after the fix
+
+  DETERMINISTIC TESTS
+  - A–T: all PASS (unchanged, re-verified)
+  - U: PASS — reorg between reconcile and next child fetch
+  - V: PASS — tip retreats between reconcile and target read
+  - W: PASS — requested height disappears during apply
+  - X: PASS — same-height reorg after reconcile
+  - Y: PASS — stable Core + contradictory parent stays terminal
+  - Bonus: negative-GetBlockCount rejection test — PASS
+
+  LIVE INTEGRATION
+  - Indexer (QOGE_INDEXER_INTEGRATION=1, capped to height 10): PASS
+  - RPC decoder (QOGE_RPC_INTEGRATION=1): PASS, unmodified
+  - Secrets printed: NO
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: PASS, all packages
+  - go test -race: PASS
+  - go build: clean
+  - PostgreSQL: local instance, isolated schemas per test, plus two manual CLI smoke-test databases (created and dropped)
+
+  PHASE BOUNDARY DIFFS
+  - migrations/: ZERO
+  - internal/store/apply.go: ZERO
+  - internal/store/reorg.go: ZERO
+  - internal/store/store.go: ZERO (unchanged since prior commit — CanonicalBlockHash untouched)
+  - internal/decode/: ZERO
+  - internal/script/: ZERO
+  - internal/chain/: ZERO
+
+  Changed only internal/indexer/* (+*_test.go) and cmd/qoge-explorer/main.go, as required.
+
+  FILES MODIFIED OUTSIDE PROJECT
+  NONE
+
+  Stop. Not merged.
+
+✻ Crunched for 11m 5s
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Wait for review before doing anything further
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
