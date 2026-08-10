@@ -1,0 +1,667 @@
+00021 is a strong Phase 2C.2 first implementation. The phase boundary is respected, Store.CanonicalBlockHash is appropriately read-only, the reorg depth logic itself looks correct, and the deterministic/live tests are substantial. Claude reports all A–T tests, PostgreSQL, race detector, capped real-Core indexing, restart, SIGTERM, and P2QPK pipeline tests passing.
+
+GitHub confirms PR #5 is open, unmerged, non-draft and mergeable, based directly on the Phase 2C.1 merge, at the expected single head:
+
+24df3826c7c07d28b9d950c70fb9ff5370a5046e
+
+I would not merge yet. I found one important race family that the A–T tests do not currently cover.
+
+Remote chain movement can still become a terminal indexing error
+
+The intention is that ordinary Core reorganization races become ErrRemoteChainMoved and trigger immediate reconciliation. But there are several windows where they currently do not.
+
+Consider this entirely normal sequence:
+
+Explorer local:
+A0 -> A1
+
+reconcile():
+Core is still:
+A0 -> A1
+PASS
+
+Core reorganizes immediately afterward to:
+A0 -> B1 -> B2
+
+Indexer now fetches height 2:
+GetBlockHash(2) = B2
+GetBlock(B2)     = B2, PreviousHash=B1
+second GetBlockHash(2) = B2
+
+All RPC race checks pass.
+
+Then Store.ApplyBlock(B2) sees local tip A1. Store correctly requires an immediate child whose PreviousHash == A1, so it returns ErrNonSequentialBlock. Store is behaving exactly as designed here.
+
+But applyHeight() simply wraps that error and returns it, so SyncToTip treats the perfectly normal Core reorg as a fatal integrity failure instead of restarting reconciliation.
+
+There are two related forms of the same problem.
+
+If Core's tip shrinks after GetBlockCount(), a requested GetBlockHash(height) can legitimately become unavailable. Right now that RPC error is also terminal rather than recognized as chain movement.
+
+And after a successful reconcile(), syncToTipLocked() performs a new GetBlockCount() and does:
+
+if local.Height >= target {
+    return nil
+}
+
+If Core retreats or performs a same-height reorg between those two operations, the explorer can declare itself caught up with a tip that is no longer canonical and then wait the full polling interval. That's contrary to the intended “chain moved → reconcile immediately” behavior.
+
+The current F test covers hash changing between the two GetBlockHash calls inside applyHeight, while G changes Core's branch between two separate SyncToTip calls. Neither exercises the critical reorg-after-reconcile/before-next-child window.
+
+There is also one small operational mistake: runIndex constructs the configured logger, but passes nil into indexer.New, so the indexer falls back to slog.Default() instead of honoring QOGE_LOG_LEVEL / QOGE_LOG_JSON.
+
+I would give Claude this focused correction:
+
+Independent review of PR #5 found one blocking orchestration race family.
+
+Stay on:
+
+  phase2c-sync-indexer
+
+Current reviewed head:
+
+  24df3826c7c07d28b9d950c70fb9ff5370a5046e
+
+Do NOT merge PR #5.
+Do NOT begin API/web work.
+Do NOT change Store write semantics.
+Do NOT modify migrations, decoder, chain, or script.
+
+Make one focused review-fix commit.
+
+
+1. NORMAL REORG AFTER reconcile() MUST NOT HALT THE INDEXER
+===========================================================
+
+Current race:
+
+local Store:
+  A0 -> A1
+
+reconcile():
+  Core still reports A1
+  -> PASS
+
+Core then reorganizes BEFORE the next block is applied:
+
+  A0 -> B1 -> B2
+
+applyHeight(2):
+
+  GetBlockHash(2)         -> B2
+  GetBlockVerbose2(B2)    -> B2, PreviousHash=B1
+  GetBlockHash(2) again   -> B2
+
+The two-height-hash check succeeds because B2 itself is stable.
+
+Store.ApplyBlock(B2) then correctly returns:
+
+  store.ErrNonSequentialBlock
+
+because the Store checkpoint is still A1 while B2's parent is B1.
+
+This is NOT a Store corruption/integrity failure.
+
+It is a normal remote-chain movement that occurred after the last
+reconciliation.
+
+The indexer must recognize this case and restart reconciliation immediately.
+
+
+2. DO NOT BLINDLY RETRY EVERY ErrNonSequentialBlock
+===================================================
+
+Do not simply map every store.ErrNonSequentialBlock to ErrRemoteChainMoved,
+because that could hide a reproducibly malformed Core/decoder model forever.
+
+When ApplyBlock returns store.ErrNonSequentialBlock, diagnose the canonical
+context.
+
+Read:
+
+  currentLocal := Store.Tip()
+
+Then determine whether the context changed.
+
+Useful rules:
+
+A. If currentLocal has advanced since this height was selected
+   (e.g. another Store/indexer writer committed a block):
+     -> canonical context moved
+     -> restart reconciliation
+
+B. If currentLocal.Height == height-1:
+
+   compare Core's CURRENT canonical hash at currentLocal.Height with
+   currentLocal.Hash.
+
+   If they differ:
+     -> Core reorganized below the block being applied
+     -> ErrRemoteChainMoved
+
+   If Core's hash still equals currentLocal.Hash BUT
+      block.PreviousHash != currentLocal.Hash:
+
+     this is NOT a normal race.
+     The fetched block representation contradicts the currently-active
+     parent relation.
+
+     Return the original integrity error / a contextual terminal error.
+
+C. If Core's current height is below currentLocal.Height:
+     -> remote tip retreated
+     -> ErrRemoteChainMoved
+
+The goal:
+
+normal canonical-context movement:
+  immediate reconciliation
+
+stable Core + internally contradictory child:
+  HALT
+
+Do not create an infinite retry loop for malformed data.
+
+
+3. HANDLE TIP RETREAT DURING GetBlockHash
+=========================================
+
+Another normal race:
+
+  target = GetBlockCount() -> H
+
+Core reorganizes to a shorter active chain.
+
+Then:
+
+  GetBlockHash(H)
+
+can fail because H is now above Core's current tip.
+
+Current code treats that as a terminal RPC failure.
+
+On a GetBlockHash(height) error during sync/reconciliation/ancestor search:
+
+- re-read GetBlockCount
+- if the new Core height is below requested height:
+    classify as ErrRemoteChainMoved
+    restart reconciliation
+- otherwise preserve the original RPC error as terminal
+
+Do not hide genuine transport/RPC failures merely because GetBlockHash
+failed.
+
+Use a small helper if useful so this behavior is consistent in:
+
+- applyHeight
+- reconcile
+- common-ancestor search
+- ancestor recheck
+
+No string matching of Core error messages.
+
+
+4. FINAL CAUGHT-UP CHECK MUST NOT ACCEPT A RETREATED/REORGED TIP
+===============================================================
+
+Current syncToTipLocked does roughly:
+
+  reconcile()
+  local = Store.Tip()
+  target = GetBlockCount()
+
+  if local.Height >= target {
+      return nil
+  }
+
+This contains two races.
+
+A. TIP RETREAT
+
+reconcile sees:
+
+  local=100
+  Core=100
+
+Core retreats to 90.
+
+Then GetBlockCount returns 90.
+
+Current:
+
+  local.Height >= target
+
+returns nil with local checkpoint still 100.
+
+Instead:
+
+  if local.Height > target:
+      immediately restart reconciliation
+
+Do NOT wait for the next polling interval.
+
+
+B. SAME-HEIGHT REORG
+
+reconcile verifies local hash A100.
+
+Core changes immediately afterward to B100.
+
+GetBlockCount still returns 100.
+
+Current code returns nil without rechecking the hash.
+
+When:
+
+  local.Height == target
+
+perform a final canonical-hash confirmation:
+
+  currentCoreHash = GetBlockHash(local.Height)
+
+Require:
+
+  currentCoreHash == local.Hash
+
+before declaring caught up.
+
+If it differs:
+  restart reconciliation immediately.
+
+If GetBlockHash becomes unavailable because Core retreated:
+  classify that as ErrRemoteChainMoved as described above.
+
+It is impossible to make Core/PostgreSQL atomically share a snapshot;
+the purpose is to close the obvious orchestration windows and make the
+remaining race converge on the next observation.
+
+
+5. ADD THE MISSING RACE TESTS
+=============================
+
+Add deterministic fake-RPC tests for at least:
+
+U. REORG BETWEEN RECONCILE AND NEXT CHILD FETCH
+
+Initial indexed:
+  A0 -> A1
+
+At reconcile:
+  Core reports A0 -> A1
+
+Immediately after reconcile, before fetching height 2, change Core to:
+
+  A0 -> B1 -> B2
+
+Expected:
+
+- no terminal store.ErrNonSequentialBlock
+- indexer restarts reconciliation
+- rolls back A1
+- applies B1/B2
+- final tip B2
+- A1 retained as orphan audit history
+
+
+V. TIP RETREATS BETWEEN RECONCILE AND TARGET READ
+
+Initial:
+  local tip = A2
+  reconcile verifies A2
+
+Then Core becomes a shorter valid chain.
+
+Expected:
+
+- SyncToTip does NOT return caught-up with stale A2
+- reconciliation occurs immediately
+- final local tip matches shortened/replacement Core branch
+
+
+W. REQUESTED HEIGHT DISAPPEARS DURING APPLY
+
+Target initially includes height H.
+
+Before GetBlockHash(H), Core retreats below H.
+
+Expected:
+
+- GetBlockHash failure is recognized via fresh GetBlockCount
+- treated as remote-chain movement
+- not surfaced as fatal RPC error
+- reconciliation succeeds
+
+
+X. SAME-HEIGHT REORG AFTER RECONCILE
+
+local/core initially:
+  A0 -> A1 -> A2
+
+reconcile verifies A2.
+
+Before final caught-up return, Core switches to:
+
+  A0 -> B1 -> B2
+
+same height.
+
+Expected:
+
+- final caught-up hash confirmation sees mismatch
+- does not return stale success
+- reorg/replacement happens immediately
+
+
+Y. STABLE CORE + CONTRADICTORY PARENT REMAINS TERMINAL
+
+Keep Core/local stable:
+
+  A0 -> A1
+
+Provide malformed/fabricated height-2 RPC data whose:
+
+  block hash identity is otherwise accepted
+  PreviousHash != A1
+
+while Core.GetBlockHash(1) still equals A1.
+
+Store will reject continuity.
+
+Expected:
+
+- do NOT convert this into an endless ErrRemoteChainMoved retry
+- return a terminal integrity error
+- checkpoint unchanged
+
+
+6. CORE MOVEMENT DURING ANCESTOR SEARCH
+=======================================
+
+Review every GetBlockHash call in reconcile/reorg.
+
+If Core retreats below the height currently being queried during ancestor
+discovery, that is also remote movement.
+
+Return/restart with ErrRemoteChainMoved rather than treating an
+out-of-range height as a permanent RPC failure.
+
+The existing final ancestor hash recheck remains required.
+
+Do NOT weaken:
+
+  MaxAutomaticReorgDepth = 100
+
+
+7. KEEP DEEP-REORG POLICY EXACT
+===============================
+
+All existing behavior must remain:
+
+  depth <= 100:
+    automatic
+
+  depth > 100:
+    ErrReorgTooDeep
+    no RollbackTo performed
+
+Exactly 100:
+  PASS automatic
+
+101:
+  HALT
+
+No-common-ancestor within allowed window:
+  HALT
+
+Do not change Store.RollbackTo.
+
+
+8. OPTIONAL LOCAL-CONTEXT SAFETY RECHECK
+========================================
+
+Before RollbackTo, re-read Store.Tip() and confirm it still equals the local
+checkpoint used to calculate:
+
+  depth = local.Height - ancestorHeight
+
+If it changed, discard the calculation and restart reconciliation.
+
+This protects the depth-policy decision against another local Store writer
+changing the checkpoint while common-ancestor discovery is running.
+
+Do not modify Store locking/write semantics for this.
+
+This is especially useful because Store itself deliberately supports
+cross-process serialized writers.
+
+
+9. PASS THE CONFIGURED LOGGER TO INDEXER
+========================================
+
+runIndex currently calls:
+
+  indexer.New(..., nil)
+
+which makes Indexer use slog.Default().
+
+That means historical-sync/reorg/debug logging does not honor the configured:
+
+  QOGE_LOG_LEVEL
+  QOGE_LOG_JSON
+
+Pass the actual logger created by logging.New into Indexer.
+
+Change runIndex's logger parameter typing if necessary.
+
+Do not change log contents to include credentials/raw witnesses.
+
+
+10. SMALL RPC HEIGHT SANITY
+===========================
+
+Core getblockcount can never legitimately be negative.
+
+Reject a negative GetBlockCount result as malformed RPC data rather than
+allowing an empty Store (-1) to appear accidentally "caught up."
+
+Add a focused test.
+
+Do not add arbitrary consensus-height limits.
+
+
+11. PRESERVE ALL EXISTING TESTS
+===============================
+
+Existing A-T must remain PASS:
+
+A fresh genesis
+B sequential sync
+C restart resume
+D caught-up no-op
+E growing tip
+F two-hash stale-block race
+G post-apply reorg
+H shallow reorg
+I shorter Core
+J exactly 100
+K depth 101
+L no ancestor
+M local gap
+N flip-back
+O malformed block
+P RPC failure
+Q cancellation
+R overlap
+S no high bootstrap
+T CanonicalBlockHash
+
+Especially preserve:
+
+- P2QPK 17,088-byte witness byte-exact
+- 32-byte pubkey byte-exact
+- decoder untouched
+- Store ApplyBlock untouched
+- Store RollbackTo untouched
+- one SQL transaction per block
+- sync_state as sole durable checkpoint
+
+
+12. LIVE TESTS
+==============
+
+After deterministic tests pass, rerun:
+
+- QOGE_INDEXER_INTEGRATION=1 capped real-Core indexer test
+- existing QOGE_RPC_INTEGRATION=1 decoder tests
+
+Do not index the full chain in tests.
+
+No credentials printed.
+
+
+13. PHASE BOUNDARY
+==================
+
+Expected changes for this fix should stay within:
+
+  internal/indexer/*
+  internal/indexer/*_test.go
+  cmd/qoge-explorer/main.go
+
+Potential test-helper changes are fine.
+
+Avoid changing even Store.CanonicalBlockHash unless a genuine issue is found.
+
+MUST remain zero:
+
+  migrations/
+  internal/store/apply.go
+  internal/store/reorg.go
+  internal/decode/
+  internal/script/
+  internal/chain/
+
+
+14. QUALITY
+===========
+
+Run:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Verify all PostgreSQL tests and opt-in live suites.
+
+
+15. COMMIT / PUSH
+=================
+
+Suggested commit:
+
+  fix: reconcile canonical chain movement races
+
+Push to the existing:
+
+  phase2c-sync-indexer
+
+Update PR #5.
+
+Do NOT merge.
+
+
+REPORT
+======
+
+PHASE 2C.2 REVIEW FIXES
+=======================
+
+Commit:
+PR head:
+
+POST-RECONCILE REORG
+--------------------
+ErrNonSequential handling:
+Stable malformed-child behavior:
+Tests:
+
+TIP RETREAT
+-----------
+GetBlockHash disappearance:
+Immediate reconciliation:
+Tests:
+
+CAUGHT-UP VERIFICATION
+----------------------
+local > remote:
+same-height hash recheck:
+Tests:
+
+ANCESTOR SEARCH
+---------------
+Remote retreat handling:
+Stable ancestor recheck:
+Local tip recheck:
+
+DEPTH POLICY
+------------
+100:
+101:
+No ancestor:
+
+LOGGER
+------
+Configured logger passed:
+JSON/level respected:
+
+P2QPK
+-----
+17,088 bytes:
+32 bytes:
+Indexer -> Store:
+
+DETERMINISTIC TESTS
+-------------------
+A-T:
+U:
+V:
+W:
+X:
+Y:
+
+LIVE INTEGRATION
+----------------
+Indexer:
+RPC decoder:
+Secrets printed: NO
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+PostgreSQL:
+
+PHASE BOUNDARY DIFFS
+--------------------
+migrations/: ZERO
+internal/store/apply.go: ZERO
+internal/store/reorg.go: ZERO
+internal/decode/: ZERO
+internal/script/: ZERO
+internal/chain/: ZERO
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+NONE
+
+Stop.
+Do not merge.
+
+The underlying architecture is still good. The problem is specifically the handoff between “I just reconciled” and “I am now applying/declaring caught-up.” Core can legally reorganize in that interval. Store is correctly strict enough to notice the resulting parent mismatch; the indexer now needs to interpret that particular mismatch as a reason to inspect/reconcile again rather than immediately terminating.
+
+After this correction I would review the updated PR once more internally, then send the final orchestration layer to the independent Core/P2QPK VM.
