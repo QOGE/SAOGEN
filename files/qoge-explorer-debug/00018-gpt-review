@@ -1,0 +1,652 @@
+00018 is a strong Phase 2C.1 implementation, but after reviewing the actual PR #4 code against Qogecoin Core, I would not merge it yet.
+
+PR #4 is currently open, unmerged, non-draft, mergeable, and still at the expected single commit 8f32909254caa8d91de523f011bd3bf5285baa16. Claude’s test/live-RPC report is extensive and all reported gates passed.
+
+The architecture is right. The remaining problems are at exactly the boundary this phase is supposed to make strict.
+
+1. Valid empty scriptPubKey is currently rejected
+
+The decoder does:
+
+if raw.ScriptPubKey.Hex == "" {
+    return chain.Output{}, fmt.Errorf("missing scriptPubKey")
+}
+
+so it cannot distinguish:
+
+"hex" field missing
+
+from the perfectly representable Core value:
+
+"hex": ""
+
+Core always emits the hex member with HexStr(script). An empty CScript therefore legitimately appears as an empty hex string. Core's basic transaction checks require at least one input/output and valid monetary ranges, but do not require a non-empty output script.
+
+So an empty output script must decode as raw []byte{} and classify TypeUnknown, not be mistaken for a missing field.
+
+This needs presence-aware RPC fields, probably *string for scriptPubKey.hex.
+
+2. Required RPC numeric fields lose presence information
+
+The typed DTO currently uses ordinary zero-valued Go fields such as:
+
+RawVin.Vout      uint32
+RawVin.Sequence  uint32
+
+RawVout.N        uint32
+
+RawTransaction.Version  uint32
+RawTransaction.Size     int
+RawTransaction.VSize    int
+RawTransaction.Weight   int
+RawTransaction.LockTime uint32
+
+RawBlock.Height     int64
+RawBlock.Time       int64
+RawBlock.Nonce      uint32
+RawBlock.Size       int
+RawBlock.Weight     int
+RawBlock.NTx        int
+
+That means malformed JSON such as an ordinary input that simply omits "vout" silently becomes:
+
+vout = 0
+
+which is also a perfectly legitimate real value. The same problem exists for sequence, locktime, nonce, version, height, etc.
+
+Core itself emits these fields unconditionally in the relevant responses: TxToUniv always writes transaction version/size/vsize/weight/locktime, ordinary input txid/vout/scriptSig/sequence, and output value/n/scriptPubKey. blockheaderToJSON/blockToJSON similarly emits height, time, nonce, bits, difficulty, nTx, size and weight.
+
+For a package whose explicit purpose is to prevent a partial RPC response from becoming canonical data, missing required fields must be distinguishable from legitimate zero values.
+
+3. Raw VIN exclusivity can still silently discard RPC data
+
+When raw.Coinbase != nil, decodeInput() immediately takes the coinbase path. It does not reject a malformed raw input that simultaneously contains txid, vout, or scriptSig. Conversely, an ordinary input is allowed to have ScriptSig == nil.
+
+But Core's actual serializer has two clear wire shapes: coinbase gets coinbase; ordinary inputs get txid, vout, and a scriptSig object whose hex member is always emitted—even when that hex string is empty.
+
+So we have another version of the same issue we fixed at the Store boundary: contradictory raw information can be silently discarded instead of rejected.
+
+4. Address presence should match Core's actual script semantics
+
+The current default branch copies raw.ScriptPubKey.Address for basically every type other than P2PK/multisig, including TypeNullData and TypeUnknown, while also allowing standard addressable outputs to arrive with an empty address.
+
+Core is more deterministic than that. ScriptToUniv emits address when ExtractDestination() succeeds, except it deliberately suppresses P2PK. Core's ExtractDestination() succeeds for P2PKH, P2SH, P2WPKH, P2WSH, P2TR and generic WITNESS_UNKNOWN; it returns false for multisig, nulldata and nonstandard scripts.
+
+That gives us a much stronger decoder contract:
+
+P2PKH/P2SH/P2WPKH/P2WSH/P2TR/P2QPK/unknown_witness
+    -> Core address MUST be present and non-empty
+
+P2PK
+    -> Core deliberately omits address; resolve via descriptor
+
+multisig
+    -> no Output.Address; resolve participants
+
+nulldata / unknown
+    -> Core address must be absent/empty
+
+Otherwise a truncated RPC response could silently omit an address and permanently undercount the explorer balance cache.
+
+There are also two smaller consequences worth fixing in the same pass: a non-genesis block currently accepts an empty PreviousBlockHash, even though Core only omits that field when there is no previous block, and a nil AddressResolver will panic on a P2PK/multisig output instead of returning a decoder error. Core's block serializer only omits previousblockhash when pprev does not exist.
+
+Give Claude this focused review-fix prompt:
+
+Independent review of PR #4 found several strict RPC-boundary integrity
+gaps.
+
+Stay on:
+
+  phase2c-rpc-decoder
+
+Current reviewed head:
+
+  8f32909254caa8d91de523f011bd3bf5285baa16
+
+Do NOT merge PR #4.
+Do NOT begin Phase 2C.2.
+Do NOT modify migrations.
+Do NOT modify Store semantics.
+
+Make one focused review-fix commit on the existing PR.
+
+
+1. DISTINGUISH MISSING RPC FIELDS FROM LEGITIMATE ZERO VALUES
+=============================================================
+
+The current Raw* DTO structs use ordinary Go numeric/string zero values for
+many fields Core always emits.
+
+That makes malformed/partial RPC JSON indistinguishable from legitimate
+values.
+
+Examples:
+
+ordinary vin with missing "vout"
+  currently becomes vout=0
+
+missing "sequence"
+  currently becomes sequence=0
+
+missing transaction "locktime"
+  currently becomes locktime=0
+
+missing block "nonce"
+  currently becomes nonce=0
+
+All of these zero values can legitimately occur, so value-based checking
+cannot solve this.
+
+Introduce explicit field-presence tracking for REQUIRED Core wire fields.
+
+A straightforward solution is pointer fields in the raw DTOs, though a
+small custom required-field type/custom UnmarshalJSON is acceptable if it
+keeps the DTO cleaner.
+
+Required transaction fields include:
+
+  txid
+  hash
+  version
+  size
+  vsize
+  weight
+  locktime
+  vin
+  vout
+
+Required ordinary vin fields:
+
+  txid
+  vout
+  scriptSig
+  sequence
+
+Required coinbase vin fields:
+
+  coinbase
+  sequence
+
+Required vout fields:
+
+  value
+  n
+  scriptPubKey
+
+Required scriptPubKey member:
+
+  hex
+
+Required block fields include:
+
+  hash
+  height
+  merkleroot
+  time
+  bits
+  difficulty
+  nonce
+  size
+  weight
+  nTx
+  tx
+
+previousblockhash is intentionally absent only for genesis.
+
+Do not detect presence by asking whether a numeric value is nonzero.
+
+Tests must prove missing required fields fail even when their Go zero value
+would otherwise have been legitimate:
+
+- ordinary vin missing vout -> REJECT
+- vin missing sequence -> REJECT
+- transaction missing version -> REJECT
+- transaction missing locktime -> REJECT
+- vout missing n at output index 0 -> REJECT
+- block missing nonce -> REJECT
+- block missing height -> REJECT
+
+
+2. EMPTY scriptPubKey IS VALID DATA
+===================================
+
+Current decoder treats:
+
+  scriptPubKey.hex == ""
+
+as "missing scriptPubKey".
+
+That is wrong.
+
+Qogecoin Core's ScriptToUniv always emits:
+
+  "hex": HexStr(script)
+
+An empty CScript therefore legitimately produces:
+
+  "hex": ""
+
+Core consensus CheckTransaction does NOT require scriptPubKey to be
+non-empty.
+
+Therefore distinguish:
+
+A. scriptPubKey object missing
+   -> REJECT
+
+B. scriptPubKey.hex member missing
+   -> REJECT
+
+C. scriptPubKey.hex present and equal to ""
+   -> ACCEPT
+   -> ScriptPubKey = zero-length []byte
+   -> script.Classify(empty) determines classification normally
+
+Do not invent bytes.
+
+Add tests:
+
+- present empty scriptPubKey hex -> accepted
+- classification == TypeUnknown
+- raw output preserved
+- decoder -> Store pipeline persists transaction_outputs row
+- its Core-equivalent UTXO behavior follows existing Store semantics
+- missing scriptPubKey object -> rejected
+- scriptPubKey object present but hex field absent -> rejected
+
+
+3. ENFORCE RAW VIN WIRE-SHAPE EXCLUSIVITY
+=========================================
+
+Core TxToUniv emits exactly one of:
+
+COINBASE:
+
+  coinbase
+  sequence
+  optional txinwitness
+
+ORDINARY:
+
+  txid
+  vout
+  scriptSig {
+    asm
+    hex
+  }
+  sequence
+  optional txinwitness
+
+The decoder must not silently discard contradictory raw fields.
+
+COINBASE RAW VIN:
+
+Require:
+- coinbase field present
+- coinbase hex non-empty and valid
+- ordinary txid absent
+- ordinary vout absent
+- scriptSig absent
+- sequence present
+
+ORDINARY RAW VIN:
+
+Require:
+- coinbase absent
+- txid present
+- vout present
+- scriptSig object present
+- scriptSig.hex member present
+- sequence present
+
+Important:
+
+  scriptSig.hex == ""
+
+is perfectly valid for pure witness inputs.
+
+So again distinguish MISSING hex from PRESENT-BUT-EMPTY hex.
+
+Reject malformed combinations such as:
+
+- coinbase + txid
+- coinbase + vout
+- coinbase + scriptSig
+- ordinary txid but missing vout
+- ordinary vin missing scriptSig
+- scriptSig object missing hex
+
+Do not silently ignore any raw input field.
+
+
+4. ENFORCE GENESIS / PREVIOUSBLOCKHASH RELATION
+===============================================
+
+Core blockheaderToJSON only emits previousblockhash when pprev exists.
+
+Decoder should require:
+
+  height == 0
+    -> previousblockhash absent
+
+  height > 0
+    -> previousblockhash present and valid 64-char lowercase hex
+
+Reject:
+
+- height 0 with a previousblockhash
+- height >0 without previousblockhash
+- negative height
+
+Again, use presence information rather than treating empty string as both
+"absent" and "empty".
+
+
+5. ENFORCE CORE ADDRESS PRESENCE BY STRUCTURAL SCRIPT TYPE
+=========================================================
+
+Classification remains entirely:
+
+  script.Classify(rawScript)
+
+RPC scriptPubKey.type remains diagnostics only.
+
+But once structural classification is known, enforce the address shape Core
+actually emits.
+
+Qogecoin Core ScriptToUniv:
+
+  adds "address" iff ExtractDestination succeeds
+  AND type != PUBKEY
+
+Core ExtractDestination succeeds for:
+
+  P2PK
+  P2PKH
+  P2SH
+  P2WPKH
+  P2WSH
+  P2TR
+  WITNESS_UNKNOWN
+
+but ScriptToUniv explicitly suppresses PUBKEY.
+
+Therefore decoder behavior should be:
+
+P2PK:
+  ignore/require absent Core address according to current source
+  resolve Output.Address through descriptor resolver
+
+P2PKH:
+P2SH:
+P2WPKH:
+P2WSH:
+P2TR:
+P2QPK:
+TypeUnknownWitness:
+  require RPC address field present AND non-empty
+  copy exactly as provided
+
+TypeMultisig:
+  Output.Address empty
+  participant addresses resolved through descriptor resolver
+
+TypeNullData:
+TypeUnknown:
+  Core does not provide an address
+  require absent/empty
+  never copy a surprising address into Output.Address
+
+This matters because silently accepting a missing address on P2PKH/P2WPKH/
+P2TR/P2QPK would persist the output without output_addresses and permanently
+undercount address balances.
+
+Tests:
+
+- P2PKH with address -> PASS
+- P2PKH missing address -> REJECT
+- P2TR missing address -> REJECT
+- P2QPK v2/32 missing address -> REJECT
+- unknown_witness with address -> PASS
+- unknown_witness missing address -> REJECT
+- nulldata with no address -> PASS
+- nulldata with fabricated address -> REJECT
+- nonstandard/TypeUnknown with fabricated address -> REJECT
+
+
+6. RESOLVER MUST NEVER PANIC
+============================
+
+decodeOutput currently dereferences AddressResolver directly for P2PK and
+multisig.
+
+A nil resolver must produce a contextual error, never panic.
+
+Either:
+
+- require a non-nil resolver in a Decoder constructor
+
+or:
+
+- check resolver before P2PK/multisig resolution.
+
+Keep resolver optional for decoding outputs that genuinely require no
+descriptor resolution if that remains useful.
+
+Also reject:
+
+  ResolvePubKeyAddress(...) == "", nil
+
+at the decoder boundary even for custom/fake implementations.
+
+CoreAddressResolver should also fail cleanly rather than panic if somehow
+constructed with a nil RPC client.
+
+Tests:
+
+- P2PK + nil resolver -> error, no panic
+- multisig + nil resolver -> error, no panic
+- resolver returns empty address + nil error -> reject
+
+
+7. BASIC RAW BLOCK/TX METRIC SANITY
+===================================
+
+After presence is established, reject representation-impossible malformed
+values where appropriate, without becoming a consensus validator.
+
+At minimum:
+
+  block.Height >= 0
+  block.Size >= 0
+  block.Weight >= 0
+  tx.Size >= 0
+  tx.VSize >= 0
+  tx.Weight >= 0
+
+Validate Core bits shape if convenient:
+
+  exactly 8 lowercase hex characters
+
+Do NOT impose monetary/PoW/subsidy consensus policy here.
+
+
+8. PRESERVE ALL EXISTING PHASE 2C.1 BEHAVIOR
+============================================
+
+Do not weaken:
+
+- exact json.Number -> satoshi conversion
+- zero floating-point monetary arithmetic
+- txid from RPC "txid"
+- wtxid from RPC "hash"
+- witness item ordering
+- zero-length witness items
+- 17,088-byte P2QPK witness preservation
+- structural script.Classify precedence
+- v1/32 P2TR vs v2/32 P2QPK separation
+- P2PK descriptor resolution
+- multisig participant resolution
+- resolver memoization
+- real mainnet vectors
+- opt-in live RPC tests
+- decoder -> Store PostgreSQL pipeline
+- no production sync loop
+
+Do not modify:
+
+  internal/store semantics
+  migrations/0001_initial.*
+
+
+9. LIVE CORE CROSS-CHECK
+========================
+
+After deterministic tests pass, rerun the opt-in live RPC integration suite
+against the current local Qogecoin node.
+
+This should confirm the stricter required-field/address rules all match
+what Qogecoin Core actually emits.
+
+Do not print credentials.
+
+
+10. QUALITY
+===========
+
+Run uncached:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run PostgreSQL-backed decoder/store tests.
+
+Run opt-in QOGE RPC integration tests.
+
+Verify:
+
+  git diff main...HEAD -- migrations/
+
+must remain ZERO.
+
+
+11. UPDATE PR DESCRIPTION
+=========================
+
+Add a short review-fix section explaining:
+
+- required RPC field-presence tracking
+- valid empty scriptPubKey distinction
+- raw vin exclusivity
+- genesis previoushash invariant
+- Core address-presence semantics
+- nil resolver hardening
+
+
+12. COMMIT / PUSH
+=================
+
+Suggested commit:
+
+  fix: enforce complete Core RPC wire representation
+
+Push to the existing:
+
+  phase2c-rpc-decoder
+
+Do NOT merge.
+
+
+FINAL REPORT
+============
+
+PHASE 2C.1 REVIEW FIXES
+=======================
+
+Commit:
+PR head:
+
+FIELD PRESENCE
+--------------
+Approach:
+Required block fields:
+Required tx fields:
+Required vin fields:
+Required vout fields:
+Missing-zero-value tests:
+
+EMPTY SCRIPT
+------------
+Missing vs empty:
+Classification:
+Store pipeline:
+
+VIN SHAPE
+---------
+Coinbase:
+Ordinary:
+Empty scriptSig:
+Contradictory-field tests:
+
+BLOCK PREVHASH
+--------------
+Genesis:
+Non-genesis:
+Tests:
+
+ADDRESS SEMANTICS
+-----------------
+Address-required types:
+Address-forbidden types:
+P2PK:
+Multisig:
+P2QPK:
+Tests:
+
+RESOLVER SAFETY
+---------------
+Nil resolver:
+Empty result:
+Tests:
+
+P2QPK
+-----
+v2/32:
+17,088 bytes:
+Address:
+P2TR negative:
+
+LIVE RPC
+--------
+Results:
+Secrets printed: NO
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+PostgreSQL:
+
+MIGRATION DIFF
+--------------
+ZERO
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+NONE
+
+Stop.
+Do not merge.
+Do not begin Phase 2C.2.
+
+The empty-script issue is the clearest concrete bug: the current code uses "" to mean “missing,” while Core uses that exact string as the legitimate hex representation of an empty script.
+
+The broader presence issue is just as important architecturally. Core always emits fields like ordinary-input vout, scriptSig and sequence; our DTO currently cannot tell “Core said zero” from “the field disappeared entirely.”
+
+Once these are fixed, I expect 2C.1 to be ready for the same final P2QPK/Core VM review we used for the schema and Store layers.
