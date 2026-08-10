@@ -1,0 +1,482 @@
+00013 successfully fixes the previous store-engine issues. I checked the report and the actual updated PR #3. GitHub shows it still open, unmerged, and mergeable, now at head b52cca8f7ca9d1017b53e97cb6c46091792f5070.
+
+The continuity lock, complete-block requirement, immutable child-set checks, orphan re-promotion, and concurrency hardening all look sound. In particular, sync_state ... FOR UPDATE now really does serialize canonical mutations, and the old-orphan corruption path we found is gone.
+
+I would still not merge yet, because this pass against Qogecoin Core itself exposed two important UTXO-semantic mismatches that our synthetic store tests never exercised, plus one transaction-shape hole.
+
+1. Genesis coinbase must not become a UTXO
+
+This is a definite Core mismatch.
+
+Qogecoin Core explicitly special-cases the genesis block in ConnectBlock() and skips connecting its transactions because the genesis coinbase is unspendable. Chainparams says the same thing: the genesis transaction output cannot be spent because it was never inserted into the coins database.
+
+The current explorer does the opposite. applyOutput() unconditionally creates a utxo_state row for every transaction output.
+
+That means when we finally index QOGE from height 0, the explorer would incorrectly create a spendable-looking UTXO for the genesis transaction:
+
+a0bc982915c0435f85fa6e44b7e6bd7b32e2a6ad10f968d223d4a56fa2aabc9e
+
+and potentially show its 100 QOGE genesis output as an address balance even though Core has no such UTXO.
+
+The immutable transaction_outputs row should absolutely remain. Only canonical utxo_state creation must be skipped for genesis.
+
+2. OP_RETURN and other provably-unspendable outputs must not enter utxo_state
+
+This is another direct Core mismatch.
+
+Qogecoin Core's CCoinsViewCache::AddCoin() immediately returns without creating a coin when the output script is IsUnspendable(). Core defines that precisely as a script that starts with OP_RETURN, or a script larger than MAX_SCRIPT_SIZE (10,000 bytes).
+
+Our explorer currently preserves the OP_RETURN output—which is correct—but also creates an unspent utxo_state row for it.
+
+So our test requirement “preserve zero-value OP_RETURN” was only half complete. We need:
+
+transaction_outputs:
+    YES — preserve it forever
+
+utxo_state:
+    NO — Core never added it to the UTXO set
+
+That distinction is exactly why separating immutable outputs from canonical UTXO state was useful.
+
+3. IsCoinbase can currently contradict the actual input structure
+
+Core defines coinbase structurally as:
+
+vin.size() == 1
+AND
+vin[0].prevout.IsNull()
+
+Our Go model represents the null prevout as PreviousOut == nil, but validateBlockShape() currently checks only TxCount and positional vin/vout indexes.
+
+Consequently a malformed canonical model can currently say:
+
+IsCoinbase = true
+
+Inputs:
+    PreviousOut = some real tx:vout
+
+and Store will treat it as coinbase: no fee computation and, worse, no prevout spend marking. Its outputs would still become UTXOs. That's an easy route for an RPC-decoder bug to inflate explorer balances even though PostgreSQL remains internally consistent.
+
+Since IsCoinbase directly controls monetary accounting, Store should enforce its structural equivalence before any writes. At block level it is also cheap to require transaction 0 to be the sole coinbase.
+
+There is one smaller multisig edge I would clean up in the same pass: output_participants is keyed by address, but replay completeness currently compares its row count with len(PubKeys). A bare multisig script containing the same pubkey twice would collapse to one participant identity on first insert and then fail its own exact replay. Raw script already preserves the duplicate, so output_participants should explicitly have set-of-identities semantics and deduplicate identical (address,pubkey) participants.
+
+Give Claude this focused Core-semantics correction:
+
+Final Core-facing review of PR #3 found two blocking UTXO semantic
+mismatches and one transaction-shape integrity gap.
+
+Stay on:
+
+  phase2b-store-engine
+
+Current reviewed head:
+
+  b52cca8f7ca9d1017b53e97cb6c46091792f5070
+
+Do NOT merge PR #3.
+Do NOT begin RPC/indexer work.
+Do NOT modify migrations/0001_initial.*.
+
+
+1. GENESIS COINBASE MUST NOT ENTER UTXO_STATE
+=============================================
+
+This is a direct Qogecoin Core behavior.
+
+Core ConnectBlock special-cases the genesis block and skips connecting its
+transactions:
+
+  "Special case for the genesis block, skipping connection of its
+   transactions (its coinbase is unspendable)"
+
+QOGE chainparams likewise documents that the genesis transaction output
+cannot be spent because it never originally existed in the coins database.
+
+Current Store behavior is wrong here:
+
+  applyOutput()
+
+unconditionally creates a utxo_state row for every output.
+
+Correct behavior:
+
+For block height 0:
+
+- persist block
+- persist transaction
+- persist transaction_variants
+- persist block_transactions
+- persist raw input
+- persist raw transaction_outputs
+- persist structural output address/participant metadata as appropriate
+
+BUT:
+
+- create NO utxo_state rows for genesis transaction outputs
+- therefore genesis output must not contribute to canonical address balance
+- genesis output remains visible/queryable as immutable transaction history
+
+Do not special-case by QOGE genesis hash inside Store unless necessary.
+Height 0 is sufficient for this Bitcoin-derived Core semantic.
+
+Add a source-derived QOGE mainnet genesis test using the real known vector:
+
+  block:
+    78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc
+
+  txid:
+    a0bc982915c0435f85fa6e44b7e6bd7b32e2a6ad10f968d223d4a56fa2aabc9e
+
+Verify:
+
+- genesis transaction persisted
+- genesis output persisted exactly
+- GetUTXO(genesis txid, 0) == nil
+- no balance cache is created from that output
+- replay remains idempotent
+
+
+2. MATCH CORE IsUnspendable UTXO SEMANTICS
+===========================================
+
+Qogecoin Core CCoinsViewCache::AddCoin does:
+
+  if (coin.out.scriptPubKey.IsUnspendable()) return;
+
+Core's CScript::IsUnspendable() is exactly:
+
+  (size() > 0 && first opcode == OP_RETURN)
+  OR
+  size() > MAX_SCRIPT_SIZE
+
+where:
+
+  MAX_SCRIPT_SIZE = 10000
+
+Therefore transaction_outputs and utxo_state have DIFFERENT cardinality.
+
+transaction_outputs:
+  preserve EVERY output 1:1 forever
+
+utxo_state:
+  represent only outputs Core would actually add to its coins view
+
+Implement a small, exact structural helper mirroring Core semantics.
+
+Prefer putting it somewhere appropriate in internal/script, e.g.:
+
+  IsUnspendable(script []byte) bool
+
+with behavior equivalent to Core:
+
+  len(script) > 0 && script[0] == OP_RETURN
+  ||
+  len(script) > 10000
+
+Do not substitute:
+
+  ScriptType == nulldata
+
+because Core's rule is based on raw script bytes and also includes scripts
+larger than MAX_SCRIPT_SIZE.
+
+In applyOutput:
+
+- ALWAYS persist transaction_outputs
+- persist display/search metadata normally
+- create utxo_state ONLY if:
+    - block is not genesis
+    - ScriptPubKey is NOT Core-IsUnspendable
+
+An unspendable output is not a missing transaction output.
+It is an immutable output that deliberately has no canonical coin/UTXO row.
+
+
+TESTS
+-----
+
+Update the existing zero-value OP_RETURN test so it proves BOTH:
+
+- transaction_outputs row exists, value 0 preserved
+- GetUTXO(txid, vout) == nil
+
+Add:
+
+- ordinary spendable output -> utxo_state exists
+- raw script beginning OP_RETURN -> transaction output exists, no UTXO
+- >10,000-byte script -> transaction output exists, no UTXO
+- exactly 10,000-byte non-OP_RETURN script is not rejected merely by this
+  helper
+- rollback/replay does not accidentally create UTXOs for unspendable outputs
+
+Do not drop OP_RETURN data.
+The whole point is immutable preservation WITHOUT falsely representing it
+as a spendable Core coin.
+
+
+3. ENFORCE COINBASE STRUCTURAL CONSISTENCY
+=========================================
+
+Qogecoin Core defines:
+
+  IsCoinBase() =
+    vin.size() == 1
+    AND vin[0].prevout.IsNull()
+
+In the explorer model, a null prevout is:
+
+  Input.PreviousOut == nil
+
+Store currently trusts Transaction.IsCoinbase independently from Inputs.
+
+That can corrupt monetary state.
+
+Example that must become impossible:
+
+  IsCoinbase = true
+  Input.PreviousOut = real previous output
+
+Current behavior would skip:
+- fee computation
+- prevout spend marking
+
+while still creating the transaction's outputs.
+
+Add structural validation before database writes.
+
+For each transaction derive:
+
+  structurallyCoinbase =
+    len(txn.Inputs) == 1
+    && txn.Inputs[0].PreviousOut == nil
+
+Require:
+
+  txn.IsCoinbase == structurallyCoinbase
+
+Also require block-level canonical shape:
+
+- block has at least one transaction
+- transaction index 0 is coinbase
+- no transaction after index 0 is coinbase
+
+This is not replacing Core consensus validation.
+It ensures the already-parsed canonical Go model is internally
+self-consistent before Store uses IsCoinbase to make monetary decisions.
+
+Add tests:
+
+- normal one-input coinbase accepted
+- IsCoinbase=true + normal prevout -> rejected, zero writes
+- IsCoinbase=false + null prevout -> rejected
+- coinbase with two inputs -> rejected
+- first transaction non-coinbase -> rejected
+- second transaction coinbase -> rejected
+
+Use a clear sentinel such as:
+
+  ErrInvalidTransactionShape
+
+or equivalent.
+
+
+4. MULTISIG PARTICIPANT SET SEMANTICS
+=====================================
+
+Small hardening while touching shape validation.
+
+output_participants is a display/search identity relation and its primary key
+is:
+
+  (txid, vout_index, address)
+
+A bare multisig script can structurally contain the same pubkey more than
+once.
+
+The raw scriptPubKey already preserves that exact duplication, so
+output_participants does not need to pretend identical participant
+identities are separate monetary objects.
+
+Current behavior can:
+
+- receive two identical pubkey/address entries
+- first insert creates one row
+- second insert becomes idempotent against the same row
+- fresh block succeeds
+- exact replay then checks persisted count 1 against len(PubKeys)=2
+- replay fails
+
+Fix this inconsistency.
+
+Define output_participants explicitly as a SET of participant identities.
+
+For identical:
+
+  address + pubkey
+
+deduplicate deterministically for persistence and completeness counting.
+
+If the same address is associated with two different pubkeys, return an
+integrity error rather than silently collapsing them.
+
+Raw scriptPubKey remains the byte-exact source for the original multisig
+key sequence, including duplicates.
+
+Add an exact replay test with duplicate identical multisig participant
+identity proving replay remains idempotent.
+
+
+5. PRESERVE ALL PRIOR FIXES
+===========================
+
+Do not weaken:
+
+- sync_state FOR UPDATE canonical mutation serialization
+- exact tip replay / immediate-child continuity
+- incomplete block rejection
+- immutable input/output/witness completeness
+- orphan re-promotion
+- markSpent RowsAffected handling
+- SET-based address cache
+- txid/wtxid separation
+- 17,088-byte P2QPK witness preservation
+- exact-prevout UTXO relation
+- atomic rollback
+- migration freeze
+
+Existing A-X tests and the new continuity/concurrency tests must remain
+green.
+
+
+6. CORE-SEMANTICS REGRESSION TESTS
+==================================
+
+Specifically report PASS/FAIL for:
+
+Genesis transaction persisted:
+Genesis transaction output persisted:
+Genesis UTXO absent:
+Genesis address balance absent:
+
+OP_RETURN output persisted:
+OP_RETURN UTXO absent:
+>10000-byte output UTXO absent:
+10000-byte non-OP_RETURN boundary:
+
+Coinbase flag/input consistency:
+Coinbase position in block:
+Multiple coinbase rejection:
+
+Duplicate multisig participant replay:
+
+P2QPK 17,088-byte preservation:
+txid/wtxid variant test:
+Reorg tests:
+Concurrency tests:
+
+
+7. DOCUMENTATION / PR DESCRIPTION
+=================================
+
+Update ARCHITECTURE.md to state clearly:
+
+  transaction_outputs
+    = every immutable on-chain output
+
+  utxo_state
+    = Core-equivalent canonical coin state, NOT every transaction output
+
+Document both exclusions:
+
+- genesis transaction outputs
+- CScript::IsUnspendable outputs
+
+Update the PR #3 description as well; it is currently stale relative to the
+b52cca8 continuity/completeness/concurrency fixes.
+
+
+8. QUALITY
+==========
+
+Run uncached:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run all PostgreSQL-backed tests.
+
+Verify:
+
+  git diff main...HEAD -- migrations/
+
+must still be ZERO.
+
+
+9. COMMIT / PUSH
+================
+
+Suggested commit:
+
+  fix: mirror Core UTXO and coinbase semantics
+
+Push to the existing PR #3.
+
+Do NOT merge.
+
+Report:
+
+PHASE 2B.2 CORE SEMANTICS FIXES
+===============================
+
+Commit:
+PR head:
+
+GENESIS
+-------
+...
+
+UNSPENDABLE OUTPUTS
+-------------------
+Core-equivalent rule:
+OP_RETURN:
+Oversized script:
+
+COINBASE SHAPE
+--------------
+...
+
+MULTISIG PARTICIPANTS
+---------------------
+...
+
+P2QPK
+-----
+...
+
+DATABASE TESTS
+--------------
+...
+
+QUALITY
+-------
+...
+
+MIGRATION DIFF
+--------------
+ZERO
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+NONE
+
+Stop for final independent review.
+
+These are worth fixing before RPC integration because they affect the very meaning of utxo_state. The schema separation itself was correct; the store implementation simply needs to follow Core on which immutable outputs actually become coins.
+
+The most important correction is that “output exists in a block” does not imply “output exists in the UTXO set.” Core explicitly excludes both the genesis coinbase and IsUnspendable() scripts.
+
+After this pass, I would send PR #3 to the P2QPK/Core VM for one final independent store-layer review rather than start another broad internal redesign cycle.
