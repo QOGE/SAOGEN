@@ -1,0 +1,1021 @@
+Confirmed. Phase 2B.2 is closed.
+
+PR #3 was merged with the reviewed head 6d745ee25cce3ef7e746292178608e31b51866ed using a genuine two-parent merge commit:
+
+cfdbaa642b248e89500cc35a32c0f22cf9d79b59
+
+Claude reports local main and origin/main identical at that commit, with the uncached test suite, race detector, PostgreSQL suite, and all the targeted store/P2QPK/reorg tests passing. GitHub independently confirms PR #3 is closed and merged with that exact merge commit. The merge commit itself is also present on GitHub as Phase 2B.2: atomic PostgreSQL block store and reorg engine.
+
+I would not combine RPC decoding and the live block-fetch loop into one review unit. The cleaner next split is:
+
+Phase 2C.1 — Core RPC decoding + address resolution
+Phase 2C.2 — historical sync/fetch loop + live reorg detection
+
+That gives us one opportunity to prove that raw Core JSON is converted exactly into the now-frozen chain.* model before those decoded objects are allowed to touch Store.ApplyBlock.
+
+There are also two documentation-only leftovers on merged main that should be fixed in 2C.1. §4 still describes the old block.Height >= indexed_height checkpoint logic, even though the actual store now enforces exact-tip replay/immediate-child continuity. And §8 still says witness rows are keyed by (txid, vin_index, item_index) rather than the finalized wtxid-based identity. These are stale prose, not code defects.
+
+The current RPC layer is deliberately only a generic Call/CallInto client, so this is exactly the intended next boundary. Likewise, chain.Output explicitly leaves Core-reported addresses and multisig participant resolution for this future RPC translator.
+
+Give the explorer Claude VM this:
+
+Begin Phase 2C.1 of QOGE Go Explorer:
+
+  TYPED QOGECOIN CORE RPC DECODING + ADDRESS RESOLUTION
+
+Repository:
+  https://github.com/QOGE/qoge-explorer
+
+Reviewed/merged Phase 2B.2 baseline:
+
+  cfdbaa642b248e89500cc35a32c0f22cf9d79b59
+
+
+PHASE BOUNDARY
+==============
+
+Phase 2B.2 is CLOSED.
+
+The following are now frozen consumers/contracts:
+
+  internal/chain
+  internal/script
+  internal/store
+  migrations/0001_initial.*
+
+Do NOT redesign the PostgreSQL schema.
+Do NOT modify migrations/0001_initial.*.
+Do NOT change Store semantics merely to make RPC decoding easier.
+
+If live Core RPC exposes something genuinely incompatible with the reviewed
+chain/store contracts, STOP and report it rather than silently adapting the
+store.
+
+Phase 2C.1 ends at:
+
+  Core JSON-RPC
+      ↓
+  typed RPC DTO
+      ↓
+  strict decoder
+      ↓
+  chain.Block / chain.Transaction
+
+Do NOT implement the continuous historical sync loop yet.
+Do NOT implement live fork/reorg detection yet.
+Do NOT call Store.ApplyBlock from a production fetch loop yet.
+
+Those belong to Phase 2C.2, after this decoder is independently reviewed.
+
+
+BRANCH
+======
+
+Start from current origin/main.
+
+Verify:
+
+  git status
+  git fetch origin
+  git switch main
+  git pull --ff-only origin main
+  git rev-parse HEAD
+  git rev-parse origin/main
+
+Both must equal:
+
+  cfdbaa642b248e89500cc35a32c0f22cf9d79b59
+
+Create:
+
+  phase2c-rpc-decoder
+
+
+0. CLEAN TWO STALE ARCHITECTURE PARAGRAPHS
+==========================================
+
+Before implementation, fix two documentation-only leftovers from earlier
+review rounds.
+
+A. docs/ARCHITECTURE.md §4 still describes old behavior resembling:
+
+   ApplyBlock reads indexed_height and updates the checkpoint only when
+   block.Height >= indexed_height.
+
+That is obsolete.
+
+Current Store behavior is:
+
+- sync_state('main') is locked FOR UPDATE
+- accepted initialized-store calls are exactly:
+    * exact current-tip replay, OR
+    * immediate child matching height+1 and PreviousHash
+- all stale/lower/gap/wrong-parent blocks are rejected
+- every accepted block re-affirms/advances the checkpoint as the FINAL
+  logical write
+
+Update the prose to describe the actual merged implementation.
+
+B. §8 still describes transaction_input_witness as keyed by:
+
+  (txid, vin_index, item_index)
+
+That is obsolete.
+
+The finalized schema is witness-variant specific:
+
+  (wtxid, vin_index, item_index)
+
+with txid retained as the non-witness body relation.
+
+Correct the documentation.
+
+Documentation only.
+Do NOT alter Store or migration code for these two items.
+
+
+1. KEEP THE GENERIC RPC CLIENT SMALL
+====================================
+
+internal/rpc/client.go already provides:
+
+  Call(...)
+  CallInto(...)
+
+Keep that generic transport layer.
+
+Do not create an enormous wrapper around every Qogecoin RPC.
+
+Add only typed RPC methods needed for decoding/indexing.
+
+For Phase 2C.1 implement at minimum:
+
+  GetBlockHash(ctx, height)
+  GetBlockVerbose2(ctx, hash)
+
+where GetBlockVerbose2 performs:
+
+  getblock <hash> 2
+
+and returns a typed raw RPC structure.
+
+Also implement the descriptor helpers needed for P2PK/multisig address
+resolution:
+
+  GetDescriptorInfo(...)
+  DeriveAddresses(...)
+
+A typed GetRawTransactionVerbose helper is acceptable/useful for focused
+transaction-vector tests, but do not expand scope into unrelated wallet,
+mempool, mining, or network RPCs.
+
+GetBlockCount and the production polling loop can wait for Phase 2C.2.
+
+
+2. RAW RPC DTOs MUST BE SEPARATE FROM chain.*
+=============================================
+
+Create explicit JSON-RPC response structs representing Core's wire shape.
+
+Do NOT decode directly into chain.Block / chain.Transaction.
+
+Do NOT use:
+
+  map[string]any
+
+for block/transaction decoding.
+
+The raw DTO should represent at least the fields needed from getblock
+verbosity=2:
+
+BLOCK
+-----
+
+  hash
+  height
+  merkleroot
+  time
+  nonce
+  bits
+  difficulty
+  size
+  weight
+  nTx
+  previousblockhash
+  tx
+
+TRANSACTION
+-----------
+
+  txid
+  hash          // THIS IS WTXID
+  version
+  size
+  vsize
+  weight
+  locktime
+  vin
+  vout
+
+VIN
+---
+
+coinbase form:
+  coinbase
+  sequence
+  txinwitness, when present
+
+ordinary form:
+  txid
+  vout
+  scriptSig.hex
+  sequence
+  txinwitness, when present
+
+VOUT
+----
+
+  value
+  n
+  scriptPubKey.hex
+  scriptPubKey.address when Core supplies one
+  scriptPubKey.type may be captured for diagnostics/tests but MUST NOT drive
+  explorer classification
+
+
+3. EXACT QOGE AMOUNT DECODING — NEVER FLOAT64
+=============================================
+
+This is blocking.
+
+Core RPC returns output amounts as decimal QOGE JSON numbers.
+
+chain.Amount is integer satoshis.
+
+Never decode monetary RPC values through float64.
+
+Use json.Number, json.RawMessage, or a dedicated custom type and convert
+directly from the decimal representation to integer satoshis.
+
+Required:
+
+  1 QOGE = 100,000,000 satoshis
+
+Examples:
+
+  0            -> 0
+  0.00000001   -> 1
+  1            -> 100000000
+  1.00000000   -> 100000000
+  6.25         -> 625000000
+  100          -> 10000000000
+
+Reject:
+
+- malformed number
+- negative output amount
+- precision that cannot be represented exactly in satoshis
+- overflow
+
+Do not round.
+
+Do not use multiplication on float values.
+
+Add a focused amount-decoder test suite including boundary/precision cases.
+
+
+4. DECODE BLOCK STRICTLY
+========================
+
+Implement a decoder with a clean shape such as:
+
+  DecodeBlock(ctx, rawRPCBlock, resolver) (chain.Block, error)
+
+or equivalent.
+
+Map:
+
+Core RPC                  chain.Block
+--------                  -----------
+hash                      Hash
+height                    Height
+previousblockhash         PreviousHash
+merkleroot                MerkleRoot
+time                      Time
+bits                      Bits
+difficulty                Difficulty
+nonce                     Nonce
+size                      Size
+weight                    Weight
+nTx                       TxCount
+tx                        Transactions
+
+Genesis:
+
+  previousblockhash absent
+  -> chain.Block.PreviousHash == ""
+
+Require:
+
+  len(decoded Transactions) == nTx
+
+before returning a complete decoded block.
+
+A malformed/incomplete RPC structure must return an error rather than
+constructing a chain.Block that Store would later reject.
+
+
+5. TXID / WTXID
+===============
+
+This boundary must preserve the finalized identity model exactly.
+
+Core verbose transaction RPC:
+
+  "txid"
+      -> chain.Transaction.TxID
+
+  "hash"
+      -> chain.Transaction.WTxID
+
+Do NOT derive either hash locally.
+Do NOT substitute one for the other.
+
+Map:
+
+  version  -> uint32 Version
+  locktime -> uint32 LockTime
+  size
+  vsize
+  weight
+
+Require lowercase 64-character hex hashes before handing them to Store, or
+normalize only if Core can legitimately emit uppercase — do not accept
+arbitrary malformed identity strings.
+
+For a non-witness transaction Core should give:
+
+  hash == txid
+
+For a witnessed transaction:
+
+  hash != txid
+
+Store already enforces that identity relationship against actual witness
+presence; the decoder should preserve Core data rather than recompute it.
+
+
+6. INPUT DECODING
+=================
+
+COINBASE
+--------
+
+When RPC vin contains "coinbase":
+
+  PreviousOut = nil
+  Coinbase    = exact hex-decoded coinbase bytes
+  ScriptSig   = nil/empty
+  Sequence    = RPC sequence
+  Witness     = txinwitness, if supplied
+
+Do not put RPC coinbase bytes into ScriptSig.
+
+ORDINARY INPUT
+--------------
+
+  PreviousOut.TxID  = vin.txid
+  PreviousOut.Index = vin.vout
+
+  Coinbase  = nil
+  ScriptSig = exact decoded scriptSig.hex
+  Sequence  = RPC sequence
+  Witness   = txinwitness
+
+Pure-witness inputs legitimately have:
+
+  ScriptSig == empty
+
+Preserve that.
+
+WITNESS
+-------
+
+Every txinwitness entry is a hex string.
+
+Decode every item independently to raw []byte.
+
+Preserve:
+
+- vin association
+- item ordering
+- zero-length witness items
+- arbitrary binary values
+- full item length
+
+Never concatenate witness items.
+Never truncate witness items.
+
+A 17,088-byte item must survive this boundary exactly.
+
+
+7. OUTPUT DECODING AND SCRIPT CLASSIFICATION
+============================================
+
+For every vout:
+
+- decode value exactly to chain.Amount
+- preserve n as Output.Index
+- hex-decode scriptPubKey.hex exactly
+- call:
+
+    script.Classify(rawScript)
+
+and populate from the classifier result:
+
+  ScriptType
+  WitnessVersion
+  WitnessProgram
+  PubKeys
+
+The RPC:
+
+  scriptPubKey.type
+
+must NOT determine ScriptType.
+
+It may be retained in the raw RPC DTO for diagnostics only.
+
+Especially:
+
+Core currently reports a P2QPK v2/32 output as:
+
+  type = "witness_unknown"
+
+The explorer must structurally classify that same raw script as:
+
+  script.TypeP2QPK
+
+Do not classify all witness_unknown outputs as P2QPK.
+
+
+8. CORE-REPORTED ADDRESS HANDLING
+=================================
+
+For ordinary addressable scripts, copy Core's:
+
+  scriptPubKey.address
+
+as-is into:
+
+  chain.Output.Address
+
+where Core supplied it.
+
+This includes the generic witness-unknown address Core already provides for
+a structurally-P2QPK v2/32 output.
+
+Therefore:
+
+P2QPK:
+
+  classification:
+    structural v2/32 from script.Classify
+
+  address:
+    Core RPC address field as-is
+
+Do NOT implement a Bech32m encoder for P2QPK.
+
+Do NOT derive a P2QPK address from its public key.
+
+The output program is:
+
+  HASH256(pubkey)
+
+not the raw public key.
+
+
+9. P2PK ADDRESS RESOLUTION
+==========================
+
+Core deliberately does not include an address field for bare P2PK outputs.
+
+The architecture already defines the Core-validated fallback:
+
+Given classifier-extracted public key:
+
+  pkh(<pubkey hex>)
+
+Call:
+
+  getdescriptorinfo("pkh(<pubkey hex>)")
+
+Use the returned canonical descriptor/checksum with:
+
+  deriveaddresses(<canonical descriptor>)
+
+Expect exactly one address.
+
+Store that address in:
+
+  chain.Output.Address
+
+while keeping:
+
+  ScriptType = p2pk
+
+Do not relabel the output as P2PKH.
+
+This lets early QOGE P2PK coinbase outputs participate in address accounting
+without lying about their script type.
+
+Add a small address resolver abstraction/interface so decoder unit tests can
+use a deterministic fake rather than requiring qogecoind.
+
+The real resolver should use Core RPC.
+
+Memoize resolved pubkeys in-memory for the lifetime of the resolver to avoid
+repeating descriptor RPC calls for the same public key.
+
+Do NOT hardcode QOGE Base58 prefixes in this decoder.
+
+
+10. BARE MULTISIG PARTICIPANT RESOLUTION
+========================================
+
+For:
+
+  script.TypeMultisig
+
+the classifier provides PubKeys.
+
+Do NOT set Output.Address.
+
+Instead, resolve each pubkey through the same Core descriptor method:
+
+  pkh(<pubkey>)
+
+and populate:
+
+  Output.ParticipantAddresses
+
+parallel to:
+
+  Output.PubKeys
+
+Preserve duplicate pubkey entries in the chain.Output model.
+
+Store already applies identity-set deduplication when persisting
+output_participants.
+
+If one participant cannot be resolved:
+
+  return a decoding/resolution error
+
+rather than silently shortening ParticipantAddresses and creating a shape
+that Store will reject.
+
+
+11. UNKNOWN / NULldata ADDRESS RULE
+===================================
+
+Never invent placeholder addresses.
+
+For:
+
+  TypeNullData
+  TypeUnknown
+
+Address normally remains empty unless there is a specifically documented
+Core behavior proving otherwise.
+
+For unknown/future witness outputs:
+
+- preserve classifier's WitnessVersion/WitnessProgram
+- if Core provides a valid address field, preserve it as RPC metadata
+- never upgrade it to P2QPK unless raw script is exactly v2/32
+
+
+12. P2QPK WITNESS VECTOR
+========================
+
+No real P2QPK spend is required.
+
+Add a synthetic SOURCE-DERIVED RPC transaction fixture that exercises:
+
+Output:
+
+  OP_2
+  push32
+  32-byte witness program
+
+Classification result:
+
+  TypeP2QPK
+  WitnessVersion = 2
+  WitnessProgram length = 32
+
+Address:
+
+  supplied by the synthetic raw RPC structure exactly as Core would expose
+  a witness_unknown destination
+  decoder copies it, never derives it
+
+Spend fixture:
+
+  txinwitness[0] = exactly 17,088 bytes
+  txinwitness[1] = exactly 32 bytes
+
+Decode and verify:
+
+  len(Witness[0]) == 17088
+  len(Witness[1]) == 32
+  every byte matches
+  ordering unchanged
+
+Do NOT perform SLH-DSA verification.
+Do NOT manufacture a mainnet transaction.
+
+
+13. REAL MAINNET SOURCE VECTORS
+===============================
+
+Use the local Qogecoin Core node to capture/verify a small set of known
+mainnet vectors.
+
+Do not make the normal unit test suite depend on the live node.
+
+Place compact sanitized JSON fixtures under testdata where appropriate, or
+construct focused source-derived DTO fixtures from captured RPC results.
+
+At minimum verify decoder behavior against:
+
+GENESIS
+-------
+
+height 0
+
+block:
+  78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc
+
+txid:
+  a0bc982915c0435f85fa6e44b7e6bd7b32e2a6ad10f968d223d4a56fa2aabc9e
+
+Confirm:
+
+- transaction version = 1
+- 100 QOGE output decodes exactly as 10,000,000,000 satoshis
+- raw genesis script classifies P2PK
+
+EARLY P2PK
+----------
+
+Use block 1 and/or block 5,000.
+
+Confirm:
+
+- Core RPC address field absent for pubkey output
+- classifier -> P2PK
+- descriptor resolver returns the previously validated P2PK-associated
+  P2PKH address
+- chain.Output.Address populated by resolver
+
+P2PKH
+-----
+
+Use block 8,000 or another known vector.
+
+Confirm Core address copied as-is.
+
+OP_RETURN
+---------
+
+Use the known historical OP_RETURN vector around block 38,393.
+
+Confirm:
+
+- raw output retained
+- value 0 retained if applicable
+- TypeNullData
+- no invented address
+
+P2WPKH
+------
+
+Use the known vector around height 494,289.
+
+Confirm v0/20.
+
+P2TR
+----
+
+Use the known real QOGE P2TR output at height:
+
+  1,284,510
+
+Confirm:
+
+  witness version = 1
+  program length = 32
+  TypeP2TR
+
+and explicitly NOT TypeP2QPK.
+
+
+14. RPC INTEGRATION TEST MODE
+=============================
+
+It is acceptable to add integration tests that exercise the currently-running
+local Qogecoin node, but they must be opt-in.
+
+For example:
+
+  QOGE_RPC_INTEGRATION=1
+
+Normal:
+
+  go test ./...
+
+must remain deterministic and must not require:
+
+- a running qogecoind
+- RPC credentials
+- network access
+
+When the integration flag/environment is present on the explorer VM, run
+the real node checks and report them separately.
+
+Never print:
+
+- RPC username
+- RPC password
+- Authorization header
+
+
+15. ERROR HANDLING
+==================
+
+Malformed RPC content must fail explicitly.
+
+Examples:
+
+- invalid hash
+- invalid hex script
+- invalid coinbase hex
+- invalid scriptSig hex
+- invalid witness hex
+- output amount with >8 exact decimal places
+- amount overflow
+- missing txid/hash
+- nTx mismatch
+- missing output script
+- P2PK descriptor resolution failure
+- malformed deriveaddresses result
+
+Do not silently replace malformed data with zero values.
+
+Errors should contain enough context to identify:
+
+  block hash
+  txid
+  vin/vout index
+
+but never credentials.
+
+
+16. NO CONSENSUS VALIDATION
+===========================
+
+The decoder is a representation boundary, not a second Qogecoin validator.
+
+Do NOT:
+
+- verify PoW
+- recompute merkle roots
+- verify ECDSA
+- verify SLH-DSA
+- determine P2QPK deployment state for validity
+- enforce block subsidy
+- implement script execution
+
+Core remains authoritative.
+
+Structural consistency checks are fine where needed to prevent a partial or
+malformed RPC object from entering the canonical chain model.
+
+
+17. TEST THE STORE BOUNDARY, BUT DO NOT BUILD THE LOOP
+======================================================
+
+After decoder unit tests pass, add a small integration-style test:
+
+  typed RPC fixture
+      ->
+  DecodeBlock
+      ->
+  Store.ApplyBlock
+      ->
+  PostgreSQL assertions
+
+Use isolated test PostgreSQL.
+
+Prove at minimum:
+
+- decoded block passes Store's shape requirements
+- exact values survive
+- witness survives
+- P2PK resolved address reaches output_addresses
+- P2QPK 17,088-byte witness reaches transaction_input_witness exactly
+- OP_RETURN survives transaction_outputs but not utxo_state
+
+This should be a test pipeline only.
+
+Do NOT create:
+
+  for height := ...
+  polling ticker
+  continuous synchronization
+  live reorg handling
+
+yet.
+
+
+18. DOCUMENTATION
+=================
+
+Update ARCHITECTURE.md to mark:
+
+  Core RPC -> canonical chain decoder
+
+as IMPLEMENTED once complete.
+
+Document:
+
+- exact decimal amount conversion
+- txid vs RPC hash/wtxid
+- coinbase mapping
+- witness mapping
+- structural classification precedence over RPC type
+- Core address field handling
+- P2PK/multisig descriptor resolution
+
+Do not claim the historical indexer loop exists yet.
+
+
+19. QUALITY
+===========
+
+Run:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run PostgreSQL-backed tests.
+
+Run opt-in local Qogecoin RPC integration tests if implemented.
+
+Verify:
+
+  git diff main...HEAD -- migrations/
+
+must be ZERO.
+
+No files outside qoge-explorer modified.
+
+
+20. COMMIT / PR
+===============
+
+Suggested commit:
+
+  feat: decode Qogecoin Core RPC into canonical chain models
+
+Push branch:
+
+  phase2c-rpc-decoder
+
+Create PR:
+
+  Phase 2C.1: typed Qogecoin Core RPC decoder
+
+Base:
+
+  main
+
+Do NOT merge.
+
+Do NOT begin Phase 2C.2.
+
+
+FINAL REPORT
+============
+
+PHASE 2C.1 — RPC DECODER
+========================
+
+Branch:
+Commit:
+PR:
+
+DOCUMENTATION CLEANUP
+---------------------
+Checkpoint prose:
+Witness-key prose:
+
+RPC METHODS
+-----------
+GetBlockHash:
+GetBlockVerbose2:
+Descriptor helpers:
+Other:
+
+AMOUNT DECODING
+---------------
+Representation:
+Float64 used:
+Boundary tests:
+
+BLOCK DECODING
+--------------
+...
+
+TRANSACTION DECODING
+--------------------
+txid:
+wtxid:
+version:
+vin/vout:
+coinbase:
+witness:
+
+SCRIPT CLASSIFICATION
+---------------------
+Classification source:
+RPC type usage:
+P2TR:
+P2QPK:
+
+ADDRESS RESOLUTION
+------------------
+Core-reported addresses:
+P2PK:
+Multisig:
+Caching:
+
+P2QPK
+-----
+v2/32:
+Address:
+17,088-byte witness:
+32-byte pubkey:
+Byte-exact:
+
+REAL MAINNET VECTORS
+--------------------
+Genesis:
+P2PK:
+P2PKH:
+OP_RETURN:
+P2WPKH:
+P2TR:
+
+DECODER -> STORE TEST
+---------------------
+Result:
+
+LIVE RPC INTEGRATION
+--------------------
+Enabled:
+Results:
+Secrets printed: NO
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+PostgreSQL:
+
+MIGRATION DIFF
+--------------
+ZERO
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+NONE
+
+Stop.
+Do not merge.
+Do not begin the historical synchronization loop.
+
+This phase boundary is useful because the RPC translator is now the only component allowed to reinterpret Core's JSON into our canonical model. The store has already become strict enough to reject malformed or incomplete models; now we make sure the translator never creates them in the first place.
+
+The architecture already specifies the two trickiest address cases: P2PK should use Core's descriptor machinery because Core omits the address from the ordinary script RPC, while P2QPK should simply retain Core's generic Bech32m address and structurally upgrade witness_unknown to P2QPK from the raw v2/32 script.
+
+After 2C.1 passes review, 2C.2 can be much simpler: getblockcount/getblockhash/getblock 2 → DecodeBlock → Store.ApplyBlock, then fork detection/common-ancestor walking and the ≤100-block automatic reorg policy.
