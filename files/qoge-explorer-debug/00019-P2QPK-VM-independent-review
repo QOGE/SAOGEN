@@ -1,0 +1,83 @@
+● Fetching the PR #4 diff now.
+
+  Read 1 file, ran 2 shell commands 
+
+● REPORT ONLY
+
+  ---
+  P2QPK / CORE FINAL RPC DECODER REVIEW
+
+  PR head reviewed: d0f5b4b2cb5b0100c170229be426297932ed7430
+  Verdict: APPROVE
+
+  ---
+  Core RPC DTO parity: PASS. RawBlock captures exactly the blockheaderToJSON-emitted fields the indexer needs (hash, height, previousblockhash, merkleroot, time, bits, difficulty, nonce, size, weight, nTx, tx). RawTransaction mirrors TxToUniv's txid, hash (wtxid), version, size, vsize, weight, locktime, vin, vout. RawVin correctly models the two mutually exclusive wire shapes Core emits. RawVout.Value is json.Number, never float64. RawScriptPubKey.Address is
+  *string — presence, not content, is the Core-compatibility discriminator. No required field is omitted.
+
+  Required-field presence: PASS. All required scalar fields across RawBlock, RawTransaction, RawVin, and RawVout are *T pointers. require[T any]() is called for every one of them; a nil pointer is an explicit decode error, never a silently substituted zero value. Legitimate zero values (genesis height 0, nonce 0, locktime 0, version 0) are correctly protected: non-nil with value zero is accepted, nil is rejected. Tests:
+  TestDecodeBlock_MissingRequiredFieldsRejected (11 cases), TestDecodeTransaction_MissingRequiredFieldsRejected (7 cases), TestDecodeInput_MissingRequiredFieldsRejected, TestDecodeOutput_MissingNRejected — all confirm nil-field → error.
+
+  Empty-script handling: PASS. Core's ScriptToUniv always emits "hex" (including "hex":"" for a genuinely empty CScript). The decoder enforces: ScriptPubKey == nil → error; ScriptPubKey.Hex == nil → error; ScriptPubKey.Hex present and "" → hex.DecodeString("") = []byte{} (zero-length, non-nil) → accepted. Empty script classifies as TypeUnknown. Test: TestDecodeOutput_EmptyScriptPubKeyHexAccepted verifies acceptance, non-nil zero-length preservation, and
+  TypeUnknown classification. Pipeline test exercises this path through Store end-to-end with a non-genesis UTXO row confirmed.
+
+  Genesis/previous-hash handling: PASS. decodeGenesisRelation enforces: height 0 + prevHashField non-nil → error; height > 0 + prevHashField nil → error; height > 0 + prevHashField present → validate as 64-char lowercase hex. Negative height is rejected before this function is called (if height < 0). This mirrors blockheaderToJSON's conditional "previousblockhash" emission — Core only includes the key when pprev is non-null, so nil at height 0 is a positive
+  assertion, never inferred from an empty string. Test: TestDecodeBlock_GenesisRelation covers all 5 cases exhaustively.
+
+  VIN wire-shape: PASS. decodeInput enforces the Core wire-shape exclusivity rule exactly. Coinbase path (raw.Coinbase != nil): rejects if any of txid, vout, or scriptSig is also present; requires sequence; hex-decodes coinbase bytes; rejects empty coinbase bytes. Ordinary path: requires txid (validated as hash), vout, scriptSig object, scriptSig.hex (pointer presence checked — missing hex member → error); scriptSig.hex == "" accepted (pure-witness spend, empty
+  ScriptSig preserved as []byte{}). Tests: TestDecodeInput_ContradictoryWireShapesRejected (6 cases), TestDecodeInput_OrdinaryPureWitnessEmptyScriptSigPreserved, TestDecodeInput_CoinbaseEmptyBytesRejected.
+
+  Amount conversion: PASS. DecodeAmount takes json.Number (raw decimal text, never float64), parses with pure string arithmetic — optional sign, integer part, optional . + 1–8 fractional digits — pads fractional part to exactly 8 digits, concatenates, and calls strconv.ParseInt(..., 10, 64). No float path anywhere. 1 QOGE = 100,000,000 satoshis confirmed by "1" → 100_000_000. Rejected: negative values (even -0), >8 fractional digits, overflow, leading +,
+  scientific notation, non-numeric characters, whitespace. Edge-case tests: "0.00000001" → 1, "0.30000001" → 30,000,001 (float-rounding proof), "20999999.99999999" → exact 8-decimal boundary, ".5" (no leading digit, intPart defaults to '0') → 50,000,000.
+
+  TXID / WTXID: PASS. Core's TxToUniv emits "txid" = GetHash() and "hash" = GetWitnessHash(). The decoder maps raw.TxID → chain.Transaction.TxID and raw.Hash → chain.Transaction.WTxID verbatim — no derivation, no recomputation, no substitution. Both validated as 64-char lowercase hex. Uppercase deliberately rejected. RawTransaction.Hash's doc comment explicitly notes this is the witness hash, not the block hash. Store's (WTxID == TxID) == hasWitness identity
+  check is enforced downstream; the decoder correctly does not replicate it. Test: TestDecodeTransaction_TxIDWTxIDPreservedNotDerived.
+
+  Transaction version: PASS. RawTransaction.Version is *uint32. Core serializes tx.nVersion as an integer in JSON; for all mainnet-valid transactions (version 1 and 2), the uint32 representation is exact and correct. A JSON negative number would fail to decode into *uint32, which is correct defensive behavior. The full uint32 range is preserved without truncation.
+
+  Witness preservation: PASS. decodeWitness hex-decodes each txinwitness string independently in order; a zero-length item ("" → hex.DecodeString("") = []byte{}) is preserved, not dropped. No concatenation, no truncation. P2QPK vector: TestDecodeInput_P2QPKWitnessSpendVector verifies 17,088-byte signature (item 0) and 32-byte pubkey (item 1) survive decode boundary byte-exact. TestDecodeBlock_ThroughStore_PipelineTest additionally verifies both items survive the
+  full RPC-DTO → decode → Store.ApplyBlock → PostgreSQL BYTEA pipeline, byte-exact on readback.
+
+  Script classification: PASS. decodeOutput calls script.Classify(rawScript) exclusively — raw.ScriptPubKey.Type is retained on the DTO for diagnostics only and never read by the decoder. TestDecodeOutput_RPCTypeNeverDrivesClassification proves this: a script whose RPC type string deliberately lies ("pubkeyhash" for a real P2WPKH script) is still classified from its bytes as TypeP2WPKH.
+
+  P2TR separation: PASS. Real QOGE Taproot output at height 1,284,510 (5120... = OP_1 / v1 / 32-byte program) classifies as TypeP2TR, confirmed by TestDecodeOutput_RealVector_P2TR. The test explicitly asserts out.ScriptType != script.TypeP2QPK. P2TR (v1/32, OP_1 = 0x51) and P2QPK (v2/32, OP_2 = 0x52) differ by the first script byte; there is no ambiguity and no possible collision.
+
+  P2QPK output representation: PASS. Current Qogecoin Core has no P2QPK TxoutType in Solver. ExtractDestination returns a WitnessUnknown destination for a v2/32 output, and ScriptToUniv therefore reports "type": "witness_unknown" — but ExtractDestination still succeeds (any structurally valid witness program), so Core supplies an address field. The decoder correctly ignores the "witness_unknown" type string, classifies from raw bytes as TypeP2QPK, and copies
+  Core's address as-is. TestDecodeOutput_P2QPKSyntheticVector confirms: Type: "witness_unknown" with v2/32 bytes → TypeP2QPK, address copied verbatim, no Bech32m encoder invoked.
+
+  P2QPK address handling: PASS. Address is always Core's scriptPubKey.address field, copied without derivation. The witness program is HASH256(pubkey), not the raw public key — the decoder correctly makes no attempt to compute it. Missing address for a P2QPK output → error (Core's ExtractDestination succeeds for witness unknowns). No local Bech32m encoding anywhere.
+
+  P2PK resolution: PASS. CoreAddressResolver.ResolvePubKeyAddress calls getdescriptorinfo("pkh(<pubkey>)") for the Core-canonical descriptor, then deriveaddresses(...) for the address — one RPC round-trip per distinct pubkey, memoized for the resolver's lifetime. Correctly handles both compressed (33-byte, 02/03 prefix) and uncompressed (65-byte, 04 prefix) pubkeys. Output.ScriptType stays TypeP2PK, never relabeled TypeP2PKH. Real vector tested live: block 1
+  coinbase pubkey 029f94e0... → qHaZdwmK... (resolved against the project node, confirmed by TestLiveRPC_DescriptorResolutionRoundTrip). QOGE Base58/Bech32 version bytes are not hardcoded anywhere in this package.
+
+  Multisig resolution: PASS. Every participant pubkey is resolved via the same pkh(<pubkey>) descriptor path. Output.Address stays empty. ParticipantAddresses is positionally parallel to PubKeys. Duplicates preserved (Store applies set-deduplication at persistence). If any single participant fails to resolve, the whole output is rejected — ParticipantAddresses is never silently shortened. Tests: TestDecodeOutput_MultisigResolvesEveryParticipant,
+  TestDecodeOutput_MultisigDuplicatePubkeyPreservedPositionally, TestDecodeOutput_MultisigOneParticipantUnresolvableRejected.
+
+  Address-presence rules: PASS. The rules match ScriptToUniv's ExtractDestination + PUBKEY suppression logic exactly: P2PKH/P2SH/P2WPKH/P2WSH/P2TR/P2QPK/TypeUnknownWitness require Core address present and non-empty (ExtractDestination succeeds, not PUBKEY); P2PK/multisig reject a Core-supplied address (ScriptToUniv suppresses for PUBKEY, ExtractDestination fails for multisig); TypeNullData/TypeUnknown accept absent address and reject a fabricated one.
+  TestDecodeOutput_AddressPresenceByType verifies 12 cases. TestDecodeOutput_P2PKUnexpectedAddressRejected and TestDecodeOutput_MultisigUnexpectedAddressRejected confirm contradictory Core data is rejected.
+
+  Resolver safety: PASS. resolvePubKey: nil resolver → explicit error with descriptive message, never panic. CoreAddressResolver.ResolvePubKeyAddress: nil client → explicit error, never panic. Empty address returned by resolver ("", nil) → resolvePubKey returns error (the addr == "" guard). Descriptor RPC failure → error propagated, output rejected. deriveaddresses returning ≠1 address → error. Tests: TestDecodeOutput_P2PKNilResolverErrorsNotPanics,
+  TestDecodeOutput_MultisigNilResolverErrorsNotPanics, TestCoreAddressResolver_NilClientErrorsNotPanics, TestDecodeOutput_ResolverEmptyAddressRejected, TestCoreAddressResolver_DeriveAddressesWrongCountRejected, TestCoreAddressResolver_DescriptorFailureRejected.
+
+  Decoder → Store compatibility: PASS. TestDecodeBlock_ThroughStore_PipelineTest applies three decoded blocks through Store.ApplyBlock against real PostgreSQL — genesis anchor (height 0), a P2PK+OP_RETURN+empty-script coinbase block (height 1), and a P2QPK-shaped witness spend (height 2) — and verifies correct satoshi values, script types, UTXO creation/spend, and byte-exact witness storage. Two decoder-level gaps exist but are not blocking: (1) DecodeBlock does
+  not independently require nTx > 0 — a non-nil empty Tx slice with nTx=0 would pass the decoder but be caught by Store's validateBlockShape; (2) coinbase positioning (tx[0] must be coinbase) is checked by Store but not by the decoder. Both are deliberate — the decoder is minimal and delegates representation-integrity checks to Store, which provides clear sentinel errors. Core would never emit these malformed shapes for a valid block.
+
+  Activation handling: PASS. script.Classify classifies v2/32 outputs as TypeP2QPK purely from structural bytes, with no knowledge of DEPLOYMENT_P2QPK state (DEFINED/STARTED/LOCKED_IN/ACTIVE). No deployment state, block height, or activation timestamp is consulted anywhere in internal/decode. Core remains the sole consensus authority.
+
+  Schema/phase boundary: PASS. migrations/0001_initial.up.sql and migrations/0001_initial.down.sql are not modified. internal/store/, internal/chain/, internal/script/ are not modified. No continuous sync loop, no live fork/reorg detection, no height iteration. TestDecodeBlock_ThroughStore_PipelineTest is a one-shot pipeline proof test, explicitly not a poller.
+
+  Data-loss risks: None found. Missing fields → errors (never silent zeros). Empty script accepted and preserved as non-nil []byte{}. ScriptSig hex decoded exactly. Zero-length witness items preserved as []byte{}. 17,088-byte witness data survives BYTEA round-trip byte-exact. raw.TxID → TxID, raw.Hash → WTxID — not swapped. P2TR (v1/32) cannot collide with P2QPK (v2/32). RPC "witness_unknown" string never drives classification. Missing Core address for a
+  required type → error. Fabricated address for NullData/TypeUnknown → error. Contradictory VIN fields → error. Nil resolver/client → error, never panic.
+
+  Consensus discrepancies: None. The decoder explicitly does not verify PoW, recompute txid/wtxid or merkle root, execute scripts, verify ECDSA or SLH-DSA signatures, decide P2QPK activation validity, or enforce subsidy rules. Package doc comment states this posture explicitly.
+
+  Architecture concerns: None. internal/decode is a clean, thin boundary between internal/rpc's wire DTOs and internal/chain's canonical model. It does not modify Store, chain, script, or migration packages. The AddressResolver interface cleanly separates the live-node dependency from the structural decoder, enabling deterministic unit tests with no running node required for go test ./....
+
+  ---
+  No blocking Core/P2QPK discrepancy found. Phase 2C.1 is safe to merge.
+
+✻ Churned for 5m 8s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                            0% until auto-compact
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
