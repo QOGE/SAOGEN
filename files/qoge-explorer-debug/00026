@@ -1,0 +1,60 @@
+● Documentation added. Now let's move to the final quality gates and phase-boundary verification.
+
+  Ran 3 shell commands 
+
+● Now the full test suite (plain, then with -race), including PostgreSQL-backed tests:
+
+  Ran 1 shell command 
+
+● Full plain suite passes with realistic timings confirming real PostgreSQL execution. Now -race:
+
+  Ran 4 shell commands 
+
+● Confirmed: the earlier decode failure was transient resource contention (a real HTTP client timeout under -race load), not a real regression. This full -race run passes cleanly across every package. Now let's verify the phase-boundary zero-diff requirement.
+
+  Ran 1 shell command 
+
+● All frozen paths are zero-diff. Let's check overall git status and the full diffstat of what changed.
+
+  Listed 1 directory, ran 2 shell commands 
+
+● Staged cleanly — .claude/ remains untouched/unstaged. Now let's commit.
+  
+  Committed 76609fe, pushed to phase2d-read-api, created PR #6 
+  ⎿  PostToolUse:Bash says: Tip: Run /ultrareview before you push to catch bugs with a cloud-based multi-agent review — 3 free reviews left.
+
+● PR #6 created. Let's do a final verification pass and mark the last task complete.
+
+  Ran 1 shell command 
+
+● PHASE 2D.1 — READ API
+  
+  Branch: phase2d-read-api
+  Commit: 76609fe
+  PR: https://github.com/QOGE/qoge-explorer/pull/6 (OPEN, mergeable, base=main) — not merged
+
+  QUERY LAYER — internal/query, SELECT-only, verified by readonly_test.go (snapshots every mutable table + checkpoint before/after a broad read sweep, requires exact equality)
+
+  ROUTES — GET /healthz, /readyz, /api/v1/status, /api/v1/blocks, /api/v1/block/{height-or-hash}, /api/v1/tx/{txid-or-wtxid}[?include_witness=true], /api/v1/address/{address}, /api/v1/address/{address}/transactions
+
+  BLOCKS — canonical-only height lookup; hash lookup returns canonical or orphaned (tagged); keyset pagination by height, hard max 100/page
+
+  TRANSACTIONS — txid lookup falls back to wtxid; ordered inputs/outputs; occurrences list canonical + orphan block appearances
+
+  WITNESS — default response omits raw bytes (metadata only); ?include_witness=true returns byte-exact hex, including the 17,088-byte P2QPK signature and 32-byte pubkey — verified through the real decode.DecodeBlock → Store.ApplyBlock pipeline
+
+  ADDRESSES — balance/history from addresses/utxo_state only; multisig participants kept structurally separate from balance ownership; orphaned outputs excluded (reorg-tested)
+
+  MONEY — exact _sats integers + exact _qoge decimal strings via chain.Amount.String(); float64 never used
+
+  QUALITY — gofmt/go vet/go build clean; go test -count=1 ./... and go test -race -count=1 ./... pass across all packages (PostgreSQL-backed); phase boundary confirmed zero-diff on all six frozen paths
+
+  Stop. Not merged. Web UI not started.
+
+✻ Churned for 27m 33s
+                                                               
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Delete the phase2d-read-api branch
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #6 · ← 1 agent
+
