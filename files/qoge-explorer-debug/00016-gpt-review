@@ -1,0 +1,192 @@
+The independent P2QPK/Core VM returned the approval we were waiting for at exactly the reviewed PR head:
+
+6d745ee25cce3ef7e746292178608e31b51866ed
+
+Its verdict is explicit: APPROVE — “No blocking Core/P2QPK discrepancy found. Phase 2B.2 is safe to merge.” It passed the atomic block transaction, continuity/reorg handling, checkpoint locking, genesis/IsUnspendable behavior, fee/UTXO semantics, address recomputation, and 17,088-byte P2QPK witness preservation.
+
+I also checked GitHub live. PR #3 is still OPEN, not merged, non-draft, and mergeable, and its head is still exactly 6d745ee25cce3ef7e746292178608e31b51866ed.
+
+There is one small inaccuracy in the external review report wording, but importantly not in the code. The reviewer wrote that a non-witness transaction stores no transaction_variants row. The actual current implementation inserts a transaction_variants row unconditionally; for a non-witness transaction its wtxid == txid. That is the correct behavior and matches the reviewed schema. The report also uses a couple of imprecise names such as witness_data/address_history; these don't reflect bugs in the actual implementation.
+
+So I consider Phase 2B.2 merge-ready. I would now merge PR #3 with a normal merge commit, not squash or rebase.
+
+Paste this into the explorer Claude VM:
+
+PR #3 has passed the final independent Qogecoin Core / P2QPK review.
+
+Proceed to merge:
+
+https://github.com/QOGE/qoge-explorer/pull/3
+
+EXPECTED REVIEWED HEAD
+======================
+
+6d745ee25cce3ef7e746292178608e31b51866ed
+
+
+1. PRE-MERGE VERIFICATION
+=========================
+
+Verify immediately before merging:
+
+- PR #3 is OPEN
+- PR #3 is mergeable
+- draft = false
+- base = main
+- head = phase2b-store-engine
+- head SHA is EXACTLY:
+
+  6d745ee25cce3ef7e746292178608e31b51866ed
+
+If the head SHA differs, STOP.
+
+Do not merge an unreviewed head.
+
+
+2. VERIFY FROZEN MIGRATIONS
+===========================
+
+Run:
+
+  git diff main...phase2b-store-engine -- migrations/
+
+It must produce ZERO changes.
+
+Also verify the PR changed-file list contains no migration files.
+
+If migrations changed, STOP.
+
+
+3. MERGE
+========
+
+Merge PR #3 using a NORMAL MERGE COMMIT.
+
+Do NOT squash.
+Do NOT rebase-merge.
+
+Preserve the Phase 2B.2 implementation and review-fix commit history.
+
+
+4. UPDATE LOCAL MAIN
+====================
+
+After GitHub reports successful merge:
+
+  git switch main
+  git pull --ff-only origin main
+
+Then verify:
+
+  git status
+  git rev-parse HEAD
+  git rev-parse origin/main
+
+Local main and origin/main must be identical.
+
+
+5. POST-MERGE QUALITY
+=====================
+
+Run fresh/uncached:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run the PostgreSQL-backed store tests with the existing isolated test
+database setup.
+
+Specifically confirm these remain PASS:
+
+- atomic block apply
+- exact replay/idempotency
+- canonical continuity
+- concurrent canonical mutation serialization
+- incomplete block rejection
+- empty-vin/vout rejection
+- input field exclusivity
+- orphan re-promotion
+- reorg rollback/replacement
+- Core IsUnspendable behavior
+- genesis output excluded from UTXO state
+- exact-prevout spend handling
+- double-spend rejection
+- integer fee computation
+- SET-based address-cache recomputation
+- multisig participant SET semantics
+- txid/wtxid variant preservation
+- 17,088-byte P2QPK witness round-trip
+
+
+6. PHASE BOUNDARY
+=================
+
+Do NOT begin RPC/indexer implementation yet.
+
+Do NOT modify the schema.
+
+Do NOT delete phase2b-store-engine yet.
+
+Stop after confirming the merged main baseline.
+
+
+FINAL REPORT
+============
+
+PHASE 2B.2 MERGE
+================
+
+PR:
+Reviewed head:
+Merge method:
+Merge commit:
+
+MAIN
+----
+Local main HEAD:
+origin/main HEAD:
+Match:
+
+PR STATE
+--------
+State:
+Merged:
+
+POST-MERGE QUALITY
+------------------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+PostgreSQL tests:
+
+STORE BASELINE
+--------------
+Atomic ApplyBlock:
+Canonical continuity:
+Reorg engine:
+Genesis/IsUnspendable:
+txid/wtxid:
+P2QPK 17,088-byte witness:
+Address SET recomputation:
+
+MIGRATION DIFF
+--------------
+Must say ZERO.
+
+WORKING TREE
+------------
+Status:
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+Must say NONE.
+
+Stop.
+Do not begin the next phase.
+
+Once that report comes back clean, Phase 2B.2 is closed. The next logical phase becomes the Core RPC → canonical chain.* translator, with the store engine treated as a frozen, reviewed consumer.
