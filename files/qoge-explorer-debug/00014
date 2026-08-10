@@ -1,0 +1,115 @@
+● Now let's run the quality gate to catch compile errors before running full tests.
+
+  Ran 1 shell command 
+
+● Clean build. Now let's run the full test suite with the test database.
+
+  Ran 2 shell commands 
+
+● All store tests pass. Let's run the full test suite (all packages) and the race variant.
+
+  Ran 1 shell command 
+
+● All packages pass. Now the race-detector run:
+
+  Ran 1 shell command 
+
+● All clean, including under -race. Let's verify the new tests specifically ran (not skipped) with verbose output:
+
+  Ran 2 shell commands 
+
+● All new tests pass. Now let's verify the migration diff is still zero and check file scope before committing.
+
+  Ran 1 shell command 
+
+● Migration diff is zero, and exactly the expected 7 files changed. Let's check for secrets in the diff and check other repos are untouched.
+
+  Ran 2 shell commands 
+
+● Clean — symbiont-wallet has no changes, qogecoin has only its pre-existing untracked build artifacts (unrelated to this session). Now let's commit and push.
+
+  Made 1 scratchpad edit +76, committed d0e46a2, pushed to phase2b-store-engine, edited PR #3, searched for 1 pattern, ran 4 shell commands 
+
+● PR #3 confirmed still OPEN, head at d0e46a2, description updated. Now delivering the final report in the required template.
+
+  PHASE 2B.2 CORE SEMANTICS FIXES
+  ===============================
+
+  Commit: d0e46a240d33f82c1ca31321082597205b2800d2
+  PR head: d0e46a240d33f82c1ca31321082597205b2800d2 (PR #3, state OPEN, not merged)
+
+  GENESIS
+  -------
+  Height 0 special case: ApplyBlock derives isGenesis := block.Height == 0 and threads it to applyOutput, which skips utxo_state row creation for every output of that block — transaction_outputs/output_addresses still persist unconditionally (full audit history).
+  No balance contribution: recomputeAddress reads utxo_state via an inner join, so an address whose only activity is a genesis output gets no addresses cache row at all (not a zero-value one) — no genesis-specific address code needed, falls out of the existing join.
+  Real mainnet vector test: TestApplyBlock_GenesisCoinbaseUnspendable, using genuine QOGE genesis block hash 78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc / txid a0bc982915c0435f85fa6e44b7e6bd7b32e2a6ad10f968d223d4a56fa2aabc9e — PASS.
+
+  UNSPENDABLE OUTPUTS
+  -------------------
+  Core-equivalent rule: new internal/script.IsUnspendable(script) mirrors CScript::IsUnspendable() exactly — (len>0 && script[0]==OP_RETURN) || len>MaxScriptSize (10,000) — a structural byte-level check, independent of script.Type/Classify.
+  OP_RETURN: transaction_outputs row persists; utxo_state row never created; GetUTXO == nil. PASS (TestApplyBlock_UnspendableOutputs).
+  Oversized script (>10,000 bytes): same exclusion, independent of OP_RETURN. PASS.
+  Exactly-10,000-byte non-OP_RETURN boundary: NOT rejected by the helper — UTXO created normally. PASS.
+  Orphan re-promotion path also respects the exclusion (not just plain tip replay). PASS.
+
+  COINBASE SHAPE
+  --------------
+  New ErrInvalidTransactionShape + validateBlockShape: for every transaction, structurallyCoinbase := len(Inputs)==1 && Inputs[0].PreviousOut==nil must equal IsCoinbase (mirrors Core's IsCoinBase()); block must have >=1 transaction, transaction 0 must be coinbase, no other transaction may be coinbase. All checked before any database write.
+  Tests (TestApplyBlock_CoinbaseStructuralConsistency): normal one-input coinbase accepted — PASS; IsCoinbase=true+real prevout rejected, zero writes — PASS; IsCoinbase=false+null prevout rejected — PASS; two-input coinbase rejected — PASS; first transaction non-coinbase rejected — PASS; second transaction coinbase rejected — PASS; zero-transaction block rejected — PASS (bonus coverage).
+
+  MULTISIG PARTICIPANTS
+  ---------------------
+  output_participants redefined explicitly as a SET of (address, pubkey) identities: applyOutput deduplicates an exactly-repeated pubkey/address pair before persistence AND before verifyExactCount's completeness comparison (which now compares against the deduplicated count, not raw len(PubKeys)). The same address claimed with two different pubkeys remains ErrImmutableConflict.
+  Duplicate multisig participant replay: TestApplyBlock_MultisigDuplicateParticipantReplay — fresh apply persists 1 row, exact tip replay stays idempotent (still 1 row, no spurious conflict) — PASS.
+  Same-address-different-pubkey conflict: TestApplyBlock_MultisigSameAddressDifferentPubkeyConflict — PASS.
+
+  P2QPK
+  -----
+  17,088-byte preservation: unaffected, TestApplyBlock_P2QPKWitnessPreservation still PASS unchanged.
+  txid/wtxid variant test: TestApplyBlock_WtxidVariantsRemainDistinct still PASS unchanged.
+
+  DATABASE TESTS
+  --------------
+  Genesis transaction persisted: PASS
+  Genesis transaction output persisted: PASS
+  Genesis UTXO absent: PASS
+  Genesis address balance absent: PASS
+  OP_RETURN output persisted: PASS
+  OP_RETURN UTXO absent: PASS
+  >10000-byte output UTXO absent: PASS
+  10000-byte non-OP_RETURN boundary (still spendable): PASS
+  Coinbase flag/input consistency: PASS
+  Coinbase position in block: PASS
+  Multiple coinbase rejection: PASS
+  Duplicate multisig participant replay: PASS
+  P2QPK 17,088-byte preservation: PASS
+  txid/wtxid variant test: PASS
+  Reorg tests (S–X, all TestRollbackTo_*): PASS
+  Concurrency tests (TestApplyBlock_ConcurrentCompetingChildrenSerialize, TestRollbackTo_SerializesAgainstApplyBlock, TestMarkSpent_ZeroRowUpdateDetectsConflict): PASS
+  All prior-round A–X + continuity/completeness tests: unchanged, all still PASS (~28 test fixtures across apply_test.go/continuity_test.go needed a synthetic coinbase transaction prepended via a new minerCoinbase helper to remain structurally valid blocks under the new coinbase-position rule — assertions were not weakened, only fixture shape corrected to model a realistic block).
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, all packages, uncached (-count=1)
+  go test -race: PASS, all packages, uncached
+  go build: clean
+  PostgreSQL: all internal/store tests PASS (per-test isolated schemas)
+
+  MIGRATION DIFF
+  --------------
+  ZERO
+
+  FILES MODIFIED OUTSIDE PROJECT
+  ------------------------------
+  NONE
+
+  Pushed to origin/phase2b-store-engine; PR #3 updated (description now covers both review rounds) and confirmed OPEN, not merged. Stopping here for final independent review, per instructions.
+
+✻ Cooked for 19m 48s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Stay on phase2b-store-engine, wait for the next review round.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
