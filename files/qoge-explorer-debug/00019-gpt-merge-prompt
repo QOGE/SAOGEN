@@ -1,0 +1,266 @@
+The independent P2QPK/Core VM gave the exact approval we were waiting for.
+
+It reviewed PR #4 at head d0f5b4b2cb5b0100c170229be426297932ed7430 and returned:
+
+Verdict: APPROVE
+“No blocking Core/P2QPK discrepancy found. Phase 2C.1 is safe to merge.”
+
+The review explicitly passed the DTO/Core parity, required-field presence model, empty-script handling, genesis/prevhash rule, VIN exclusivity, exact amount conversion, txid/wtxid mapping, uint32 version handling, 17,088-byte witness preservation, P2TR/P2QPK separation, P2QPK witness_unknown/address semantics, P2PK descriptor fallback, multisig participant resolution, resolver safety, and decoder→Store compatibility.
+
+I also checked GitHub live. PR #4 is still open, unmerged, non-draft, and mergeable, and the head has not moved from the reviewed SHA. The changed-file list contains only architecture docs, internal/decode/*, and internal/rpc/block.go; there are no migration, Store, chain, or script changes in this PR.
+
+So I would merge Phase 2C.1 now with a normal merge commit.
+
+Paste this into the explorer Claude VM:
+
+PR #4 has passed the final independent Qogecoin Core / P2QPK review.
+
+Proceed to merge:
+
+https://github.com/QOGE/qoge-explorer/pull/4
+
+EXPECTED REVIEWED HEAD
+======================
+
+d0f5b4b2cb5b0100c170229be426297932ed7430
+
+
+1. PRE-MERGE VERIFICATION
+=========================
+
+Verify immediately before merging:
+
+- PR #4 is OPEN
+- PR #4 is mergeable
+- draft = false
+- base = main
+- head = phase2c-rpc-decoder
+- head SHA is EXACTLY:
+
+  d0f5b4b2cb5b0100c170229be426297932ed7430
+
+If the head SHA differs, STOP.
+
+Do not merge an unreviewed head.
+
+
+2. VERIFY PHASE BOUNDARY
+========================
+
+Confirm the PR changed-file list contains only the intended RPC/decoder/docs
+scope.
+
+Specifically verify there are ZERO changes under:
+
+  migrations/
+  internal/store/
+  internal/chain/
+  internal/script/
+
+Run:
+
+  git diff main...phase2c-rpc-decoder -- migrations/
+  git diff main...phase2c-rpc-decoder -- internal/store/
+  git diff main...phase2c-rpc-decoder -- internal/chain/
+  git diff main...phase2c-rpc-decoder -- internal/script/
+
+All must be empty.
+
+If any are non-empty, STOP.
+
+
+3. MERGE
+========
+
+Merge PR #4 using a NORMAL MERGE COMMIT.
+
+Do NOT squash.
+Do NOT rebase-merge.
+
+Preserve the original decoder implementation commit and the strict-wire
+review-fix commit.
+
+
+4. UPDATE LOCAL MAIN
+====================
+
+After GitHub confirms the merge:
+
+  git switch main
+  git pull --ff-only origin main
+
+Verify:
+
+  git status
+  git rev-parse HEAD
+  git rev-parse origin/main
+
+Local main and origin/main must match exactly.
+
+
+5. POST-MERGE QUALITY
+=====================
+
+Run uncached:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run PostgreSQL-backed decoder/store tests.
+
+Run the opt-in live RPC integration suite against the existing local
+qogecoind:
+
+  QOGE_RPC_INTEGRATION=1 go test -count=1 ./internal/decode/...
+
+or the exact existing command used by this project.
+
+Never print RPC credentials.
+
+
+6. SPECIFIC POST-MERGE VERIFICATION
+===================================
+
+Explicitly confirm PASS for:
+
+RPC DTO strictness:
+- required-field presence
+- legitimate zero values preserved
+- missing required fields rejected
+
+Amount decoder:
+- no float64 monetary path
+- 1 QOGE = 100,000,000 sats
+- 8-decimal exact conversion
+- overflow/negative/overprecision rejection
+
+Empty script:
+- present hex="" accepted
+- missing scriptPubKey / missing hex rejected
+
+VIN:
+- coinbase/ordinary exclusivity
+- empty pure-witness scriptSig accepted
+
+Block:
+- genesis has no previousblockhash
+- non-genesis requires previousblockhash
+
+TX identity:
+- RPC txid -> TxID
+- RPC hash -> WTxID
+
+Script:
+- classification from raw bytes only
+- RPC type does not drive ScriptType
+- P2TR v1/32 remains distinct from P2QPK v2/32
+
+Address handling:
+- Core address presence rules
+- P2PK descriptor resolution
+- bare multisig participant resolution
+- no invented P2QPK address
+
+P2QPK:
+- v2/32 structural classification
+- Core witness_unknown RPC type ignored for classification
+- Core-provided address copied as-is
+- 17,088-byte signature preserved exactly
+- 32-byte pubkey preserved exactly
+
+Decoder -> Store:
+- PostgreSQL pipeline passes
+- OP_RETURN preserved but excluded from UTXO
+- empty script output preserved
+- P2PK address reaches output_addresses
+- P2QPK witness reaches transaction_input_witness byte-exact
+
+
+7. PHASE BOUNDARY
+=================
+
+Do NOT begin Phase 2C.2 yet.
+
+Do NOT add:
+
+- historical sync loop
+- polling loop
+- live fork detection
+- common-ancestor logic
+- production Store.ApplyBlock caller
+
+Do NOT delete phase2c-rpc-decoder yet.
+
+Stop after confirming the merged main baseline.
+
+
+FINAL REPORT
+============
+
+PHASE 2C.1 MERGE
+================
+
+PR:
+Reviewed head:
+Merge method:
+Merge commit:
+
+MAIN
+----
+Local main HEAD:
+origin/main HEAD:
+Match:
+
+PR STATE
+--------
+State:
+Merged:
+
+POST-MERGE QUALITY
+------------------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+PostgreSQL tests:
+Live RPC tests:
+
+RPC DECODER BASELINE
+--------------------
+Required-field presence:
+Exact amount conversion:
+Empty script handling:
+VIN exclusivity:
+Genesis prevhash:
+txid/wtxid:
+Structural classification:
+P2PK resolver:
+Multisig resolver:
+P2TR separation:
+P2QPK v2/32:
+P2QPK 17,088-byte witness:
+Decoder -> Store pipeline:
+
+PHASE BOUNDARY DIFFS
+--------------------
+migrations/: ZERO
+internal/store/: ZERO
+internal/chain/: ZERO
+internal/script/: ZERO
+
+WORKING TREE
+------------
+Status:
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+Must say NONE.
+
+Stop.
+Do not begin Phase 2C.2.
+
+Once that merge report comes back clean, Phase 2C.1 is closed. Then Phase 2C.2 can focus purely on orchestration: best-chain height/hash tracking, sequential fetch/decode/apply, restart/resume behavior, live fork detection, common-ancestor discovery, and the ≤100-block automatic reorg policy.
