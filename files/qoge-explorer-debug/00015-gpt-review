@@ -1,0 +1,387 @@
+00015 looks good. I reviewed Claude’s report and the actual latest PR #3 commit. The final integrity commit is exactly 6d745ee25cce3ef7e746292178608e31b51866ed; it adds the empty-vin/vout rejection, enforces PreviousOut/Coinbase/ScriptSig consistency, and corrects the genesis fixture description and source-derived values.
+
+The important fixes are implemented in the right place: validateBlockShape, before persistent block writes. The genesis fixture now uses version 1, 100 QOGE, and the real genesis P2PK output while explicitly acknowledging that its coinbase script remains synthetic rather than pretending to be byte-exact.
+
+GitHub currently shows PR #3 open, unmerged, non-draft, and mergeable, with head exactly 6d745ee25cce3ef7e746292178608e31b51866ed against main. Claude reports the entire PostgreSQL suite, uncached Go tests, race detector, vet, formatting, and build all passing, with zero migration changes.
+
+I found no new blocking issue in this internal pass. We reached the point we planned for: stop iterating internally and send the whole store engine to the independent P2QPK/Core VM.
+
+Paste this there:
+
+Please perform the FINAL independent Qogecoin Core / P2QPK review of:
+
+https://github.com/QOGE/qoge-explorer/pull/3
+
+EXPECTED PR HEAD
+================
+
+6d745ee25cce3ef7e746292178608e31b51866ed
+
+This is Phase 2B.2: the atomic PostgreSQL block store and reorg engine.
+
+IMPORTANT
+=========
+
+Do NOT modify the repository.
+Do NOT merge the PR.
+Do NOT review an older commit or an earlier report.
+
+Review the ACTUAL current PR diff at exactly:
+
+  6d745ee25cce3ef7e746292178608e31b51866ed
+
+You developed/reviewed the QOGE P2QPK soft fork and have the Core source
+context, so focus especially on whether the explorer's persistent/canonical
+state semantics faithfully represent what Qogecoin Core actually does.
+
+
+1. ATOMIC CANONICAL BLOCK APPLICATION
+=====================================
+
+Review Store.ApplyBlock.
+
+Verify that:
+
+- one PostgreSQL transaction covers the whole block
+- sync_state('main') is locked FOR UPDATE
+- canonical mutations are serialized
+- checkpoint update is the final logical write
+- any failure rolls back the entire block
+- exact tip replay is idempotent
+- only the immediate child of the current tip may extend the chain
+- stale/lower/orphan blocks cannot mutate canonical state
+- an immediately-valid previously orphaned block may safely be promoted
+  canonical again
+
+Check for any Core/reorg semantic discrepancy.
+
+
+2. COMPLETE BLOCK / TRANSACTION REPRESENTATION
+==============================================
+
+Verify the final shape checks.
+
+ApplyBlock requires:
+
+  len(block.Transactions) == block.TxCount
+
+and each transaction requires:
+
+  len(Inputs) > 0
+  len(Outputs) > 0
+
+Inputs/outputs must use positional indices corresponding to Core vin/vout
+array position.
+
+Coinbase structure must satisfy:
+
+  exactly one input
+  null PreviousOut
+  transaction index 0
+  no other transaction in the block is coinbase
+
+Input-model field rules are now:
+
+Coinbase input:
+  PreviousOut == nil
+  Coinbase raw bytes non-empty
+  ScriptSig empty
+
+Non-coinbase input:
+  PreviousOut != nil
+  Coinbase bytes empty
+  ScriptSig may be empty (e.g. pure witness spend)
+
+Confirm these are valid representation-integrity requirements for already
+decoded Core RPC data and do not conflict with Qogecoin Core behavior.
+
+
+3. TXID / WTXID / WITNESS
+=========================
+
+Review the full persistence path again.
+
+Confirm:
+
+transactions
+  = non-witness transaction body keyed by txid
+
+transaction_variants
+  = full observed serialization keyed by wtxid
+
+block_transactions
+  = exact txid/wtxid occurrence
+
+transaction_input_witness
+  = witness data keyed by wtxid
+
+Verify:
+
+- no witness is keyed solely by txid
+- no two witness variants can overwrite one another
+- wtxid == txid iff no witness exists
+- a witnessed transaction requires wtxid != txid
+- raw witness stack item order is preserved
+- arbitrary witness bytes are preserved exactly
+
+
+4. P2QPK
+========
+
+Verify the store can faithfully preserve a P2QPK spend:
+
+Output:
+  witness version 2
+  32-byte witness program
+  program = HASH256(pubkey), NOT raw pubkey
+
+Spend:
+  witness item 0 = SLH-DSA signature
+  exactly 17,088 bytes
+  witness item 1 = public key
+  32 bytes
+
+Confirm:
+
+- no 17,088-byte truncation or artificial limit exists
+- txid/wtxid handling is correct for P2QPK
+- two witness variants of the same txid remain independent
+- P2TR v1/32 cannot be confused with P2QPK v2/32
+- Store performs representation/persistence integrity, not SLH-DSA
+  consensus validation
+
+
+5. CORE UTXO SEMANTICS
+======================
+
+This received substantial review and should be checked carefully.
+
+transaction_outputs:
+  contains EVERY immutable on-chain output
+
+utxo_state:
+  contains only Core-equivalent canonical coins
+
+Store deliberately does NOT create utxo_state rows for:
+
+A. genesis block outputs
+
+QOGE source-derived identity:
+
+  block:
+  78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc
+
+  txid:
+  a0bc982915c0435f85fa6e44b7e6bd7b32e2a6ad10f968d223d4a56fa2aabc9e
+
+  transaction version:
+  1
+
+  reward:
+  100 QOGE / 10,000,000,000 satoshis
+
+B. CScript::IsUnspendable outputs
+
+Explorer helper mirrors:
+
+  (script.size > 0 && script[0] == OP_RETURN)
+  ||
+  script.size > MAX_SCRIPT_SIZE
+
+with:
+
+  MAX_SCRIPT_SIZE = 10000
+
+Confirm this matches Qogecoin Core's ConnectBlock /
+CCoinsViewCache::AddCoin behavior.
+
+Check specifically that:
+
+- OP_RETURN remains in transaction_outputs
+- it never becomes a UTXO
+- oversized unspendable output remains immutable history but no UTXO
+- genesis output remains immutable history but no UTXO
+- these exclusions remain correct through replay, rollback and orphan
+  re-promotion
+
+
+6. PREVOUT / SPEND SEMANTICS
+============================
+
+Verify:
+
+- every non-coinbase input resolves an existing canonical utxo_state row
+- missing prevout fails the whole block
+- already-spent prevout fails except exact idempotent replay
+- markSpent verifies RowsAffected
+- spending_txid/vin must correspond to the exact prev_txid/vout
+- fee uses exact integer satoshis
+- negative fee is rejected as an indexing inconsistency
+- coinbase fee remains NULL
+- accumulator overflow is checked
+
+Look for any difference from Core's UTXO behavior that could corrupt explorer
+balances or spend state.
+
+
+7. REORG MODEL
+==============
+
+Review RollbackTo and its relationship with ApplyBlock.
+
+Expected model:
+
+Immutable audit history remains:
+
+- blocks
+- transactions
+- transaction_variants
+- block_transactions
+- transaction_inputs
+- transaction_input_witness
+- transaction_outputs
+- output addresses/participants as immutable metadata
+
+Canonical derived state changes:
+
+- block canonical/orphaned status
+- utxo_state
+- addresses cache
+- sync_state
+
+Confirm:
+
+- disconnected outputs disappear from canonical UTXO state
+- spends made by disconnected blocks are restored
+- immutable witness/P2QPK history survives
+- replacement blocks can be applied normally afterward
+- re-promoting an old immediate-child orphan reconstructs canonical state
+  safely
+
+
+8. ADDRESS ACCOUNTING
+=====================
+
+Review address-cache semantics.
+
+The cache must be recomputed with SET semantics from canonical source data,
+never additive increments.
+
+Confirm:
+
+- replay cannot increase balances
+- rollback/replacement produces the same values as fresh canonical
+  recomputation
+- output_addresses is the monetary destination relation
+- output_participants NEVER contributes to balances
+- bare-multisig participant duplicates use identity-set semantics
+- same address associated with contradictory different pubkeys is rejected
+
+
+9. IMMUTABLE DATA COMPLETENESS
+==============================
+
+Review the existing same-identity conflict protections.
+
+For an already-known identity, Store should reject changed:
+
+- block header body
+- transaction input set
+- transaction output set
+- input contents
+- output contents
+- witness stack/item set
+- wtxid variant metrics
+- block transaction occurrence
+
+Verify that an added/removed/reindexed child cannot silently change an
+already-persisted txid/wtxid body.
+
+
+10. ACTIVATION STATUS
+=====================
+
+Confirm the store remains independent of whether P2QPK deployment is:
+
+  DEFINED
+  STARTED
+  LOCKED_IN
+  ACTIVE
+
+The explorer may structurally classify/store v2/32 P2QPK-shaped data before
+ACTIVE.
+
+Core remains the sole authority for whether a transaction/block is valid.
+
+Store must not treat script_type='p2qpk' as proof of consensus validity.
+
+
+11. SCHEMA CONTRACT
+===================
+
+Verify PR #3 does NOT alter:
+
+  migrations/0001_initial.up.sql
+  migrations/0001_initial.down.sql
+
+The reviewed Phase 2B.1 schema is frozen.
+
+If the Store implementation conflicts with that schema, report it rather
+than suggesting silent migration edits.
+
+
+12. DATA-LOSS / CORRUPTION REVIEW
+================================
+
+Look specifically for any path that could:
+
+- lose/truncate P2QPK witness bytes
+- collapse txid/wtxid variants
+- manufacture a UTXO Core would not have
+- fail to restore a UTXO after reorg
+- leave an orphan's state canonical
+- double-count balances after replay
+- checkpoint a partially decoded block/transaction
+- silently discard inconsistent raw input fields
+- permit stale canonical state through concurrent Apply/Rollback
+
+
+REPORT ONLY
+===========
+
+P2QPK / CORE FINAL STORE REVIEW
+===============================
+
+PR head reviewed:
+Verdict: APPROVE / CHANGES REQUIRED
+
+Atomic ApplyBlock:
+Canonical continuity:
+Concurrency locking:
+Complete-block/transaction checks:
+Input representation:
+Coinbase semantics:
+Genesis semantics:
+IsUnspendable semantics:
+TXID / WTXID:
+P2QPK witness preservation:
+UTXO/spend model:
+Fees:
+Address accounting:
+Reorg behavior:
+Immutable audit history:
+Activation handling:
+Schema compatibility:
+Data-loss risks:
+Consensus discrepancies:
+Architecture concerns:
+
+If APPROVE, explicitly state:
+
+  "No blocking Core/P2QPK discrepancy found. Phase 2B.2 is safe to merge."
+
+Do not modify anything.
+Do not merge.
+Stop after the report.
+
+If that independent session returns APPROVE at exactly 6d745ee25..., I would merge PR #3 rather than doing another broad internal review. The store engine has now gone through the schema review plus three increasingly narrow implementation review rounds, and the remaining external review is specifically to validate our interpretation against Core/P2QPK before live RPC data is attached.
