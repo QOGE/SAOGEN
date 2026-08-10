@@ -1,0 +1,182 @@
+● Now let's run the full quality gate suite: gofmt, vet, build, test, test -race, and verify phase-boundary diffs.
+
+  Ran 3 shell commands 
+
+● Now let's re-run the opt-in live RPC/indexer integration suites, and finally check the phase-boundary diffs.
+
+  Ran 1 shell command 
+
+● All existing and new integration suites pass. Now let's check the phase-boundary diffs.
+
+  Ran 2 shell commands 
+
+● Right — nothing is committed yet, so main...HEAD is empty. Let me commit first, then re-verify the diffs against the actual commit.
+
+  Committed 24df382, ran 1 shell command 
+  ⎿  PostToolUse:Bash says: Tip: Run /ultrareview before you push to catch bugs with a cloud-based multi-agent review.
+
+● Now let's re-verify the phase-boundary diffs against the actual commit.
+
+  Ran 1 shell command 
+
+● All zero, and every touched file is within the phase boundary's allowed list. Let's do a final full quality pass and check for no credentials/binaries in the commit.
+
+  Ran 1 shell command 
+
+● No actual secrets — only comments referencing the redaction policy. Everything is clean. Now let's push the branch and open the PR.
+
+  Pushed to phase2c-sync-indexer, created PR #5 
+
+● PR opened. Let's finalize with a working-tree status check.
+
+  Ran 1 shell command 
+
+● FINAL REPORT
+
+  PHASE 2C.2 — INDEXER
+
+  Branch: phase2c-sync-indexer
+  Commit: 24df3826c7c07d28b9d950c70fb9ff5370a5046e
+  PR: https://github.com/QOGE/qoge-explorer/pull/5 (open, not merged)
+
+  RPC
+  - GetBlockCount: added (internal/rpc/methods.go), thin getblockcount wrapper
+  - Other additions: none
+
+  STORE READ API
+  - CanonicalBlockHash: added (internal/store/store.go), WHERE height=$1 AND canonical, found=false on no row, wraps real errors
+  - Store write semantics changed: NO
+
+  STARTUP SAFETY
+  - Network validation: QOGE_NETWORK must exactly equal getblockchaininfo().chain; ErrNetworkMismatch otherwise
+  - Pruned-node handling: pruned=true → halt, ErrPrunedNode
+  - IBD handling: initialblockdownload=true → halt (refuse, don't retry), operator re-runs after IBD completes
+  - Fresh bootstrap height: always 0 (genesis) when Store.Tip().Height == -1
+
+  HISTORICAL SYNC
+  - Start height: 0, always, for an uninitialized store
+  - Sequential fetch: GetBlockHash → GetBlockVerbose2 → DecodeBlock, one block at a time, no parallelism, no skipped heights
+  - Second hash check: yes, before every ApplyBlock call; mismatch → ErrRemoteChainMoved, block discarded
+  - Decode: real decode.DecodeBlock, untouched
+  - ApplyBlock: real Store.ApplyBlock, one transaction per block, untouched
+  - Checkpoint source: Store.Tip() exclusively — no secondary checkpoint state
+
+  RESTART
+  - Resume behavior: from checkpoint+1, verified by test C and a real two-run CLI smoke test (851 after 850)
+  - Crash behavior: pre-commit failure retries same height; post-commit stop resumes at next height (atomicity inherited from Store.ApplyBlock)
+
+  LIVE LOOP
+  - Poll interval: QOGE_INDEX_POLL_SECONDS, default 10s
+  - Cancellation: ctx.Done() → clean nil return, verified (test Q + CLI SIGTERM smoke test)
+  - Overlap prevention: sync.Mutex.TryLock, second concurrent call gets ErrSyncInProgress (test R)
+
+  REORG DETECTION
+  - Tip comparison: local hash at local height vs Core hash at same height, every pass
+  - Common ancestor: downward walk from min(localHeight, coreHeight) via CanonicalBlockHash vs GetBlockHash
+  - Stable-ancestor recheck: re-GetBlockHash(ancestorHeight) immediately before RollbackTo; mismatch → ErrRemoteChainMoved, restart
+  - Core-moving race: ErrRemoteChainMoved sentinel, never surfaced past SyncToTip, always triggers immediate reconciliation restart
+
+  DEPTH POLICY
+  - ≤100: automatic
+  ▎ 100: ErrReorgTooDeep, DB unchanged
+  - Exactly-100 test: PASS (automatic)
+  - 101 test: PASS (halt, DB unchanged)
+
+  REORG EXECUTION
+  - Rollback: Store.RollbackTo, untouched, re-verified via Store.Tip() post-call
+  - Replacement branch: normal GetBlockHash/GetBlockVerbose2/DecodeBlock/ApplyBlock path — no second insertion path
+  - Flip-back behavior: PASS (A→B→A; A re-promoted, not reinserted)
+  - Orphan audit history: PASS (B branch rows remain queryable, canonical=false)
+
+  P2QPK
+  - v2/32: PASS (structural classification TypeP2QPK)
+  - 17,088-byte witness: PASS, byte-exact
+  - 32-byte pubkey: PASS, byte-exact
+  - Byte-exact through Indexer → Store: PASS (TestSyncToTip_P2QPKPipeline)
+
+  DETERMINISTIC TESTS
+  A–S: all PASS (internal/indexer/indexer_test.go). T: PASS (internal/store/canonical_block_hash_test.go, 4 subtests).
+
+  ┌──────┬──────────────────────────────────────┬────────┐
+  │ Item │                 Test                 │ Result │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ A    │ FreshDBStartsAtGenesis               │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ B    │ SequentialSyncProducesCheckpointN    │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ C    │ RestartResumesFromCheckpointPlusOne  │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ D    │ AlreadyCaughtUpIsNoOp                │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ E    │ CoreTipGrowsDuringSync               │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ F    │ StaleHashNotApplied                  │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ G    │ ChainMovesRightAfterApply            │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ H    │ ShallowReorg                         │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ I    │ CoreTipBecomesShorter                │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ J    │ ReorgDepthExactly100IsAutomatic      │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ K    │ ReorgDepth101Halts                   │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ L    │ NoCommonAncestorWithinWindow         │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ M    │ LocalChainGapHalts                   │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ N    │ BranchFlipBack                       │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ O    │ MalformedBlockDoesNotMoveCheckpoint  │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ P    │ RPCFetchFailureDoesNotMoveCheckpoint │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ Q    │ Run_ContextCancellationExitsCleanly  │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ R    │ NoOverlappingPasses                  │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ S    │ (asserted inline in test A)          │ PASS   │
+  ├──────┼──────────────────────────────────────┼────────┤
+  │ T    │ CanonicalBlockHash × 4 subtests      │ PASS   │
+  └──────┴──────────────────────────────────────┴────────┘
+
+  LIVE INDEXER INTEGRATION
+  - Enabled: QOGE_INDEXER_INTEGRATION=1
+  - Capped real-Core range: genesis..10
+  - Result: PASS (tip hash matches real Core; idempotent re-run also PASS); TestLiveIndexer_CurrentTipFetchOnly PASS (decoded real tip at height 2,441,777, no DB write)
+  - Secrets printed: NO
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: PASS (all packages, no external deps needed)
+  - go test -race: PASS
+  - go build: clean
+  - PostgreSQL: local instance, qoge_explorer_test DB used for isolated-schema tests
+  - Existing live RPC suite (Phase 2C.1, QOGE_RPC_INTEGRATION=1): PASS, unmodified
+
+  Additionally ran a manual CLI smoke test against real Core + a scratch database: genesis start, checkpoint resume across two runs, clean SIGTERM shutdown, and both the network-mismatch and missing-QOGE_NETWORK guards halting before any DB write — scratch database dropped afterward.
+
+  PHASE BOUNDARY DIFFS
+  - migrations/: ZERO
+  - internal/store/apply.go: ZERO
+  - internal/store/reorg.go: ZERO
+  - internal/decode/: ZERO
+  - internal/script/: ZERO
+  - internal/chain/: ZERO
+
+  WORKING TREE
+  - Status: clean, branch pushed, up to date with origin/phase2c-sync-indexer
+
+  FILES MODIFIED OUTSIDE PROJECT
+  - NONE
+
+  Stop. Not merged. Awaiting independent review.
+
+✻ Brewed for 27m 45s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ ping the review team for Phase 2C.2
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
