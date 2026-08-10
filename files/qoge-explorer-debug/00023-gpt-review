@@ -1,0 +1,672 @@
+00023 closes the last race I found. I checked Claude’s report, the actual new commit, the current PR, race.go, the new test, and the architecture update.
+
+PR #5 is now open, unmerged, non-draft, and mergeable at exact head:
+
+7fceafb4edfa9df4fc13ba5722f17f60c4a4a2f9
+
+The final hardening is exactly one commit after the previously reviewed 3a465b7..., touching only internal/indexer/race.go, internal/indexer/indexer_test.go, and docs/ARCHITECTURE.md.
+
+The important correction is implemented properly. diagnoseNonSequential() now first asks Core whether the block itself is still canonical at that height, then reads the local checkpoint and parent, and finally re-reads the block height again before making a terminal malformed-parent judgment. That closes the same-height A→B checkpoint replacement case without turning every ErrNonSequentialBlock into an infinite retry.
+
+Test Z also reproduces the actual problematic condition rather than a simplified approximation: the Store checkpoint is moved to B1 at the same height by simulated second-writer activity while this indexer has stale A2, and the system converges to B2 instead of falsely halting. The previous stable-malformed-child test Y remains in place as the negative control.
+
+The multi-writer limitation is now explicit too: one active qoge-explorer index orchestrator per database for this phase. Store remains transaction-safe across processes, but the indexer's ≤100 reorg-policy decision is not claimed to be an atomic multi-orchestrator guarantee.
+
+I found no new blocking issue in this internal review. I would stop changing PR #5 and send exact head 7fceafb... to the independent Core/P2QPK VM.
+
+Paste this there:
+
+Please perform the FINAL independent Qogecoin Core / P2QPK review of:
+
+https://github.com/QOGE/qoge-explorer/pull/5
+
+EXPECTED PR HEAD
+================
+
+7fceafb4edfa9df4fc13ba5722f17f60c4a4a2f9
+
+Phase:
+
+  2C.2 — historical synchronization + live reorg orchestration
+
+Do NOT modify the repository.
+Do NOT merge the PR.
+Do NOT review an older commit/report.
+
+Review the ACTUAL current PR at exactly:
+
+  7fceafb4edfa9df4fc13ba5722f17f60c4a4a2f9
+
+
+SYSTEM BOUNDARY
+===============
+
+Already independently reviewed/frozen components:
+
+  Core JSON-RPC
+       ↓
+  internal/rpc typed DTOs
+       ↓
+  internal/decode
+       ↓
+  chain.Block / Transaction
+       ↓
+  internal/store
+
+Phase 2C.2 adds only orchestration around these:
+
+  Core best chain
+       ↓
+  internal/indexer
+       ↓
+  fetch/decode
+       ↓
+  Store.ApplyBlock
+
+and on fork:
+
+  detect mismatch
+       ↓
+  discover common ancestor
+       ↓
+  enforce <=100 depth
+       ↓
+  Store.RollbackTo
+       ↓
+  normal replacement ApplyBlock path
+
+The indexer must NOT become a consensus validator or duplicate Store logic.
+
+
+1. PHASE BOUNDARY
+=================
+
+Confirm PR #5 does NOT change write semantics in:
+
+  internal/store/apply.go
+  internal/store/reorg.go
+
+and does NOT change:
+
+  migrations/
+  internal/decode/
+  internal/script/
+  internal/chain/
+
+The only Store production addition should be the previously-reviewed
+read-only:
+
+  CanonicalBlockHash(height)
+
+Report any boundary violation.
+
+
+2. FRESH HISTORICAL BOOTSTRAP
+=============================
+
+Verify an uninitialized production database:
+
+  Store.Tip().Height == -1
+
+always starts with:
+
+  height 0
+
+and can never bootstrap at Core's current tip.
+
+Store itself deliberately supports arbitrary first-block bootstrap for
+controlled tests; the production indexer must never use that freedom.
+
+
+3. SEQUENTIAL FETCH/APPLY PIPELINE
+==================================
+
+For every height H verify the production path is:
+
+  hash1 = GetBlockHash(H)
+
+  raw = GetBlockVerbose2(hash1)
+
+  block = DecodeBlock(raw)
+
+  require:
+    block.Height == H
+    block.Hash == hash1
+
+  hash2 = GetBlockHash(H)
+
+  require:
+    hash2 == hash1
+
+  Store.ApplyBlock(block)
+
+Confirm:
+
+- one block at a time
+- no block write parallelism
+- no skipped heights
+- no batch DB transaction spanning multiple blocks
+- Store.Tip remains the sole durable checkpoint
+
+
+4. REMOTE CHAIN RACES
+=====================
+
+Review all handling of Core moving between RPC calls.
+
+ErrRemoteChainMoved must be an internal retry/reconciliation condition,
+not a data-corruption condition.
+
+Check these windows carefully:
+
+A. hash changes between first/second GetBlockHash(H)
+
+B. requested height disappears because Core retreated
+
+C. Core reorganizes after reconcile() but before fetching the next child
+
+D. same-height reorg occurs after reconcile() but before declaring caught up
+
+E. Core changes immediately after Store.ApplyBlock commits
+
+F. Core changes during common-ancestor discovery
+
+G. Core changes between ancestor discovery and the pre-RollbackTo recheck
+
+Confirm each converges through reconciliation rather than incorrectly
+halting or applying stale state.
+
+
+5. ErrNonSequentialBlock DIAGNOSIS
+==================================
+
+This received multiple review rounds.
+
+Store.ErrNonSequentialBlock is sometimes:
+
+- a genuine orchestration race
+
+and sometimes:
+
+- a real stable model/integrity contradiction
+
+Verify current diagnoseNonSequential.
+
+It should:
+
+1. re-read:
+
+     Core.GetBlockHash(height)
+
+2. if it no longer equals block.Hash:
+
+     ErrRemoteChainMoved
+
+3. read current Store tip
+
+4. require expected parent-height relationship or treat changed context as
+   remote movement
+
+5. read Core parent hash
+
+6. re-read Core.GetBlockHash(height) again
+
+7. require the block's identity stayed stable across the parent observation
+
+Only when all of these remain stable should:
+
+  block.PreviousHash != stable current parent
+
+be classified as terminal malformed/inconsistent data.
+
+Pay special attention to SAME-HEIGHT branch replacement:
+
+  local before:
+    A1 height 1
+
+  stale in-flight block:
+    A2
+
+  Core changes to:
+    B1 -> B2
+
+  Store checkpoint may also become:
+    B1 height 1
+
+Same HEIGHT but different HASH must not be mistaken for stable context.
+
+
+6. MIXED CORE SNAPSHOT PROTECTION
+=================================
+
+Core RPC calls cannot form one atomic snapshot.
+
+Verify the indexer does not make a terminal malformed-child decision from:
+
+  block hash read from branch A
+  parent hash read from branch B
+  second state observation from another branch
+
+The current-block hash bracketing in diagnoseNonSequential should be
+sufficient to convert obvious mixed observations into ErrRemoteChainMoved.
+
+Report any remaining route where a normal reorg could be falsely diagnosed
+as permanent corruption.
+
+
+7. CAUGHT-UP CHECK
+==================
+
+Review the final success condition.
+
+After reconcile():
+
+if:
+
+  local.Height > newly-read remote height
+
+the indexer must NOT return caught-up.
+
+It should immediately reconcile again.
+
+If:
+
+  local.Height == remote height
+
+the indexer must re-read:
+
+  Core.GetBlockHash(local.Height)
+
+and require it equals:
+
+  local.Hash
+
+before returning success.
+
+A same-height reorg must not be hidden until the next polling interval.
+
+
+8. COMMON ANCESTOR DISCOVERY
+============================
+
+Verify discovery compares:
+
+  Store.CanonicalBlockHash(H)
+
+against:
+
+  Core.GetBlockHash(H)
+
+walking downward.
+
+A missing local canonical row at:
+
+  H <= local tip
+
+must be ErrLocalChainGap, not merely interpreted as "no match."
+
+The first matching hash is the candidate common ancestor.
+
+Before rollback, verify:
+
+- candidate Core hash is re-read
+- candidate still matches
+- local Store tip is re-read
+- stale observations restart reconciliation
+
+
+9. REORG DEPTH POLICY
+=====================
+
+Required:
+
+  depth <= 100
+    automatic
+
+  depth > 100
+    HALT / ErrReorgTooDeep
+
+Depth:
+
+  oldLocalTip.Height - ancestorHeight
+
+Verify specifically:
+
+  exactly 100 -> automatic
+  101         -> halt
+
+If no common ancestor exists inside the allowed window:
+
+  halt without RollbackTo
+
+If Core's tip is already >100 blocks below local:
+
+  halt without doing an unnecessarily deep search
+
+Confirm no route calls RollbackTo before the depth policy is approved.
+
+
+10. REORG EXECUTION
+===================
+
+Once approved:
+
+  Store.RollbackTo(ancestor)
+
+Then require Store.Tip equals the chosen ancestor.
+
+Replacement blocks must go through the NORMAL:
+
+  GetBlockHash
+  GetBlockVerbose2
+  DecodeBlock
+  ApplyBlock
+
+pipeline.
+
+No second insertion/replacement code path should exist.
+
+Verify branch flip-back:
+
+  A -> B -> A
+
+uses Store's existing orphan re-promotion semantics safely.
+
+
+11. MULTI-WRITER POLICY
+=======================
+
+Phase 2C.2 now explicitly defines:
+
+  exactly ONE active indexer orchestrator per database
+
+as the supported production configuration.
+
+Store itself remains cross-process safe because ApplyBlock/RollbackTo share
+the canonical Postgres row lock.
+
+But indexer-level automatic-reorg depth calculation is not claimed to be
+atomically coordinated across multiple independent orchestrators.
+
+Review this distinction.
+
+Question for reviewer:
+
+Is this single-active-indexer operational policy acceptable for Phase 2C.2,
+given that Store remains transaction-safe and no multi-indexer HA capability
+is promised?
+
+If yes, do not require a pg_advisory_lock in this phase.
+
+If you believe lack of hard singleton enforcement creates a blocking
+correctness issue even under the documented supported deployment model,
+explain precisely why.
+
+
+12. STARTUP SAFETY
+==================
+
+Verify production `qoge-explorer index`:
+
+- requires RPC credentials
+- requires database URL
+- requires QOGE_NETWORK
+- checks Core getblockchaininfo.chain exactly
+- rejects pruned=true
+- rejects initialblockdownload=true
+- does not infer network from address HRP
+- does not require txindex unnecessarily
+- never prints RPC credentials
+
+
+13. RESTART / CRASH SEMANTICS
+=============================
+
+Verify:
+
+process stops between blocks:
+  resume Store.Tip()+1
+
+ApplyBlock fails before commit:
+  prior checkpoint remains
+
+process stops after block commit:
+  committed checkpoint is authoritative
+
+already-caught-up restart:
+  reconciliation/no-op, no duplicate accounting
+
+There must be no secondary durable checkpoint.
+
+
+14. LIVE LOOP
+=============
+
+Review Indexer.Run:
+
+- no overlapping SyncToTip on one Indexer
+- poll only after successful caught-up state
+- ErrRemoteChainMoved causes immediate reconciliation inside SyncToTip
+- context cancellation shuts down cleanly
+- deterministic Store/decode/integrity/deep-reorg errors halt safely
+
+Confirm it does not endlessly retry stable corruption.
+
+
+15. CORE RPC FAILURE CLASSIFICATION
+===================================
+
+Review classifyHashUnavailable.
+
+A failed GetBlockHash(H) should be classified as remote movement only when
+a fresh GetBlockCount proves:
+
+  currentCoreHeight < H
+
+Otherwise preserve the RPC/transport failure as terminal for that pass.
+
+No string matching against Core error messages.
+
+
+16. NEGATIVE / IMPOSSIBLE HEIGHT DATA
+=====================================
+
+Core getblockcount must never be negative.
+
+Verify the wrapper rejects negative height rather than allowing:
+
+  local -1 >= remote -1
+
+to make a fresh database appear caught up.
+
+
+17. P2QPK END-TO-END
+====================
+
+Reconfirm the indexer never inspects/transforms P2QPK witness itself.
+
+Synthetic source-derived fixture should travel:
+
+  fake RPC
+      ↓
+  raw DTO
+      ↓
+  DecodeBlock
+      ↓
+  Indexer
+      ↓
+  Store.ApplyBlock
+      ↓
+  PostgreSQL
+
+and preserve:
+
+P2QPK output:
+  witness version 2
+  32-byte witness program
+  structurally TypeP2QPK
+  RPC generic witness_unknown type irrelevant
+  Core-provided address retained
+
+P2QPK spend:
+
+  witness item 0:
+    exactly 17,088 bytes
+
+  witness item 1:
+    exactly 32 bytes
+
+byte-exact.
+
+
+18. P2TR SEPARATION
+===================
+
+Ensure nothing in orchestration changes the already-reviewed distinction:
+
+  v1/32 -> P2TR
+  v2/32 -> P2QPK
+
+Indexer must never classify scripts itself.
+
+
+19. IMMUTABLE / UTXO / ADDRESS STATE
+====================================
+
+Verify the orchestration layer does not bypass Store's already-reviewed:
+
+- genesis UTXO exclusion
+- Core IsUnspendable semantics
+- txid/wtxid variants
+- witness storage
+- exact prevout accounting
+- fee computation
+- SET-based address balances
+- orphan audit preservation
+
+All canonical mutations must still go exclusively through:
+
+  Store.ApplyBlock
+  Store.RollbackTo
+
+
+20. TEST QUALITY
+================
+
+Inspect deterministic tests A-Z.
+
+Especially verify the newer cases genuinely exercise:
+
+U:
+  reorg after reconcile before next-child application
+
+V:
+  remote tip retreat after reconcile
+
+W:
+  requested height disappears
+
+X:
+  same-height reorg at final caught-up check
+
+Y:
+  stable Core + genuinely contradictory child remains TERMINAL
+
+Z:
+  same-height LOCAL checkpoint hash replacement while stale block is
+  in flight
+
+Confirm Y remains the negative control preventing "retry everything forever."
+
+
+21. LIVE INTEGRATION
+====================
+
+Review the opt-in design:
+
+  QOGE_INDEXER_INTEGRATION=1
+
+Real local Core is capped to a tiny historical range for DB application.
+
+It must not try to index ~2.4M blocks during tests.
+
+Existing:
+
+  QOGE_RPC_INTEGRATION=1
+
+decoder tests remain independent.
+
+No credentials printed.
+
+
+22. DATA-LOSS / CORRUPTION REVIEW
+================================
+
+Look specifically for any route that could:
+
+- persist a stale/orphan block as canonical and never reconcile it
+- roll back >100 blocks automatically
+- mistake normal reorg movement for permanent corruption
+- endlessly retry a stable malformed block
+- silently skip a height
+- advance checkpoint after a failed block
+- use an independent checkpoint outside Store
+- lose/rewrite P2QPK witness data
+- bypass Store UTXO/address semantics
+- apply replacement blocks through a separate unsafe path
+- declare caught-up on a same-height stale branch
+
+
+REPORT ONLY
+===========
+
+P2QPK / CORE FINAL INDEXER REVIEW
+=================================
+
+PR head reviewed:
+Verdict: APPROVE / CHANGES REQUIRED
+
+Phase boundary:
+Fresh genesis bootstrap:
+Sequential sync:
+Second-hash race check:
+Remote-chain movement handling:
+ErrNonSequential diagnosis:
+Same-height replacement:
+Mixed-snapshot handling:
+Caught-up confirmation:
+Tip-retreat handling:
+Common ancestor discovery:
+Stable ancestor recheck:
+Local-tip recheck:
+Depth <=100 policy:
+Depth 101 behavior:
+Rollback execution:
+Replacement branch:
+Branch flip-back:
+Single-indexer policy:
+Startup safety:
+Restart/crash semantics:
+Live polling:
+RPC failure classification:
+Negative-height handling:
+P2QPK preservation:
+P2TR separation:
+Store/UTXO/address isolation:
+Tests A-Z:
+Live integration:
+Data-loss risks:
+Consensus discrepancies:
+Architecture concerns:
+
+If APPROVE, explicitly state:
+
+  "No blocking Core/P2QPK/indexer discrepancy found. Phase 2C.2 is safe to merge."
+
+Do not modify anything.
+Do not merge.
+Stop after the report.
+
+At this point I would not add a singleton advisory lock merely for completeness. The supported deployment is one indexer process per database; making that constraint explicit is enough for this phase, while the Store itself continues to protect database correctness even if someone accidentally runs a second writer. A database-backed lease can be added later if active/passive HA is actually needed.
+
+So this is ready for the final independent review at exactly 7fceafb4....
