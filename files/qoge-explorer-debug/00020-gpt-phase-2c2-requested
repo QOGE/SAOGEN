@@ -1,0 +1,1227 @@
+Confirmed. Phase 2C.1 is formally closed.
+
+Claude reports PR #4 merged with a normal two-parent merge commit 2c17c500d1aefbb5e5dbd009da3dd4ce442c8655, with local main == origin/main, all Go/PostgreSQL tests passing, and all four live-RPC integration tests passing. GitHub independently confirms PR #4 is closed/merged with that exact merge commit, and the merge commit itself is present on main.
+
+The next boundary is clean: the architecture explicitly leaves internal/indexer as the fetch/sync orchestration layer. Store already exposes Tip, ApplyBlock, and RollbackTo; importantly, RollbackTo deliberately expects the indexer to detect a fork, select the common ancestor, and enforce the ≤100-block policy.
+
+One small Store addition is justified in 2C.2: a read-only canonical block hash-at-height query. Without it, the indexer cannot safely compare its historical canonical branch against Core while searching for a common ancestor without violating Store encapsulation. No Store write semantics or schema need to change.
+
+Paste this into the explorer Claude VM:
+
+Begin Phase 2C.2 of QOGE Go Explorer:
+
+  HISTORICAL SYNCHRONIZATION + LIVE CHAIN/REORG ORCHESTRATION
+
+Repository:
+  https://github.com/QOGE/qoge-explorer
+
+Reviewed/merged Phase 2C.1 baseline:
+
+  2c17c500d1aefbb5e5dbd009da3dd4ce442c8655
+
+
+PHASE BOUNDARY
+==============
+
+Phase 2C.1 is CLOSED.
+
+The following are already independently reviewed:
+
+- canonical chain model
+- script classification
+- PostgreSQL schema
+- atomic Store.ApplyBlock
+- Store.RollbackTo
+- txid/wtxid persistence
+- P2QPK witness preservation
+- strict Core RPC DTOs
+- RPC -> chain decoder
+- P2PK/multisig address resolution
+
+Phase 2C.2 is ORCHESTRATION ONLY:
+
+  Core best chain
+       ↓
+  indexer
+       ↓
+  RPC fetch
+       ↓
+  DecodeBlock
+       ↓
+  Store.ApplyBlock
+
+and, on a fork:
+
+  detect mismatch
+       ↓
+  find common ancestor
+       ↓
+  depth policy
+       ↓
+  Store.RollbackTo
+       ↓
+  apply replacement branch normally
+
+
+DO NOT:
+
+- redesign schema
+- modify migrations/0001_initial.*
+- change Store ApplyBlock semantics
+- change Store RollbackTo semantics
+- weaken decoder validation
+- implement public explorer API
+- implement web UI
+- implement mempool indexing
+- implement wallet logic
+- implement consensus validation
+
+Do NOT merge this phase until independent review.
+
+
+BRANCH
+======
+
+Start from current origin/main.
+
+Verify:
+
+  git status
+  git fetch origin
+  git switch main
+  git pull --ff-only origin main
+  git rev-parse HEAD
+  git rev-parse origin/main
+
+Both must equal:
+
+  2c17c500d1aefbb5e5dbd009da3dd4ce442c8655
+
+Create:
+
+  phase2c-sync-indexer
+
+
+1. INDEXER PACKAGE
+==================
+
+Implement internal/indexer.
+
+Keep it small and explicit.
+
+A reasonable shape is:
+
+  type Indexer struct {
+      ...
+  }
+
+  func New(...) *Indexer
+  func (i *Indexer) SyncToTip(ctx context.Context) error
+  func (i *Indexer) Run(ctx context.Context) error
+
+or an equivalent clean API.
+
+Do NOT build an abstract framework.
+
+The indexer coordinates already-reviewed components.
+
+It does not parse SQL.
+It does not classify scripts itself.
+It does not decode raw Core JSON itself.
+
+
+2. TESTABLE RPC INTERFACE
+=========================
+
+Define a narrow interface around the Core operations the indexer needs.
+
+At minimum:
+
+  GetBlockCount(ctx) (int64, error)
+  GetBlockHash(ctx, height int64) (string, error)
+  GetBlockVerbose2(ctx, hash string) (rpc.RawBlock, error)
+
+Use the real *rpc.Client in production.
+
+Use deterministic fake implementations in indexer tests.
+
+Add:
+
+  rpc.Client.GetBlockCount(...)
+
+as a thin typed wrapper for:
+
+  getblockcount
+
+Do not expand RPC scope unnecessarily.
+
+
+3. ONE MINIMAL READ-ONLY STORE ADDITION
+=======================================
+
+Common-ancestor discovery requires comparing Core's canonical hash at height H
+against the explorer's currently-canonical hash at the same H.
+
+Store currently exposes Tip and RollbackTo, but no read method for an older
+canonical height.
+
+Add exactly one minimal READ-ONLY API, e.g.:
+
+  CanonicalBlockHash(
+      ctx context.Context,
+      height int64,
+  ) (hash string, found bool, err error)
+
+It should query:
+
+  blocks
+  WHERE height = ?
+    AND canonical = true
+
+Semantics:
+
+- canonical row exists -> hash, true, nil
+- no canonical row -> "", false, nil
+- database error -> error
+
+No mutation.
+No schema change.
+No change to ApplyBlock or RollbackTo.
+
+Add focused Store tests for this method.
+
+Do NOT let internal/indexer issue SQL directly.
+
+
+4. PRODUCTION SYNC ALWAYS STARTS AT GENESIS
+===========================================
+
+Store deliberately permits arbitrary bootstrap points for controlled tests.
+
+Production historical indexing must NOT use that freedom.
+
+If:
+
+  Store.Tip().Height == -1
+
+the indexer MUST begin with:
+
+  height 0
+
+Then:
+
+  GetBlockHash(0)
+  GetBlockVerbose2(hash)
+  DecodeBlock(...)
+  Store.ApplyBlock(...)
+
+Never bootstrap a production empty database at the current Core tip.
+
+This guarantees complete explorer history.
+
+
+5. STARTUP NODE / NETWORK SAFETY
+================================
+
+The index command should validate its Core/database environment before
+mutating the database.
+
+Use existing getblockchaininfo support.
+
+Add explicit indexer network configuration:
+
+  QOGE_NETWORK
+
+Its value should correspond to Core's own:
+
+  getblockchaininfo.chain
+
+Require an exact match before indexing.
+
+Do not infer the network from an address HRP.
+
+This matters because network/address representations can overlap.
+
+Also require a FULL non-pruned node for this explorer's historical sync.
+
+If Core reports:
+
+  pruned = true
+
+halt before historical indexing with a clear operator error.
+
+For a fresh production start, if Core is still in initial block download,
+prefer refusing/waiting rather than indexing an unstable partial history.
+Choose the simplest auditable behavior and document it.
+
+Do NOT require txindex solely for getblock <hash> 2 if Core does not require
+it.
+
+Never print RPC credentials.
+
+
+6. CONFIGURATION
+================
+
+Add only the small amount of configuration the indexer genuinely needs.
+
+Recommended:
+
+  QOGE_NETWORK
+  QOGE_INDEX_POLL_SECONDS
+
+Use a sensible documented default polling interval, e.g. 10 seconds.
+
+Keep:
+
+  MAX AUTOMATIC REORG DEPTH = 100
+
+as a code/architecture safety constant, not an environment variable that an
+operator can accidentally weaken.
+
+RPC/database configuration already exists; reuse it.
+
+Update command help text, which still describes the old no-indexing phase.
+
+
+7. SEQUENTIAL HISTORICAL SYNC
+=============================
+
+Correctness first.
+
+Do NOT parallelize block application in this phase.
+
+For each height H:
+
+1. Core:
+
+     hash1 = GetBlockHash(H)
+
+2. Core:
+
+     raw = GetBlockVerbose2(hash1)
+
+3. Decode:
+
+     block = decode.DecodeBlock(...)
+
+4. Verify contextual identity:
+
+     block.Height == H
+     block.Hash == hash1
+
+5. Re-read Core:
+
+     hash2 = GetBlockHash(H)
+
+6. Require:
+
+     hash2 == hash1
+
+   before ApplyBlock.
+
+7. Store:
+
+     ApplyBlock(block)
+
+This second GetBlockHash closes the obvious race where:
+
+  getblockhash(H)
+      ↓
+  Core reorganizes
+      ↓
+  getblock(oldHash)
+
+would otherwise let the explorer apply a block that is already orphaned by
+the time it reaches Store.
+
+Never reorder transactions or blocks.
+
+Never skip a failed height.
+
+
+8. REMOTE CHAIN MOVEMENT DURING SYNC
+====================================
+
+Core and PostgreSQL cannot share one atomic transaction, so the remote chain
+can still reorganize immediately after the final hash check or even after
+ApplyBlock commits.
+
+Handle this explicitly.
+
+Introduce an indexer-level condition/sentinel such as:
+
+  ErrRemoteChainMoved
+
+When a height hash changes during fetch/decode/apply orchestration:
+
+- do not treat it as blockchain corruption
+- restart canonical reconciliation immediately
+
+If a block was already committed immediately before Core changed branch,
+the next reconciliation must detect that local checkpoint hash no longer
+matches Core and roll it back normally.
+
+Do not attempt distributed locking with Core.
+
+Store's atomicity protects local state; indexer reconciliation repairs the
+remote/local race.
+
+
+9. CHECK LOCAL TIP AGAINST CORE BEFORE FORWARD SYNC
+===================================================
+
+Every SyncToTip pass must begin by reconciling the current Store checkpoint
+with Core.
+
+Let:
+
+  local = Store.Tip()
+  remoteHeight = GetBlockCount()
+
+If local is uninitialized:
+
+  start at genesis.
+
+Otherwise:
+
+If:
+
+  local.Height <= remoteHeight
+
+obtain:
+
+  coreHashAtLocalHeight = GetBlockHash(local.Height)
+
+If:
+
+  coreHashAtLocalHeight == local.Hash
+
+the local tip is still on Core's active chain.
+
+Forward syncing may proceed from:
+
+  local.Height + 1
+
+If the hashes differ:
+
+  REORG DETECTED.
+
+Also treat:
+
+  local.Height > remoteHeight
+
+as a reorg/tip-retreat condition requiring ancestor discovery.
+
+
+10. COMMON ANCESTOR DISCOVERY
+=============================
+
+Do not use orphan block guesses.
+
+Compare the two actual canonical chains by height.
+
+Starting point:
+
+  h = min(localTip.Height, coreTipHeight)
+
+For each H walking downward:
+
+  localHash, found =
+      Store.CanonicalBlockHash(H)
+
+  coreHash =
+      Core.GetBlockHash(H)
+
+If local canonical data is unexpectedly missing at a height <= local tip:
+
+  HALT with an explicit local-chain-gap/integrity error.
+
+Do not pretend that means "no match."
+
+First equal hash is the common ancestor.
+
+Before calling RollbackTo, RE-READ:
+
+  Core.GetBlockHash(ancestorHeight)
+
+and require that it still equals the candidate ancestor hash.
+
+If Core changed during ancestor discovery:
+
+  discard the candidate and restart reconciliation.
+
+This avoids rolling back based on a mixed snapshot of two different Core
+branches.
+
+
+11. MAXIMUM AUTOMATIC REORG DEPTH
+=================================
+
+Policy remains:
+
+  <= 100 blocks
+      automatic
+
+  > 100 blocks
+      HALT FOR OPERATOR
+
+Depth is:
+
+  localTip.Height - ancestorHeight
+
+Do not call Store.RollbackTo before this policy is checked.
+
+Efficient search:
+
+- there is no need to walk thousands/millions of blocks looking for an
+  ancestor that would already violate policy
+- search only the range capable of producing depth <=100
+
+If:
+
+  localTip.Height - min(localTip.Height, coreTipHeight) > 100
+
+then Core is already more than 100 blocks behind local state:
+
+  HALT immediately as deep reorg.
+
+Otherwise walk downward only as far as:
+
+  localTip.Height - 100
+
+If no common ancestor is found inside the allowed window:
+
+  return ErrReorgTooDeep
+
+and leave the database unchanged.
+
+Exactly depth 100:
+  automatic.
+
+Depth 101:
+  operator halt.
+
+
+12. REORG EXECUTION
+===================
+
+Once a stable common ancestor is found and depth <=100:
+
+1. Log non-secret information:
+
+   old local tip height/hash
+   ancestor height/hash
+   reorg depth
+
+2. Call:
+
+     Store.RollbackTo(ctx, ancestorHash)
+
+3. Re-read:
+
+     Store.Tip()
+
+4. Require it now equals the selected ancestor.
+
+5. Resume ordinary forward syncing from:
+
+     ancestorHeight + 1
+
+Replacement blocks must use the NORMAL path:
+
+  GetBlockHash
+  GetBlockVerbose2
+  DecodeBlock
+  Store.ApplyBlock
+
+Do not build a second "replacement branch insertion" path.
+
+This is important because Store already knows how to:
+
+- restore UTXOs
+- preserve orphan audit history
+- re-promote an old orphan that becomes canonical again
+- recompute address caches
+- preserve txid/wtxid witness variants
+
+
+13. BRANCH FLIP-BACK
+====================
+
+Test this explicitly.
+
+Example:
+
+Core initially:
+
+  A0 -> A1 -> A2
+
+Explorer indexes A0/A1/A2.
+
+Core changes to:
+
+  A0 -> B1 -> B2
+
+Indexer should:
+
+  detect mismatch
+  find A0
+  rollback A1/A2
+  apply B1/B2
+
+Then Core changes BACK to:
+
+  A0 -> A1 -> A2
+
+Indexer should:
+
+  detect mismatch again
+  rollback B1/B2
+  ApplyBlock(A1/A2)
+
+Store should re-promote the already-persisted orphan A blocks instead of
+creating conflicting state.
+
+Verify final:
+
+- canonical blocks correct
+- UTXO state correct
+- address cache correct
+- old B branch retained as orphan audit history
+
+
+14. SYNC TARGET MOVES FORWARD
+=============================
+
+Do not assume getblockcount remains fixed throughout a long historical sync.
+
+A SyncToTip pass may snapshot:
+
+  targetHeight = GetBlockCount()
+
+and sequentially reach that target.
+
+Once reached:
+
+- read Core tip height again
+- reconcile the local tip hash again
+- if Core advanced, continue
+- if Core changed branch, reconcile/reorg
+- only return "caught up" when the local tip is currently on Core's active
+  branch and has reached the observed tip
+
+This makes historical catch-up naturally transition into live operation.
+
+
+15. LIVE LOOP
+=============
+
+Implement:
+
+  Run(ctx)
+
+as a thin loop around SyncToTip.
+
+Expected behavior:
+
+1. Sync/reconcile to current Core tip.
+2. Wait QOGE_INDEX_POLL_SECONDS.
+3. Repeat.
+4. Stop cleanly when ctx is cancelled.
+
+Do NOT have multiple concurrent SyncToTip calls.
+
+Do NOT start parallel block workers.
+
+Do NOT let polling overlap.
+
+For a chain-moved race:
+
+  retry/reconcile immediately rather than waiting a full poll interval.
+
+For a deterministic decoder/store/local-integrity/deep-reorg error:
+
+  return the error and halt.
+
+Prefer failing safely over endlessly retrying a reproducible integrity error.
+
+A temporary process exit is safer than silently modifying chain state on an
+error whose meaning is unknown; service supervision can restart the process.
+
+
+16. INDEX COMMAND
+=================
+
+Add a production CLI command, preferably:
+
+  qoge-explorer index
+
+It should:
+
+- validate RPC config
+- require QOGE_DATABASE_URL
+- validate QOGE_NETWORK
+- connect PostgreSQL
+- verify Core/network/full-node status
+- create rpc.Client
+- create CoreAddressResolver
+- create Store
+- create Indexer
+- create signal-aware context
+- run Indexer.Run(ctx)
+
+Use:
+
+  signal.NotifyContext
+
+for SIGINT/SIGTERM clean shutdown.
+
+Do not combine this with the HTTP server yet.
+
+For now:
+
+  qoge-explorer index
+
+and:
+
+  qoge-explorer serve
+
+remain separate commands.
+
+A combined long-running service can be considered after indexing is reviewed.
+
+
+17. LOGGING
+===========
+
+Add useful structured progress logging without flooding output.
+
+Historical sync should report progress periodically, for example:
+
+- starting height
+- target height
+- current height
+- percentage
+- blocks remaining
+
+Do not log every huge witness or raw transaction.
+
+On reorg log:
+
+- old tip
+- common ancestor
+- depth
+- replacement progress
+
+Never log:
+
+- RPC password
+- Authorization header
+- full raw P2QPK signatures
+
+
+18. DO NOT ADD ADDITIVE CHECKPOINT STATE
+========================================
+
+The database checkpoint remains:
+
+  sync_state('main')
+
+Store owns it.
+
+Do not add:
+
+- a second checkpoint file
+- JSON resume file
+- LevelDB marker
+- in-memory-only durable height
+- duplicate SQL sync state
+
+On restart:
+
+  Store.Tip()
+
+is the sole durable source of explorer progress.
+
+
+19. RESTART / CRASH SEMANTICS
+=============================
+
+Explicitly test:
+
+A. process stops between blocks:
+   resume at checkpoint+1
+
+B. Store.ApplyBlock fails before commit:
+   checkpoint stays prior block
+   restart retries same height
+
+C. process stops after block commit:
+   checkpoint includes block
+   restart starts at next height
+
+D. exact tip is already indexed:
+   no duplicate balance/accounting changes
+
+Do not invent special recovery files.
+
+
+20. ERROR CLASSIFICATION
+========================
+
+Define clear indexer errors/sentinels where useful:
+
+  ErrReorgTooDeep
+  ErrLocalChainGap
+  ErrRemoteChainMoved
+  ErrNetworkMismatch
+  ErrPrunedNode
+
+or equivalent.
+
+Use errors.Is-compatible wrapping for decisions.
+
+Do not string-match Store errors.
+
+Store errors such as:
+
+  ErrImmutableConflict
+  ErrMissingPrevout
+  ErrDoubleSpend
+  ErrNegativeFee
+  ErrWitnessIdentityMismatch
+  ErrInvalidTransactionShape
+
+should be treated as HALT/integrity failures from the indexer's perspective,
+not automatically retried forever.
+
+
+21. REQUIRED DETERMINISTIC INDEXER TESTS
+========================================
+
+Use fake RPC + isolated PostgreSQL wherever appropriate.
+
+At minimum prove:
+
+A. fresh DB starts at height 0
+
+B. sequential sync 0..N produces checkpoint N
+
+C. restart resumes from checkpoint+1
+
+D. already-caught-up SyncToTip is a no-op
+
+E. Core tip grows while syncing and indexer continues to new tip
+
+F. block hash changes between first and second GetBlockHash(H):
+   stale block is NOT applied
+
+G. Core changes immediately after a block was applied:
+   next reconciliation detects and rolls it back
+
+H. same-height shallow reorg:
+   common ancestor found
+   rollback
+   replacement applied
+
+I. Core tip becomes shorter:
+   common ancestor search works
+
+J. reorg depth exactly 100:
+   automatic
+
+K. reorg depth 101:
+   ErrReorgTooDeep
+   database unchanged
+
+L. no common ancestor within 100:
+   ErrReorgTooDeep
+   database unchanged
+
+M. local canonical block missing inside expected history:
+   ErrLocalChainGap
+   no mutation
+
+N. reorg branch flip-back:
+   old orphan branch safely re-promoted
+
+O. malformed DecodeBlock result/RPC data:
+   no checkpoint movement
+
+P. RPC block fetch failure:
+   no checkpoint movement
+
+Q. context cancellation:
+   Run exits cleanly
+
+R. no overlapping sync passes
+
+S. indexer never bootstraps an empty production Store above height 0
+
+T. Store.CanonicalBlockHash read API behaves correctly
+
+
+22. P2QPK INDEXER PIPELINE TEST
+==============================
+
+Keep a synthetic source-derived P2QPK orchestration fixture.
+
+Fake Core should expose a short valid chain where one transaction contains:
+
+  witness item 0:
+    exactly 17,088 bytes
+
+  witness item 1:
+    exactly 32 bytes
+
+and a structural P2QPK output:
+
+  witness v2
+  32-byte program
+  Core RPC type "witness_unknown"
+  Core-provided address
+
+Run through the REAL path:
+
+  fake RPC
+      ->
+  Indexer
+      ->
+  rpc.RawBlock
+      ->
+  decode.DecodeBlock
+      ->
+  Store.ApplyBlock
+      ->
+  PostgreSQL
+
+Verify byte-exact witness persistence.
+
+Indexer must never inspect/transform the signature itself.
+
+
+23. REAL CORE OPT-IN INDEXER TEST
+=================================
+
+Add an opt-in integration test using the existing local qogecoind.
+
+Do NOT let a test attempt to index all ~2.4M blocks.
+
+Use an RPC wrapper in the TEST ONLY that:
+
+- forwards GetBlockHash/GetBlockVerbose2 to the real local Core node
+- caps GetBlockCount to a small height, e.g. 10
+
+Then run the real Indexer against a fresh isolated PostgreSQL schema.
+
+This exercises:
+
+  real Core
+      ->
+  real RPC DTO
+      ->
+  real DecodeBlock
+      ->
+  real P2PK resolver
+      ->
+  real Store
+      ->
+  PostgreSQL
+
+for genesis through the small capped height.
+
+Gate with an environment variable such as:
+
+  QOGE_INDEXER_INTEGRATION=1
+
+Normal:
+
+  go test ./...
+
+must never require:
+
+- qogecoind
+- RPC credentials
+- Internet access
+
+Verify no credentials printed.
+
+
+24. OPTIONAL CURRENT-TIP FETCH TEST
+===================================
+
+It is also acceptable for the opt-in suite to:
+
+- call real GetBlockCount
+- fetch/decode the current tip
+- NOT apply it to the fresh DB
+
+This verifies current live Core format without attempting a multi-million
+block bootstrap in tests.
+
+
+25. PERFORMANCE — CORRECTNESS FIRST
+===================================
+
+Do not parallelize PostgreSQL block writes yet.
+
+Do not batch several blocks into one DB transaction.
+
+The reviewed invariant is:
+
+  one SQL transaction per block
+
+Maintain it.
+
+Do not add speculative caches beyond the existing pubkey-address resolver.
+
+Historical sync performance can be measured after correctness review.
+
+Log enough timing information that we can later identify:
+
+- RPC fetch time
+- decode time
+- Store.ApplyBlock time
+
+without changing correctness behavior.
+
+
+26. DOCUMENTATION
+=================
+
+Update docs/ARCHITECTURE.md to mark the indexer orchestration implemented.
+
+Document:
+
+- Store.Tip is sole durable resume point
+- fresh production sync starts at genesis
+- sequential getblockhash/getblock 2/decode/apply pipeline
+- second getblockhash race check
+- local-tip/Core-tip reconciliation
+- common ancestor discovery
+- ≤100 automatic reorg
+- >100 operator halt
+- RollbackTo + normal ApplyBlock replacement path
+- polling/live-loop behavior
+- network/full-node requirement
+- crash/restart semantics
+
+Do not claim public API/UI exists.
+
+
+27. PHASE BOUNDARY
+==================
+
+This PR may modify only what Phase 2C.2 genuinely requires, expected roughly:
+
+  internal/indexer/*
+  internal/indexer/*_test.go
+  internal/rpc/*              # GetBlockCount only/minimal helpers
+  internal/store/store.go     # read-only CanonicalBlockHash only
+  internal/store/*_test.go    # read-only query test
+  internal/config/*
+  cmd/qoge-explorer/main.go
+  docs/ARCHITECTURE.md
+
+Do NOT modify:
+
+  migrations/0001_initial.*
+  internal/store/apply.go
+  internal/store/reorg.go
+  internal/decode semantics
+  internal/script semantics
+  internal/chain semantics
+
+If you discover that one of those frozen components MUST change for
+correctness:
+
+  STOP AND REPORT.
+
+Do not silently change it.
+
+
+28. QUALITY
+===========
+
+Run uncached:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run:
+
+- PostgreSQL-backed Store/indexer tests
+- deterministic fake-RPC indexer tests
+- opt-in real Core indexer test
+- existing Phase 2C.1 live RPC tests
+
+Verify:
+
+  git diff main...HEAD -- migrations/
+
+must be ZERO.
+
+Also verify:
+
+  git diff main...HEAD -- internal/store/apply.go
+  git diff main...HEAD -- internal/store/reorg.go
+  git diff main...HEAD -- internal/decode
+  git diff main...HEAD -- internal/script
+  git diff main...HEAD -- internal/chain
+
+must be ZERO unless the task explicitly allowed a test-only change and you
+report it.
+
+No credentials.
+No binaries.
+No files outside qoge-explorer.
+
+
+29. COMMIT / PR
+===============
+
+Suggested commit:
+
+  feat: implement canonical chain synchronization and reorg orchestration
+
+Push:
+
+  phase2c-sync-indexer
+
+Create PR:
+
+  Phase 2C.2: historical sync and live reorg orchestration
+
+Base:
+
+  main
+
+Do NOT merge.
+
+Stop for independent review.
+
+
+FINAL REPORT
+============
+
+PHASE 2C.2 — INDEXER
+====================
+
+Branch:
+Commit:
+PR:
+
+RPC
+---
+GetBlockCount:
+Other additions:
+
+STORE READ API
+--------------
+CanonicalBlockHash:
+Store write semantics changed: NO
+
+STARTUP SAFETY
+--------------
+Network validation:
+Pruned-node handling:
+IBD handling:
+Fresh bootstrap height:
+
+HISTORICAL SYNC
+---------------
+Start height:
+Sequential fetch:
+Second hash check:
+Decode:
+ApplyBlock:
+Checkpoint source:
+
+RESTART
+-------
+Resume behavior:
+Crash behavior:
+
+LIVE LOOP
+---------
+Poll interval:
+Cancellation:
+Overlap prevention:
+
+REORG DETECTION
+---------------
+Tip comparison:
+Common ancestor:
+Stable-ancestor recheck:
+Core-moving race:
+
+DEPTH POLICY
+------------
+<=100:
+>100:
+Exactly-100 test:
+101 test:
+
+REORG EXECUTION
+---------------
+Rollback:
+Replacement branch:
+Flip-back behavior:
+Orphan audit history:
+
+P2QPK
+-----
+v2/32:
+17,088-byte witness:
+32-byte pubkey:
+Byte-exact through Indexer -> Store:
+
+DETERMINISTIC TESTS
+-------------------
+List A-T individually with PASS/FAIL.
+
+LIVE INDEXER INTEGRATION
+------------------------
+Enabled:
+Capped real-Core range:
+Result:
+Secrets printed: NO
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+PostgreSQL:
+Existing live RPC suite:
+
+PHASE BOUNDARY DIFFS
+--------------------
+migrations/: ZERO
+internal/store/apply.go: ZERO
+internal/store/reorg.go: ZERO
+internal/decode/: ZERO
+internal/script/: ZERO
+internal/chain/: ZERO
+
+WORKING TREE
+------------
+Status:
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+NONE
+
+Stop.
+Do not merge.
+Do not begin API/web work.
+
+The key architectural point in 2C.2 is that the indexer should never “repair” blockchain state itself. Its job is only to determine which branch Core currently considers canonical; the already-reviewed Store remains responsible for atomically applying a block or rolling back to an explicitly selected ancestor. RollbackTo was deliberately written with exactly that division of responsibility.
+
+And keeping sync_state('main') as the single durable resume point means the new live loop does not reintroduce the kind of independent checkpoint/data state that caused the old eIquidus crash-replay corruption. Store.Tip() already exposes that durable checkpoint specifically for the future indexer.
