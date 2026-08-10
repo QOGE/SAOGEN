@@ -1,0 +1,64 @@
+● No Store changes. Now the final quality gate: gofmt, vet, build, full test suite, race, and both opt-in live suites.
+
+  Ran 1 shell command 
+
+● Now the opt-in live suites.
+
+  Ran 1 shell command 
+
+● All pass, no credentials printed. Now let's verify the phase-boundary diffs and commit.
+
+  Ran 1 shell command 
+
+● All zero. Let's commit and push.
+
+  Committed 7fceafb, pushed to phase2c-sync-indexer, ran 2 shell commands 
+
+● Pushed and PR #5 updated. Final full phase-boundary check against main:
+
+  Ran 1 shell command 
+
+● REPORT
+
+  PHASE 2C.2 FINAL RACE HARDENING
+
+  Commit: 7fceafb4edfa9df4fc13ba5722f17f60c4a4a2f9
+  PR head: https://github.com/QOGE/qoge-explorer/pull/5 (updated, still open, not merged)
+
+  NONSEQUENTIAL DIAGNOSIS
+  - Current-block recheck: diagnoseNonSequential now re-reads GetBlockHash(height) first and compares against block.Hash before any parent reasoning — a mismatch alone (same-height branch replacement, with or without the local checkpoint having caught up yet) is classified as ErrRemoteChainMoved immediately
+  - Parent recheck: only proceeds to compare currentLocal.Height/parent hash/block.PreviousHash once the block's own identity at height is confirmed current
+  - Mixed-snapshot protection: the parent read is now bracketed by a second GetBlockHash(height) read (mirroring applyHeight's own two-hash check); a change between the two discards the observation via ErrRemoteChainMoved rather than drawing a terminal conclusion from a mixed snapshot
+  - Stable malformed child: unchanged conclusion — only reached when both height-reads agree the block is stably current and Core/local agree on the parent and block.PreviousHash still contradicts it
+
+  TEST Z
+  - TestSyncToTip_SameHeightLocalCheckpointReplacement — Result: PASS. Reproduces a second writer having already reconciled the checkpoint to a new branch's same-height block while this indexer's in-flight fetch is still the old branch's block; resolves via ErrRemoteChainMoved and converges to the correct final branch (verified this scenario would have produced a false terminal halt
+  under the prior diagnosis logic, by manual trace)
+
+  MULTI-WRITER POLICY
+  - Chosen policy: A — exactly one active indexer orchestrator per database for Phase 2C.2, documented in docs/ARCHITECTURE.md §18 ("Multi-writer policy")
+  - Automatic-reorg depth guarantee: Store remains fully cross-process transaction-safe (its own row lock serializes ApplyBlock/RollbackTo); the indexer's reorg-depth approval is only detectably-stale-safe (pre-RollbackTo Tip() recheck discards a stale decision), not atomically coordinated across multiple concurrent orchestrators — documented as the reason enforcement (e.g. a
+  pg_advisory_lock singleton lease) is deferred to a later phase rather than added now, since it would require new Store API surface or a second independent DB connection beyond this phase's minimal scope
+
+  A-Y: all PASS (24 tests, re-verified)
+  Z: PASS
+
+  P2QPK: byte-exact, PASS (unchanged)
+  Live indexer: PASS (QOGE_INDEXER_INTEGRATION=1, capped to height 10; idempotent re-run also verified in prior round)
+  Live decoder: PASS (QOGE_RPC_INTEGRATION=1, unmodified)
+  Secrets printed: NO
+
+  QUALITY: gofmt clean · go vet clean · go build clean · go test -count=1 ./... all pass · go test -race -count=1 ./... all pass
+
+  PHASE BOUNDARY: migrations/, internal/store/apply.go, internal/store/reorg.go, internal/store/store.go, internal/decode/, internal/script/, internal/chain/ — all ZERO diff against main. Changed only internal/indexer/race.go, internal/indexer/indexer_test.go, and docs/ARCHITECTURE.md.
+
+  FILES OUTSIDE PROJECT: NONE
+
+  Stop. Not merged.
+
+✻ Worked for 7m 1s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ check reviewer feedback on PR #5
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
