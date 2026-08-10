@@ -1,0 +1,336 @@
+00014 fixes the Core-semantic issues from the previous round correctly. I checked both Claude’s report and the current PR #3. GitHub shows PR #3 still open, unmerged, and mergeable at head d0e46a240d33f82c1ca31321082597205b2800d2.
+
+The new script.IsUnspendable() is a faithful mirror of Core’s raw-script rule, genesis outputs are now preserved in immutable history without entering utxo_state, and the multisig deduplication logic looks sound. The previous continuity/concurrency protections also remain intact.
+
+I found two small remaining store-integrity gaps and one inaccurate test fixture. These are much narrower than the previous rounds; there is no schema redesign involved.
+
+1. A partially decoded transaction can still be checkpointed
+
+validateBlockShape() now verifies transaction count, positional indexes, and coinbase positioning, but it does not reject a transaction with zero inputs or zero outputs.
+
+Qogecoin Core explicitly rejects both:
+
+vin.empty()  -> bad-txns-vin-empty
+vout.empty() -> bad-txns-vout-empty
+
+This matters for the explorer even though Core remains the consensus authority. If the future RPC translator accidentally constructs a transaction but omits its vin or vout, TxCount would still match and Store could mark that block fully indexed.
+
+That is exactly the kind of partial-decoding failure the complete-block checks are supposed to prevent.
+
+2. chain.Input field exclusivity isn't enforced
+
+The model itself says Coinbase is only populated when PreviousOut == nil, while ScriptSig is for non-coinbase inputs and should be empty for coinbase inputs.
+
+But applyInput() currently does:
+
+if in.PreviousOut != nil {
+    // use prevout
+} else {
+    coinbase = in.Coinbase
+}
+
+and then always persists in.ScriptSig.
+
+So this malformed model:
+
+PreviousOut = real tx:vout
+Coinbase    = non-empty bytes
+
+passes the current shape validation, and the Coinbase bytes are silently discarded during persistence.
+
+That violates our 1:1 raw-input preservation rule. Conversely, a coinbase carrying a non-empty ScriptSig can produce an ambiguous representation.
+
+Store should reject contradictory chain.Input fields before writing anything.
+
+3. The “real genesis vector” test contains the wrong transaction body
+
+The new genesis test uses the genuine block hash and txid, but constructs the transaction with:
+
+5,000,000,000 satoshis = 50 QOGE
+
+Claude therefore calls it a “real mainnet vector,” but QOGE Core actually creates the mainnet genesis with 100 QOGE, i.e. 10,000,000,000 satoshis.
+
+There are other synthetic differences too: Core creates the genesis transaction with version 1, the actual timestamp coinbase script, and the actual 65-byte P2PK output script.
+
+This doesn't invalidate the genesis-UTXO fix itself, but the test should not claim to be a real transaction vector while pairing the genuine txid with a body that could not hash to that txid.
+
+Give Claude this small final integrity pass:
+
+One final review of PR #3 found two small Store model-integrity gaps and
+one inaccurate QOGE genesis fixture.
+
+Stay on:
+
+  phase2b-store-engine
+
+Current reviewed head:
+
+  d0e46a240d33f82c1ca31321082597205b2800d2
+
+Do NOT merge.
+Do NOT start RPC/indexer work.
+Do NOT modify migrations/0001_initial.*.
+
+
+1. REQUIRE COMPLETE TRANSACTION SHAPE
+=====================================
+
+validateBlockShape currently checks:
+
+- block transaction count
+- vin/vout positional indexes
+- coinbase flag/prevout relationship
+- coinbase position in block
+
+but a transaction with:
+
+  len(Inputs) == 0
+
+or:
+
+  len(Outputs) == 0
+
+can still pass in some cases.
+
+Qogecoin Core CheckTransaction explicitly rejects:
+
+  vin.empty()  -> bad-txns-vin-empty
+  vout.empty() -> bad-txns-vout-empty
+
+Store is not becoming a consensus validator.
+
+This is a COMPLETENESS invariant: ApplyBlock claims to persist a fully
+decoded transaction, so an empty vin or vout must not be accepted as a
+possibly-partial RPC translation.
+
+Add to validateBlockShape:
+
+  len(txn.Inputs) > 0
+  len(txn.Outputs) > 0
+
+Return ErrInvalidTransactionShape.
+
+Tests:
+
+- coinbase with zero outputs -> rejected, zero writes
+- non-coinbase with zero inputs -> rejected, zero writes
+- transaction with normal vin/vout -> accepted
+
+Confirm checkpoint cannot move on either malformed case.
+
+
+2. ENFORCE chain.Input FIELD EXCLUSIVITY
+========================================
+
+internal/chain.Input documents:
+
+PreviousOut:
+  nil for coinbase
+
+Coinbase:
+  raw coinbase script
+  populated only when PreviousOut == nil
+
+ScriptSig:
+  raw non-coinbase scriptSig
+  empty for coinbase
+
+Current applyInput silently discards Input.Coinbase when PreviousOut != nil.
+
+That violates the raw 1:1 preservation invariant if the future RPC decoder
+constructs an inconsistent model.
+
+Before database writes, enforce:
+
+COINBASE INPUT:
+
+  PreviousOut == nil
+  len(Coinbase) > 0
+  len(ScriptSig) == 0
+
+NON-COINBASE INPUT:
+
+  PreviousOut != nil
+  len(Coinbase) == 0
+  ScriptSig may be empty or non-empty
+
+Do not require a non-empty ScriptSig for non-coinbase:
+pure witness spends legitimately have an empty scriptSig.
+
+Do not add signature/script consensus validation.
+
+Return ErrInvalidTransactionShape for contradictory input representation.
+
+Tests:
+
+- normal coinbase representation -> PASS
+- coinbase with non-empty ScriptSig -> REJECT
+- coinbase with missing/empty Coinbase raw bytes -> REJECT
+- non-coinbase with Coinbase bytes populated -> REJECT
+- pure-witness non-coinbase with empty ScriptSig -> PASS
+
+All failures must happen before any persistent block write.
+
+
+3. CORRECT THE QOGE GENESIS FIXTURE
+===================================
+
+TestApplyBlock_GenesisCoinbaseUnspendable currently uses the real:
+
+block hash:
+  78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc
+
+txid:
+  a0bc982915c0435f85fa6e44b7e6bd7b32e2a6ad10f968d223d4a56fa2aabc9e
+
+but pairs them with a synthetic 50-QOGE transaction body.
+
+Qogecoin stable chainparams actually creates genesis with:
+
+  transaction version = 1
+  reward = 100 * COIN
+         = 10,000,000,000 satoshis
+
+and the P2PK output key:
+
+  042f87f89b47b6d60836b56bb0b112e573913f47361c07852957ce967c618ea09577c10b0c7a6d54d785860e45309318056c387e0e15047e57ad45e5f623b61594
+
+with OP_CHECKSIG.
+
+Prefer making the fixture source-faithful.
+
+At minimum:
+
+- use 10,000,000,000 satoshis
+- Version = 1
+- use the real genesis P2PK scriptPubKey
+
+If practical, also hardcode the real coinbase script from Qogecoin Core so
+the modeled transaction body is fully source-derived.
+
+Do NOT introduce a runtime dependency on qogecoind for tests.
+
+If the entire transaction body is not made exact, change the comments so the
+test is explicitly described as:
+
+  "source-derived genesis identity/UTXO-semantics fixture"
+
+rather than claiming it is the genuine full transaction vector.
+
+The test's purpose remains:
+
+- immutable genesis transaction persists
+- immutable genesis output persists
+- genesis output has no utxo_state row
+- it contributes no canonical balance
+- replay remains idempotent
+
+
+4. KEEP ALL PRIOR BEHAVIOR
+==========================
+
+Do not weaken:
+
+- Core IsUnspendable parity
+- genesis UTXO exclusion
+- OP_RETURN / oversized-output exclusion
+- canonical FOR UPDATE serialization
+- tip continuity
+- incomplete-block detection
+- immutable child-set completeness
+- orphan re-promotion
+- markSpent hardening
+- txid/wtxid variant handling
+- P2QPK 17,088-byte witness preservation
+- SET-based address caches
+- reorg behavior
+- multisig participant SET semantics
+
+All existing tests must remain green.
+
+
+5. QUALITY
+==========
+
+Run uncached:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run all PostgreSQL-backed tests.
+
+Verify again:
+
+  git diff main...HEAD -- migrations/
+
+must be ZERO.
+
+
+6. COMMIT / PUSH
+================
+
+Suggested commit:
+
+  fix: enforce complete transaction input representation
+
+Push to the existing PR #3.
+
+Do NOT merge.
+
+Report:
+
+PHASE 2B.2 FINAL MODEL INTEGRITY
+================================
+
+Commit:
+PR head:
+
+TRANSACTION COMPLETENESS
+------------------------
+Empty vin:
+Empty vout:
+Tests:
+
+INPUT REPRESENTATION
+--------------------
+Coinbase:
+Non-coinbase:
+Pure witness:
+Tests:
+
+QOGE GENESIS FIXTURE
+--------------------
+Version:
+Reward:
+ScriptPubKey:
+Fixture accuracy:
+
+P2QPK
+-----
+17,088-byte test:
+txid/wtxid test:
+
+QUALITY
+-------
+gofmt:
+go vet:
+go test:
+go test -race:
+go build:
+PostgreSQL:
+
+MIGRATION DIFF
+--------------
+ZERO
+
+FILES MODIFIED OUTSIDE PROJECT
+------------------------------
+NONE
+
+Stop.
+Do not merge.
+
+After this I would stop internal review iterations and send PR #3 to the P2QPK/Core VM for the final independent store review. The remaining findings are about ensuring a partially or inconsistently decoded future RPC object can never become the durable checkpoint; the actual UTXO/reorg/P2QPK architecture now looks solid.
