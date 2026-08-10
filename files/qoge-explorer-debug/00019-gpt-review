@@ -1,0 +1,570 @@
+00019 resolves the issues from the first RPC-decoder review cleanly. I checked the report and the actual updated PR #4 code.
+
+PR #4 is still open, unmerged, non-draft, and currently mergeable, with head exactly:
+
+d0f5b4b2cb5b0100c170229be426297932ed7430
+
+The fix is one commit ahead of the previously reviewed 8f32909, touching only the expected RPC/decode/test files—no migrations or Store changes. The new DTO layer really does use presence-aware pointer fields for required zero-capable RPC values.
+
+The main corrections also look correct in the actual implementation: empty scriptPubKey.hex is now accepted as a real empty script, while a missing script object/member is rejected; ordinary and coinbase VIN wire shapes are mutually exclusive; height 0 versus previousblockhash is enforced explicitly; and Core address presence is now checked according to the structurally classified script type.
+
+The resolver hardening is also correct: nil resolver/client paths return errors rather than panic, and empty resolved addresses are rejected. Claude reports the full deterministic suite, race suite, PostgreSQL pipeline tests, and all four live-Core integration tests passing with the stricter decoder.
+
+I found no new blocking issue in this internal review. I would stop modifying PR #4 now and send this exact head to the P2QPK/Core VM for final independent review.
+
+Paste this there:
+
+Please perform the FINAL independent Qogecoin Core / P2QPK review of:
+
+https://github.com/QOGE/qoge-explorer/pull/4
+
+EXPECTED PR HEAD
+================
+
+d0f5b4b2cb5b0100c170229be426297932ed7430
+
+This is Phase 2C.1:
+
+  Qogecoin Core JSON-RPC
+      ↓
+  typed RPC wire DTOs
+      ↓
+  strict decoder
+      ↓
+  canonical chain.Block / chain.Transaction
+
+Do NOT modify the repository.
+Do NOT merge the PR.
+Do NOT review an older commit/report.
+
+Review the ACTUAL PR diff at exactly:
+
+  d0f5b4b2cb5b0100c170229be426297932ed7430
+
+
+1. VERIFY AGAINST ACTUAL QOGECOIN CORE RPC SOURCE
+=================================================
+
+Use the Qogecoin Core source as authority.
+
+Especially inspect the equivalents of:
+
+  src/core_write.cpp
+    TxToUniv
+    ScriptToUniv
+    ValueFromAmount
+
+  src/rpc/blockchain.cpp
+    blockheaderToJSON
+    blockToJSON
+
+  src/script/standard.cpp
+    Solver
+    ExtractDestination
+
+and the P2QPK implementation/source where relevant.
+
+Confirm the explorer's raw DTO shapes and decoder assumptions match what
+Core actually emits for `getblock <hash> 2`.
+
+
+2. REQUIRED FIELD PRESENCE
+==========================
+
+The raw RPC DTOs now preserve key presence for required fields instead of
+silently turning missing fields into Go zero values.
+
+Verify this is appropriate for all required fields used by the canonical
+model.
+
+Block:
+
+- hash
+- height
+- merkleroot
+- time
+- bits
+- difficulty
+- nonce
+- size
+- weight
+- nTx
+- tx
+
+Transaction:
+
+- txid
+- hash
+- version
+- size
+- vsize
+- weight
+- locktime
+- vin
+- vout
+
+Ordinary vin:
+
+- txid
+- vout
+- scriptSig
+- scriptSig.hex
+- sequence
+
+Coinbase vin:
+
+- coinbase
+- sequence
+
+Vout:
+
+- value
+- n
+- scriptPubKey
+- scriptPubKey.hex
+
+Confirm Core always supplies these fields in the relevant verbosity-2
+response and that no legitimate zero value is mistakenly rejected.
+
+
+3. EMPTY SCRIPT HANDLING
+========================
+
+Verify against ScriptToUniv/Core behavior:
+
+A genuinely empty CScript is serialized as:
+
+  "hex": ""
+
+and is valid representation data.
+
+Decoder now distinguishes:
+
+missing scriptPubKey object:
+  ERROR
+
+missing scriptPubKey.hex:
+  ERROR
+
+present:
+  "hex": ""
+  ACCEPT
+
+It then structurally classifies the empty script as TypeUnknown and preserves
+the zero-length script.
+
+Confirm this is Core-compatible.
+
+
+4. BLOCK / GENESIS SHAPE
+========================
+
+Verify:
+
+height == 0:
+  previousblockhash must be absent
+
+height > 0:
+  previousblockhash must be present and valid
+
+negative height:
+  rejected
+
+Confirm this mirrors blockheaderToJSON semantics.
+
+
+5. VIN WIRE-SHAPE EXCLUSIVITY
+=============================
+
+Confirm Core emits exactly these shapes:
+
+COINBASE:
+
+  coinbase
+  sequence
+  optional txinwitness
+
+ORDINARY:
+
+  txid
+  vout
+  scriptSig {
+    asm
+    hex
+  }
+  sequence
+  optional txinwitness
+
+Decoder rejects mixtures such as:
+
+- coinbase + txid
+- coinbase + vout
+- coinbase + scriptSig
+- ordinary input without vout
+- ordinary input without scriptSig
+- scriptSig object without hex
+
+but correctly accepts:
+
+  scriptSig.hex == ""
+
+for pure-witness inputs.
+
+Verify no legitimate Core input is excluded.
+
+
+6. AMOUNT DECODING
+==================
+
+Review DecodeAmount carefully.
+
+Core ValueFromAmount emits decimal QOGE values.
+
+Explorer converts:
+
+  json.Number
+      ->
+  direct decimal/string integer arithmetic
+      ->
+  satoshis int64
+
+Never through float64.
+
+Verify:
+
+  1 QOGE = 100,000,000 satoshis
+
+and that:
+
+- no rounding occurs
+- negative outputs are rejected
+- >8 fractional decimal precision is rejected
+- overflow is rejected
+- legitimate Core ValueFromAmount output is always representable by this
+  parser
+
+Look specifically for any edge case that could cause a real QOGE amount to
+decode incorrectly.
+
+
+7. TXID / WTXID
+===============
+
+Verify directly against TxToUniv:
+
+  RPC "txid"
+    = GetHash()
+    -> chain.Transaction.TxID
+
+  RPC "hash"
+    = GetWitnessHash()
+    -> chain.Transaction.WTxID
+
+Confirm neither is recomputed/substituted.
+
+Witness item presence must remain consistent with the finalized Store
+txid/wtxid model.
+
+
+8. TRANSACTION VERSION
+======================
+
+Verify Core's RPC emits:
+
+  static_cast<uint32_t>(tx.nVersion)
+
+and the explorer's raw/canonical representation remains uint32.
+
+Check the full range representation is preserved.
+
+
+9. WITNESS PRESERVATION
+=======================
+
+Verify txinwitness decoding:
+
+- every item independently hex-decoded
+- item order preserved
+- zero-length items preserved
+- no concatenation
+- no truncation
+
+Especially confirm P2QPK:
+
+  item 0:
+    17,088-byte SLH-DSA signature
+
+  item 1:
+    32-byte public key
+
+survives RPC DTO -> decoder -> chain model byte-exact.
+
+
+10. SCRIPT CLASSIFICATION
+=========================
+
+Explorer classification MUST remain based exclusively on:
+
+  script.Classify(raw scriptPubKey bytes)
+
+RPC:
+
+  scriptPubKey.type
+
+must never decide explorer ScriptType.
+
+Verify:
+
+P2WPKH:
+  v0 / 20
+
+P2WSH:
+  v0 / 32
+
+P2TR:
+  v1 / 32
+
+P2QPK:
+  v2 / 32
+
+unknown witness:
+  other structurally-valid nonzero witness forms
+
+Confirm real QOGE P2TR at height 1,284,510 cannot collide with P2QPK.
+
+
+11. P2QPK RPC REPRESENTATION
+============================
+
+This is especially important.
+
+Verify against current Qogecoin Core source:
+
+A v2/32 P2QPK output is currently serialized by RPC as:
+
+  type = "witness_unknown"
+
+because Solver has no P2QPK TxoutType.
+
+But ExtractDestination returns a generic WitnessUnknown destination and Core
+therefore supplies its correctly encoded Bech32m address.
+
+Explorer should consequently:
+
+- ignore RPC type for classification
+- structurally recognize raw v2/32 as TypeP2QPK
+- copy Core's address as-is
+- never implement its own P2QPK Bech32m encoder
+- never treat the 32-byte witness program as the raw SLH-DSA public key
+
+Confirm this remains exactly correct.
+
+
+12. CORE ADDRESS-PRESENCE SEMANTICS
+==================================
+
+Review the new strict rules against ScriptToUniv + ExtractDestination.
+
+Explorer currently requires Core address present/non-empty for:
+
+- P2PKH
+- P2SH
+- P2WPKH
+- P2WSH
+- P2TR
+- P2QPK
+- TypeUnknownWitness
+
+P2PK:
+
+- Core address must be absent
+- explorer resolves pkh(pubkey) through descriptor RPC
+
+Bare multisig:
+
+- Core output address must be absent
+- explorer resolves participant pubkeys separately
+
+NullData / TypeUnknown:
+
+- no Core destination address
+
+Confirm these rules match actual Core source, including generic
+WitnessUnknown destinations.
+
+
+13. P2PK ADDRESS FALLBACK
+=========================
+
+Review:
+
+  getdescriptorinfo("pkh(<pubkey>)")
+       ↓
+  canonical descriptor
+       ↓
+  deriveaddresses(...)
+
+Confirm this is valid for both compressed and uncompressed QOGE P2PK keys and
+matches the historical P2PK-associated address behavior.
+
+The output must remain:
+
+  ScriptType = p2pk
+
+not be relabeled P2PKH.
+
+
+14. BARE MULTISIG
+=================
+
+Confirm resolving each extracted pubkey via the same pkh(pubkey) descriptor
+is appropriate for explorer participant/search identity.
+
+Output.Address remains empty.
+
+ParticipantAddresses stays parallel to PubKeys.
+
+Duplicates remain preserved in the chain model; Store later applies its
+identity-set semantics.
+
+This is display/search metadata only, never monetary ownership accounting.
+
+
+15. RESOLVER FAILURE SAFETY
+===========================
+
+Verify:
+
+- nil AddressResolver cannot panic
+- nil Core RPC client cannot panic
+- empty resolver result cannot silently enter Output.Address
+- descriptor failures reject decoding rather than silently dropping the
+  address
+
+
+16. DECODER -> STORE CONTRACT
+=============================
+
+Verify every chain.Block returned successfully by DecodeBlock is structurally
+compatible with the already-reviewed Store.ApplyBlock contract.
+
+Look for any path where DecodeBlock could return a model Store would reject
+because of:
+
+- empty block transaction list
+- coinbase positioning
+- txid/wtxid witness identity
+- input field shape
+- output index shape
+- missing P2PK/multisig metadata
+
+Do not change Store; report any discrepancy.
+
+
+17. NO CONSENSUS DUPLICATION
+============================
+
+Confirm the decoder is NOT attempting to become a second validator.
+
+It should not:
+
+- verify PoW
+- recompute txid/wtxid
+- recompute merkle root
+- execute scripts
+- verify ECDSA
+- verify SLH-DSA
+- decide P2QPK activation validity
+- enforce subsidy
+
+Representation/shape checks are expected.
+
+
+18. ACTIVATION INDEPENDENCE
+===========================
+
+Confirm P2QPK-shaped v2/32 outputs can be decoded/classified irrespective of:
+
+  DEFINED
+  STARTED
+  LOCKED_IN
+  ACTIVE
+
+Core remains sole consensus authority.
+
+The decoder must never interpret TypeP2QPK as proof that a transaction is
+valid under current deployment state.
+
+
+19. DATA-LOSS / CORRUPTION REVIEW
+================================
+
+Look specifically for any path that could:
+
+- silently turn a missing RPC field into zero
+- reject a legitimate empty script
+- lose scriptSig bytes
+- lose zero-length witness items
+- truncate 17,088-byte witness data
+- swap txid/wtxid
+- misclassify P2TR as P2QPK
+- use RPC "witness_unknown" as proof of P2QPK
+- lose an address Core actually supplied
+- invent an address Core did not supply
+- silently discard contradictory VIN fields
+- panic during address resolution
+
+
+20. SCHEMA / PHASE BOUNDARY
+===========================
+
+Confirm PR #4 does NOT modify:
+
+  migrations/0001_initial.*
+  internal/store semantics
+
+No historical synchronization loop or live reorg detection should exist yet.
+
+
+REPORT ONLY
+===========
+
+P2QPK / CORE FINAL RPC DECODER REVIEW
+=====================================
+
+PR head reviewed:
+Verdict: APPROVE / CHANGES REQUIRED
+
+Core RPC DTO parity:
+Required-field presence:
+Empty-script handling:
+Genesis/previous-hash handling:
+VIN wire-shape:
+Amount conversion:
+TXID / WTXID:
+Transaction version:
+Witness preservation:
+Script classification:
+P2TR separation:
+P2QPK output representation:
+P2QPK address handling:
+P2PK resolution:
+Multisig resolution:
+Address-presence rules:
+Resolver safety:
+Decoder -> Store compatibility:
+Activation handling:
+Schema/phase boundary:
+Data-loss risks:
+Consensus discrepancies:
+Architecture concerns:
+
+If APPROVE, explicitly state:
+
+  "No blocking Core/P2QPK discrepancy found. Phase 2C.1 is safe to merge."
+
+Do not modify anything.
+Do not merge.
+Stop after the report.
+
+If that VM approves exactly d0f5b4b2..., I would merge PR #4 rather than begin another broad internal review cycle. The decoder has now been exercised against both adversarial/missing-field fixtures and the real running Qogecoin node, including the known P2PK/P2PKH/OP_RETURN/P2WPKH/P2TR vectors.
