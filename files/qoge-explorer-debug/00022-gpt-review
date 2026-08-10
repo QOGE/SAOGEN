@@ -1,0 +1,371 @@
+00022 fixes the race family from the previous review correctly in the normal single-writer case. I checked the report and the actual PR #5 code.
+
+PR #5 is still open, unmerged, non-draft, and mergeable, now at exact head:
+
+3a465b77d0b821c31e11ca8dbec78a632c072631
+
+The correction commit is exactly one commit after 24df382... and touches only cmd/qoge-explorer/main.go plus internal/indexer/*; the frozen Store/decode/script/chain code is untouched by this review fix.
+
+The substantive fixes are real: GetBlockHash disappearance is now distinguished from ordinary RPC failure by rereading Core height, the final “caught up” path rechecks the hash at the local tip, tip retreat immediately restarts reconciliation, ancestor discovery rechecks both Core and local state before rollback, and the configured slog.Logger is now actually passed into the indexer.
+
+The new U–Y tests also genuinely exercise the intended race windows rather than merely renaming existing tests.
+
+I found one subtle remaining race in diagnoseNonSequential that I would fix before sending this to the final independent VM.
+
+diagnoseNonSequential says Rule A detects whether the local checkpoint changed, but it actually compares only the height:
+
+if currentLocal.Height != height-1 {
+    return ErrRemoteChainMoved
+}
+
+That misses a checkpoint changing to a different hash at the same height.
+
+For example:
+
+local before fetch:
+A0 -> A1
+
+Indexer fetches and verifies:
+A2, parent=A1
+
+After its second GetBlockHash(2), but before Store.ApplyBlock:
+
+Core reorganizes:
+A0 -> B1 -> B2
+
+and another legitimate Store/indexer writer has already reconciled
+the shared DB to:
+
+A0 -> B1
+
+ApplyBlock(A2) correctly returns ErrNonSequentialBlock.
+
+The diagnostic then sees:
+
+currentLocal.Height == 1
+height - 1          == 1
+
+so Rule A incorrectly says the local checkpoint did not move.
+
+It queries Core at height 1 and gets B1, which equals the new local hash. Then it sees A2.PreviousHash != B1 and concludes that A2 is malformed, returning a terminal integrity error.
+
+But nothing was malformed: the canonical context genuinely changed from A1 to B1 at the same height.
+
+The cleanest way to distinguish this from test Y's genuinely malformed child is to recheck the current Core hash at the block's own height during diagnosis. If Core no longer says block.Hash is canonical at height, it is unquestionably remote-chain movement. If Core still reports that exact block at height, Core/local parent are stable, and block.PreviousHash nevertheless contradicts that stable parent, then the terminal malformed-child result is justified.
+
+There is also a related architecture issue worth making explicit: the new pre-RollbackTo Store.Tip() check reduces multi-writer races but is not atomic with RollbackTo. Another writer could change the tip after that check but before RollbackTo obtains Store's canonical lock. This only matters if multiple production indexer writers against one database are intended to be supported. If production is deliberately single-indexer, we should state/enforce that invariant rather than implying the ≤100 policy is cross-process atomic. Store itself remains safely serialized; it is the indexer's policy calculation that isn't atomic across separate orchestrators.
+
+I would give Claude this narrow final correction:
+
+One final internal review of PR #5 found a same-height canonical-context
+race in diagnoseNonSequential.
+
+Stay on:
+
+  phase2c-sync-indexer
+
+Current reviewed head:
+
+  3a465b77d0b821c31e11ca8dbec78a632c072631
+
+Do NOT merge.
+Do NOT begin API/web work.
+Do NOT modify migrations.
+Do NOT modify Store ApplyBlock/RollbackTo semantics.
+
+
+1. FIX SAME-HEIGHT LOCAL/CANONICAL DRIFT
+=======================================
+
+diagnoseNonSequential currently treats local checkpoint movement as:
+
+  currentLocal.Height != height-1
+
+That is insufficient.
+
+A checkpoint can move to a DIFFERENT HASH AT THE SAME HEIGHT.
+
+Example:
+
+Initial local/Core:
+
+  A0 -> A1
+
+Indexer successfully fetches and performs the second height-2 hash check
+for:
+
+  A2, PreviousHash=A1
+
+Then, before Store.ApplyBlock(A2):
+
+Core reorganizes:
+
+  A0 -> B1 -> B2
+
+and another legitimate writer sharing this Store has already reconciled
+the DB checkpoint to:
+
+  B1 at height 1
+
+Store correctly returns ErrNonSequentialBlock for A2.
+
+Current diagnosis sees:
+
+  currentLocal.Height == height-1
+
+and misses that the checkpoint hash changed.
+
+It then sees Core/local parent B1 and A2.PreviousHash=A1 and incorrectly
+classifies A2 as a malformed child.
+
+That was a real canonical-context race, not malformed data.
+
+
+2. RECHECK THE BLOCK'S OWN CURRENT CORE IDENTITY
+================================================
+
+When diagnosing store.ErrNonSequentialBlock, re-read Core's CURRENT
+GetBlockHash(height), not only height-1.
+
+Use classifyHashUnavailable if it errors.
+
+If:
+
+  currentCoreHashAtHeight != block.Hash
+
+then the block being diagnosed is no longer Core's active block at that
+height:
+
+  -> ErrRemoteChainMoved
+
+This cleanly covers same-height branch replacement.
+
+Only proceed toward a terminal "contradictory parent" conclusion when Core
+still currently reports:
+
+  GetBlockHash(height) == block.Hash
+
+Then inspect the parent.
+
+If Core currently reports the same block at height AND:
+
+  currentLocal.Height == height-1
+  Core.GetBlockHash(height-1) == currentLocal.Hash
+  block.PreviousHash != currentLocal.Hash
+
+then the stable block/parent representation is genuinely contradictory and
+must remain terminal.
+
+Do not blindly retry all ErrNonSequentialBlock.
+
+
+3. STABILITY AGAINST A SECOND REORG DURING DIAGNOSIS
+====================================================
+
+Because the two Core height reads are not one atomic snapshot, avoid making a
+terminal malformed-child judgment from an obviously mixed observation.
+
+A reasonable sequence is:
+
+  currentBlockHash1 = GetBlockHash(height)
+
+  currentParentHash = GetBlockHash(height-1)
+
+  currentBlockHash2 = GetBlockHash(height)
+
+Require:
+
+  currentBlockHash1 == currentBlockHash2 == block.Hash
+
+before declaring the fetched block stably current.
+
+If the block hash changes during diagnosis:
+
+  -> ErrRemoteChainMoved
+
+This mirrors the existing two-hash philosophy used by applyHeight.
+
+
+4. ADD TEST Z
+=============
+
+Add a deterministic test for SAME-HEIGHT LOCAL CHECKPOINT REPLACEMENT.
+
+Scenario:
+
+Explorer/indexer has:
+
+  A0 -> A1
+
+The current sync has fetched and verified:
+
+  A2
+
+Before A2 reaches Store.ApplyBlock:
+
+- Core switches to A0 -> B1 -> B2
+- the shared Store checkpoint is changed by a second Store/indexer writer
+  to B1 at height 1
+
+Then the first writer attempts A2.
+
+Expected:
+
+- Store returns ErrNonSequentialBlock internally
+- indexer diagnoses canonical movement
+- it does NOT return a terminal malformed-child error
+- reconciliation restarts
+- final canonical branch becomes B1/B2
+- A branch audit history remains consistent
+
+Test must prove that a same HEIGHT but different HASH checkpoint movement is
+recognized.
+
+Existing Y must remain PASS:
+
+stable Core/local A1 +
+a fabricated height-2 block whose parent is bogus
+  -> TERMINAL
+  -> no infinite ErrRemoteChainMoved retry
+
+
+5. MULTI-WRITER POLICY — MAKE IT EXPLICIT
+=========================================
+
+Review the cross-process policy around automatic reorg depth.
+
+Current sequence is:
+
+  calculate ancestor/depth
+  Store.Tip() recheck
+  Store.RollbackTo()
+
+The Tip recheck is not atomic with RollbackTo's internal FOR UPDATE lock.
+
+Another writer could theoretically change the tip between those two calls,
+meaning RollbackTo could disconnect a different number of blocks from the
+depth that was approved.
+
+Do NOT redesign Store silently.
+
+Choose and document one of these policies:
+
+A. Phase 2C.2 production supports exactly ONE active indexer orchestrator
+   per database.
+
+   If this is the intended policy, state it clearly in ARCHITECTURE.md and
+   report that Store remains cross-process transaction-safe, but the
+   indexer's <=100 automatic-reorg POLICY assumes one active orchestrator.
+
+   Prefer enforcing this later/now with a DB-backed singleton lease if there
+   is already a clean, non-schema-changing way to do so.
+
+OR
+
+B. If multiple simultaneous indexer orchestrators are intended to be fully
+   supported, STOP and report that an atomic expected-tip precondition around
+   RollbackTo is required at the Store boundary.
+
+Do not pretend the current pre-call Tip() read makes the policy atomic.
+
+For this phase I expect policy A is sufficient unless the architecture
+already explicitly promises multiple active indexer processes.
+
+
+6. PRESERVE EVERYTHING ELSE
+===========================
+
+Keep all A-Y tests green.
+
+Especially preserve:
+
+- <=100 automatic / 101 halt
+- remote hash disappearance classification
+- final caught-up hash confirmation
+- ancestor Core recheck
+- local-tip pre-rollback recheck
+- P2QPK 17,088-byte witness
+- 32-byte pubkey
+- branch flip-back
+- no overlapping calls on one Indexer
+- configured slog logger
+- negative getblockcount rejection
+
+
+7. QUALITY / BOUNDARY
+=====================
+
+Run:
+
+  gofmt -l .
+  go vet ./...
+  go test -count=1 ./...
+  go test -race -count=1 ./...
+  go build ./...
+
+Run both opt-in live suites.
+
+Must remain ZERO:
+
+  migrations/
+  internal/store/apply.go
+  internal/store/reorg.go
+  internal/decode/
+  internal/script/
+  internal/chain/
+
+If multi-writer policy A only requires docs/indexer changes, do not touch
+Store.
+
+
+8. COMMIT / PUSH
+================
+
+Suggested commit:
+
+  fix: diagnose same-height canonical movement
+
+Push to existing PR #5.
+
+Do NOT merge.
+
+REPORT:
+
+PHASE 2C.2 FINAL RACE HARDENING
+===============================
+
+Commit:
+PR head:
+
+NONSEQUENTIAL DIAGNOSIS
+-----------------------
+Current-block recheck:
+Parent recheck:
+Mixed-snapshot protection:
+Stable malformed child:
+
+TEST Z
+------
+Result:
+
+MULTI-WRITER POLICY
+-------------------
+Chosen policy:
+Automatic-reorg depth guarantee:
+
+A-Y:
+Z:
+
+P2QPK:
+Live indexer:
+Live decoder:
+
+QUALITY:
+PHASE BOUNDARY:
+FILES OUTSIDE PROJECT:
+
+Stop.
+
+Other than that same-height diagnostic gap, the fixes in 00022 are the right ones. In particular, the previous reorg-after-reconcile, tip-retreat, and same-height caught-up windows are now covered correctly.
+
+After this last narrow correction, I would send PR #5 to the independent Core/P2QPK VM rather than do another broad design review.
