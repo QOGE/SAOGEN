@@ -1,0 +1,104 @@
+● I'll start with pre-merge verification before touching anything.
+
+  Ran 1 shell command 
+
+● Pre-merge verification passes exactly: OPEN, MERGEABLE, not draft, base=main, head=phase2b-store-engine, head SHA matches exactly. Now verifying frozen migrations.
+
+  Ran 1 shell command 
+
+● Migrations diff is zero, and no migration files appear in the PR's changed-file list (grep exit 1 = no match). Both checks clean. Proceeding to merge with a normal merge commit.
+
+  Ran 3 shell commands 
+
+● PR #3 merged via merge commit cfdbaa642b248e89500cc35a32c0f22cf9d79b59. Let's verify it's a true 2-parent merge commit (not squash/rebase), then update local main.
+
+  Ran 1 shell command 
+
+● Confirmed: two parents (b3373aa = prior main, 6d745ee = reviewed PR head) — a genuine merge commit preserving full history, not a squash/rebase. Now updating local main.
+
+  Ran 1 shell command 
+
+● Working tree is clean. Switching to main and fast-forwarding.
+
+  Ran 2 shell commands 
+
+● Local main and origin/main are identical at cfdbaa6. Now running the post-merge quality gate against the merged main baseline.
+
+  Ran 1 shell command 
+
+● Clean. Now the full test suite and race variant, uncached.
+
+  Ran 2 shell commands 
+
+● All clean under -race too. Let's confirm the specific named behaviors explicitly by running their test groups verbosely.
+
+  Ran 2 shell commands 
+
+● All confirmed PASS. Now let's do the final housekeeping checks: phase2b-store-engine branch still exists (not deleted), and confirm no files outside the project were touched.
+
+  Ran 1 shell command 
+
+● phase2b-store-engine branch preserved on both local and remote. Outside-project directories show only their pre-existing, unrelated untracked build artifacts. Delivering the final report.
+
+  PHASE 2B.2 MERGE
+  ================
+
+  PR: https://github.com/QOGE/qoge-explorer/pull/3
+  Reviewed head: 6d745ee25cce3ef7e746292178608e31b51866ed
+  Merge method: normal merge commit (--merge, not squash, not rebase)
+  Merge commit: cfdbaa642b248e89500cc35a32c0f22cf9d79b59 (parents: b3373aa0621cfe666689a318fb0e82995f07fb9e = prior main, 6d745ee25cce3ef7e746292178608e31b51866ed = reviewed PR head — confirmed 2-parent merge commit, full history preserved)
+
+  MAIN
+  ----
+  Local main HEAD:  cfdbaa642b248e89500cc35a32c0f22cf9d79b59
+  origin/main HEAD: cfdbaa642b248e89500cc35a32c0f22cf9d79b59
+  Match: YES (fast-forwarded cleanly, b3373aa..cfdbaa6)
+
+  PR STATE
+  --------
+  State: MERGED
+  Merged: yes (mergedAt 2026-08-10T04:29:03Z, mergedBy QOGE)
+
+  POST-MERGE QUALITY
+  ------------------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, all packages, uncached (-count=1)
+  go test -race: PASS, all packages, uncached
+  go build: clean
+  PostgreSQL tests: all 57 internal/store test functions PASS, 0 FAIL (per-test isolated schemas)
+
+  STORE BASELINE
+  --------------
+  Atomic ApplyBlock: PASS (TestApplyBlock_SingleBlockAtomic, TestApplyBlock_IdempotentReplay)
+  Canonical continuity: PASS (TestApplyBlock_CanonicalTipContinuity, TestApplyBlock_ConcurrentCompetingChildrenSerialize)
+  Reorg engine: PASS (TestRollbackTo_MultiBlockReorg, TestRollbackTo_ReplacementBranchAndAddressRecompute, TestApplyBlock_OrphanRePromotion)
+  Genesis/IsUnspendable: PASS (TestApplyBlock_GenesisCoinbaseUnspendable, TestApplyBlock_UnspendableOutputs)
+  Completeness (block/tx/input-field): PASS (TestApplyBlock_CompleteBlockRequirement, TestApplyBlock_TransactionCompleteness, TestApplyBlock_InputFieldExclusivity)
+  Spend/double-spend/fee: PASS (TestApplyBlock_SpendMarksExactUTXO, TestApplyBlock_DoubleSpendRejectsWholeBlock, TestApplyBlock_FeeComputation)
+  Multisig SET semantics: PASS (TestApplyBlock_MultisigDuplicateParticipantReplay, TestApplyBlock_MultisigSameAddressDifferentPubkeyConflict)
+  txid/wtxid: PASS (TestApplyBlock_WtxidVariantsRemainDistinct)
+  P2QPK 17,088-byte witness: PASS (TestApplyBlock_P2QPKWitnessPreservation)
+  Address SET recomputation: PASS (exercised throughout TestRollbackTo_ReplacementBranchAndAddressRecompute)
+
+  MIGRATION DIFF
+  --------------
+  ZERO (git diff origin/main...origin/phase2b-store-engine -- migrations/ empty, confirmed pre-merge; migrations/0001_initial.* untouched throughout Phase 2B.2's full review history)
+
+  WORKING TREE
+  ------------
+  Status: clean, on branch main, up to date with origin/main
+
+  FILES MODIFIED OUTSIDE PROJECT
+  ------------------------------
+  NONE (qogecoin/symbiont-wallet checkouts show only their pre-existing, unrelated untracked build artifacts)
+
+  Phase 2B.2 is merged to main. phase2b-store-engine branch preserved (not deleted) as instructed. Stopping here — not beginning RPC/indexer work, no schema changes.
+
+✻ Churned for 4m 49s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Set up QOGE block explorer development environment ──
+❯ Start Phase 2C: RPC decoding and the block-fetch loop
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
+
