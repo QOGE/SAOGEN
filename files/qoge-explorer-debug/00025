@@ -1,0 +1,126 @@
+● Head SHA matches exactly. Now checking phase boundary before merge.
+
+  Ran 1 shell command 
+
+● All zero, working tree clean. Proceeding with the merge (normal merge commit, no squash/rebase).
+
+  Ran 2 shell commands 
+
+● PR #5 merged via commit 8d6a57e. Now updating local main.
+
+  Ran 1 shell command 
+
+● Local main matches origin/main. Now running post-merge quality gates.
+
+  Ran 1 shell command 
+
+● All clean. Now running the full test suite and race suite.
+
+  Ran 2 shell commands 
+
+✻ Churned for 1m 11s
+
+❯ sorry I have pressed option 2.No by mistake, so your work was paused. Can you resume the work please, and make sure nothing is skipped                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+
+● No problem — that was just me checking whether the test DB env var was already set; nothing was lost. I'll source the env file quietly (without printing it) instead, and continue the post-merge verification.
+
+  Ran 2 shell commands 
+
+● All packages pass with the real PostgreSQL-backed tests running (indexer 17.5s, store 39.3s — consistent with hitting a real DB). Now running the race detector suite.
+
+  Ran 1 shell command 
+
+● Race detector passes clean. Now running the two opt-in live suites against real Qogecoin Core.
+
+  Ran 2 shell commands 
+
+● Live decoder suite passes. Now the live indexer suite.
+
+  Ran 1 shell command 
+
+● Both live suites pass, no credentials printed. Now let me verify the specific baseline items by inspecting the actual test names in the merged suite to confirm all required scenarios are covered.
+
+  Ran 1 shell command 
+
+● All 26 indexer tests + 4 store tests present and covering every required baseline item (genesis start, sequential sync, resume, no-skip, second-hash check, stale/retreat/same-height/reorg-after-reconcile/post-apply movement, diagnosis cases, ancestor discovery, depth 100/101, no-ancestor halt, branch flip-back, no-overlap, negative-count rejection). Now confirming ARCHITECTURE.md still states the single-orchestrator policy post-merge.
+
+  Ran 1 shell command 
+
+● Confirmed intact. Now checking orphan-audit retention and P2TR/P2QPK distinctness, and confirming the working tree/branch retention (branch should not be deleted).
+
+  Ran 1 shell command 
+
+● Everything checks out — orphan retention verified, P2TR remains distinct from P2QPK (frozen internal/decode/internal/script, untouched by this PR), and phase2c-sync-indexer branch was left intact (not deleted). All verification is complete.
+
+  FINAL REPORT
+
+  PHASE 2C.2 MERGE
+
+  PR:              https://github.com/QOGE/qoge-explorer/pull/5
+  Reviewed head:   7fceafb4edfa9df4fc13ba5722f17f60c4a4a2f9
+  Merge method:    normal merge commit (no squash/rebase, no amend)
+  Merge commit:    8d6a57ed8feece708aae62d0132f760c4931497b
+
+  MAIN
+  Local main HEAD:   8d6a57ed8feece708aae62d0132f760c4931497b
+  origin/main HEAD:  8d6a57ed8feece708aae62d0132f760c4931497b
+  Match:             YES
+
+  PR STATE
+  State:   MERGED
+  Merged:  true
+
+  POST-MERGE QUALITY
+  gofmt:            clean
+  go vet:            clean
+  go test:           PASS (all packages, PostgreSQL-backed store/indexer tests included)
+  go test -race:     PASS (all packages, PostgreSQL-backed)
+  go build:          clean
+  PostgreSQL:        PASS (store 39–51s, indexer 17–20s runtimes confirm real DB use)
+  Live indexer:      PASS (TestLiveIndexer_CappedHistoricalSync, TestLiveIndexer_CurrentTipFetchOnly)
+  Live RPC decoder:  PASS (TestLiveRPC_GenesisBlockDecodesAgainstRealNode, DescriptorResolutionRoundTrip, KnownVectorsMatchLiveNode, DecodeRecentBlockRoundTrip)
+
+  INDEXER BASELINE
+  Genesis bootstrap:            PASS (TestSyncToTip_FreshDBStartsAtGenesis)
+  Sequential sync:               PASS (TestSyncToTip_SequentialSyncProducesCheckpointN)
+  Checkpoint resume:             PASS (TestSyncToTip_RestartResumesFromCheckpointPlusOne)
+  Second hash check:             PASS (TestSyncToTip_StaleHashNotApplied)
+  Remote movement:               PASS (TestSyncToTip_ChainMovesRightAfterApply, TipRetreatsBetweenReconcileAndTargetRead, RequestedHeightDisappearsDuringApply, SameHeightReorgAfterReconcile, ReorgBetweenReconcileAndNextChildFetch)
+  ErrNonSequential diagnosis:    PASS (TestSyncToTip_SameHeightLocalCheckpointReplacement, StableCoreContradictoryParentIsTerminal)
+  Caught-up confirmation:        PASS (TestSyncToTip_AlreadyCaughtUpIsNoOp)
+  Common ancestor:                PASS (TestSyncToTip_ShallowReorg, NoCommonAncestorWithinWindow, LocalChainGapHalts)
+  Depth 100:                      PASS (TestSyncToTip_ReorgDepthExactly100IsAutomatic)
+  Depth 101:                      PASS (TestSyncToTip_ReorgDepth101Halts)
+  Branch flip-back:               PASS (TestSyncToTip_BranchFlipBack)
+  Single-indexer policy:          documented in docs/ARCHITECTURE.md §18 "Multi-writer policy" — confirmed present post-merge, not modified this task
+
+  P2QPK
+  v2/32:                    PASS (structural)
+  17,088-byte witness:      PASS (byte-exact)
+  32-byte pubkey:            PASS (byte-exact)
+  Byte-exact end-to-end:     PASS (TestSyncToTip_P2QPKPipeline)
+
+  PHASE BOUNDARY
+  migrations/:               ZERO
+  internal/store/apply.go:   ZERO
+  internal/store/reorg.go:   ZERO
+  internal/decode/:          ZERO
+  internal/script/:          ZERO
+  internal/chain/:           ZERO
+
+  WORKING TREE
+  Status: clean (on main, up to date with origin/main)
+
+  FILES MODIFIED OUTSIDE PROJECT
+  NONE
+
+  No advisory locking was added during this task; phase2c-sync-indexer branch was left intact (not deleted), per instructions.
+
+  Stop. Not beginning the next phase.
+
+✻ Brewed for 2m 32s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Delete the phase2c-sync-indexer branch
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
