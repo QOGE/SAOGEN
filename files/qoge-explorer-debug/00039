@@ -1,0 +1,197 @@
+✻ Brewed for 8s
+
+❯ your work was paused becuse I hit my session limit, but you can resume working where you stopped                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+
+● All pre-merge conditions match exactly: OPEN, not merged, not draft, mergeable, base=main@d5c123d, head=phase2e-live-chain-ui@0d40c834 — exactly the reviewed head. Continuing with local state verification.
+
+  Ran 1 shell command 
+
+● Working tree clean, origin/phase2e-live-chain-ui matches the reviewed head exactly. Now the phase-boundary re-check before merge:
+
+  Ran 1 shell command 
+
+● Zero diff on all ten frozen paths. Changes confined to internal/web/ and docs/ARCHITECTURE.md exactly as expected. Now merge via a normal merge commit.
+
+  Ran 2 shell commands 
+
+● Merged via merge commit 026d91a. Now update local main:
+
+  Ran 2 shell commands 
+
+● Local main == origin/main, and the merge commit's second parent is exactly the reviewed head 0d40c834decea3a83049d314dcc9192b345090d8. Now post-merge quality gates:
+
+  Ran 3 shell commands 
+
+● All 9 packages pass with PostgreSQL tests actually executing. Now -race:
+
+  Ran 1 shell command 
+
+● All pass with -race, first attempt.
+
+  Ran 1 shell command 
+
+● Now explicitly rerun all four snapshot consistency tests against merged main:
+
+  Ran 1 shell command 
+
+● All four pass, no mixed canonical states. Now let's confirm the live status source and behavioral contract items directly against merged main's source and via the Go test suite (already reconfirmed passing):
+
+  Searched for 1 pattern 
+
+● Confirmed on merged main: only /api/v1/status is polled, cache: "no-store", 10s interval, requestInFlight overlap guard, document.hidden gating, visibilitychange catch-up, and hasStatusBaseline two-mode logic all present exactly as reviewed. Now the Node-vm state-machine re-verification against the merged source (item 24):
+
+  Listed 1 directory, ran 2 shell commands 
+
+● Recreating the throwaway Node-vm harness (previous scratch directory was cleared across the session pause) to re-verify the state machine against merged main's source, per item 24.
+
+  Made 1 scratchpad edit +225, ran 1 shell command 
+
+● All 15 assertions pass against merged main's actual live.js, covering every item in review section 24 (notify-only silent/failure baseline, home same-tip/A→B, empty-chain→genesis, transient rollback→replacement). Deleting the temporary harness now:
+
+  Ran 1 shell command 
+
+● Harness deleted. Now let's confirm the Go test suite items covering home/blocks/detail/P2QPK/security etc. — already reconfirmed via the full go test/-race runs above (all Phase 2E.1+2E.2 tests pass unmodified). Let's do the manual smoke test against the actual serve binary on merged main:
+
+  Ran 4 shell commands 
+
+● All confirmed on merged main's serve binary. Also confirm API routes unchanged and JS-disabled independence:
+
+  Ran 1 shell command 
+
+● Everything confirmed. Now tear down and clean up:
+
+  Ran 1 shell command 
+
+● Clean — no leftover files, working tree unmodified. Now branch cleanup — all conditions satisfied.
+
+  Ran 2 shell commands 
+
+● Branch cleanup complete, working tree clean, local main == origin/main.
+
+  PHASE 2E.2 MERGE
+
+  PR: #8 | Reviewed head: 0d40c834decea3a83049d314dcc9192b345090d8 | Merge method: normal merge commit | Merge commit: 026d91a82e1115d1406373aee89034e78fd173f9
+
+  PRE-MERGE
+  - State: OPEN, mergedAt: null
+  - Mergeable: true
+  - Head: 0d40c834decea3a83049d314dcc9192b345090d8 (exact match)
+  - Working tree: clean
+  - Boundary: zero diff on all 10 frozen paths; changes confined to internal/web/ + docs/ARCHITECTURE.md
+
+  MAIN
+  - Local HEAD: 026d91a82e1115d1406373aee89034e78fd173f9
+  - origin/main: 026d91a82e1115d1406373aee89034e78fd173f9
+  - Match: YES
+  - Second parent: 0d40c834decea3a83049d314dcc9192b345090d8 (exact match)
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all 9 packages pass
+  - go test -race: all 9 packages pass, first attempt
+  - go build: clean
+  - PostgreSQL executed: YES (real timings, no skips)
+
+  SNAPSHOTS
+  - Overview: PASS
+  - Address: PASS
+  - Transaction: PASS
+  - Block: PASS
+
+  LIVE
+  - Status endpoint: /api/v1/status only, confirmed via source grep on merged main
+  - Interval: 10000ms confirmed
+  - No overlap: requestInFlight flag confirmed
+  - Hidden tabs: document.hidden guard confirmed
+  - Visibility catch-up: visibilitychange listener confirmed
+  - Failure behavior: silent catch, no reload/banner, confirmed via Node-vm harness re-run against merged source
+
+  BASELINES
+  - Home: hasStatusBaseline = true immediately from rendered attributes — confirmed live + harness
+  - Blocks: same pattern, first-page-only — confirmed via source (unchanged from prior review)
+  - Notify-only: hasStatusBaseline = false until first successful poll — confirmed via harness (silent init, failure-before-success case)
+  - Empty chain: -1/null baseline still detects genesis and auto-reloads — confirmed via harness
+  - False first banner: absent — confirmed via harness and live curl check on /block/1
+
+  HOME
+  - Gap detection: confirmed (A→B reload scenario, harness)
+  - Auto reload: confirmed live (data-live-refresh="home" present)
+  - Lower-height handling: confirmed via harness (A100→A99 banner-only, A99→B100 reload)
+
+  BLOCKS
+  - First page: data-live-refresh="blocks" unchanged from prior review, zero diff
+  - Historical: notify-only unchanged
+  - Pagination: no regression (full web suite passes)
+
+  DETAIL
+  - Block: notify-only, confirmed live (/block/1 has banner, no data-live-refresh)
+  - Transaction: notify-only, unchanged
+  - Address: notify-only, unchanged
+  - First poll: silent baseline (harness)
+  - Changed tip: banner (harness)
+  - Auto reload: never (harness + source)
+
+  P2QPK
+  - Default 17088 / Default 32: hidden, unchanged (full web regression suite passes)
+  - Raw 17088 / Raw 32: byte-exact, unchanged
+  - Auto reload: never on ?include_witness=true (no live-refresh marker, unchanged from prior review)
+
+  P2TR
+  - Distinct: unchanged (regression suite passes)
+
+  REORG
+  - Transient rollback: banner-only, confirmed via harness
+  - Replacement tip: reload once height stabilizes at/above baseline, confirmed via harness
+
+  BANNER
+  - Hidden: confirmed live
+  - ARIA: role="status" aria-live="polite" confirmed live
+  - Refresh: button, unchanged
+  - textContent: confirmed via source (no innerHTML)
+
+  SECURITY
+  - CSP: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' — confirmed live
+  - No inline: confirmed
+  - No eval: confirmed (contract test + harness source)
+  - No innerHTML: confirmed
+  - No external: confirmed
+
+  SSR
+  - Works without JS: confirmed — home/address pages render full content in raw HTML independent of script execution
+
+  MEMPOOL
+  - Present: NO
+
+  API
+  - Unchanged: confirmed live — all /api/v1/*, /healthz, /readyz return correct JSON/status
+
+  PHASE BOUNDARY
+  - migrations/: ZERO
+  - store/: ZERO
+  - indexer/: ZERO
+  - decode/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - query/: ZERO
+  - api/: ZERO
+  - rpc/: ZERO
+  - cmd/: ZERO
+
+  BRANCH
+  - phase2e-live-chain-ui: Deleted (local + remote)
+
+  WORKING TREE
+  - Status: clean
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop.
+
+✻ Churned for 5m 23s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Begin Phase 2E.3
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
