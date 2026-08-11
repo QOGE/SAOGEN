@@ -1,0 +1,102 @@
+● Pre-merge state confirmed: PR #6, OPEN, not merged, not draft, mergeable, base=main, head=phase2d-read-api at exactly a9634230d1e8a574329e153a6ad86c70f7c735bc — matches the independently reviewed head exactly. Working tree clean, origin/phase2d-read-api matches too.
+
+  Ran 1 shell command 
+
+● Phase boundary confirmed zero-diff, and all changed files are confined to internal/query/, internal/api/, cmd/qoge-explorer/main.go, docs/ARCHITECTURE.md, and their tests — exactly the allowed scope. Now let's merge with a normal merge commit.
+
+  Ran 2 shell commands 
+
+● PR #6 merged via merge commit 1aa7c30a34a94e9d671a59862a91b020fa2f357e. Now switch to main and verify.
+
+  Ran 1 shell command 
+
+● Local main == origin/main == 1aa7c30, and the merge commit's second parent is exactly the reviewed head a963423. Now running post-merge quality gates.
+
+  Ran 2 shell commands 
+
+● All PostgreSQL-backed query and API tests pass — none skipped (no SKIP lines, ok with real timings confirms DB tests actually executed). Now the full suite plus race.
+
+  Ran 2 shell commands 
+
+● All packages pass, both plain and -race, on the first attempt from freshly-merged main, with real PostgreSQL. Now let's verify the specific behavioral requirements (§7–17) against the merged code, and check main.go's serve command details.
+
+  Ran 1 shell command 
+
+● All confirmed present in merged main. Now let's check main.go for the serve command requirements (§16) and confirm health/ready and index/serve separation are intact post-merge.
+
+  Read 1 file, ran 1 shell command 
+
+● All §16 requirements confirmed. Now let's do a final working-tree check and decide on branch cleanup.
+
+  Ran 2 shell commands 
+
+● All conditions for cleanup are met. The .claude/settings.local.json is pre-existing local tooling config, unrelated to the project or this phase — leaving it untouched. Proceeding with branch cleanup as authorized.
+
+  Ran 2 shell commands 
+
+● PHASE 2D.1 MERGE
+
+  PR: 6 | Reviewed head: a9634230d1e8a574329e153a6ad86c70f7c735bc | Merge method: normal merge commit | Merge commit: 1aa7c30a34a94e9d671a59862a91b020fa2f357e
+
+  PRE-MERGE
+  - PR state: OPEN, not draft, not merged
+  - Mergeable: true
+  - Head SHA: a963423... — exact match to reviewed head
+  - Working tree: clean
+  - Phase boundary: ZERO diff on all six frozen paths
+
+  MAIN
+  - Local main HEAD: 1aa7c30a34a94e9d671a59862a91b020fa2f357e
+  - origin/main HEAD: 1aa7c30a34a94e9d671a59862a91b020fa2f357e
+  - Match: YES; merge commit's second parent confirmed = a963423 (the reviewed head)
+
+  POST-MERGE QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all packages pass (api 9.7s, chain, decode, indexer 28.5s, query 23.8s, script, store 55.5s)
+  - go test -race: all packages pass, first attempt (api 20.2s, decode 11.0s, indexer 39.6s, query 34.7s, store 74.1s)
+  - go build: clean
+  - PostgreSQL tests actually executed: YES — real timings, no skips, verified via -v run showing every query/api test individually PASS
+
+  READ SNAPSHOTS
+  - TransactionByTxID: readTx (RepeatableRead/ReadOnly) confirmed in query.go/transactions.go
+  - TransactionByWTxID: identity resolution + detail share one snapshot
+  - BlockByHeight / BlockByHash: one snapshot each
+  - Concurrent reorg tests: TestSnapshotConsistency_TransactionDetail_ConcurrentReorg and TestSnapshotConsistency_BlockDetail_ConcurrentReorg both PASS — in-flight query sees coherent pre-reorg snapshot, fresh query after sees new canonical state
+
+  BLOCK / ORPHAN SEMANTICS — RecentBlocks/height lookup canonical-only, hash lookup canonical-or-orphan with accurate flag, occurrence canonical/orphan distinction preserved (TestBlockByHash_Orphan, TestReorg_* pass)
+
+  ADDRESSES — balance canonical-cache-only, history canonical receive/spend only, all edge tests pass (genesis, canonical spend, reorg, flip-back, multisig separation)
+
+  TXID / WTXID — fixture retains txid != wtxid; TestTransactionEndpoint_WTxIDFallback proves TransactionByTxID misses and TransactionByWTxID fallback succeeds
+
+  P2QPK — decoder-driven HTTP path confirmed (TestTransactionWitness_DefaultOmitsRaw_OptInIncludesIt PASS): OP_2/PUSH32 structural script, script_type=p2qpk, witness_version=2, witness_program=32 bytes, address persisted; default witness sizes 17088/32 with data_hex absent; opt-in decodes to exactly 17088/32 bytes, byte-exact
+
+  P2TR — v1/32 stays distinct from p2qpk (TestDecoded_P2TRDistinctFromP2QPK PASS)
+
+  MONEY — integer sats, exact QOGE decimal strings, no float64 monetary path (TestTransaction_ExactMoneyRepresentation PASS)
+
+  HTTP — 400/404/405 JSON envelopes confirmed, Allow header present, 500 stays generic; healthz/readyz/serve-index separation confirmed in main.go
+
+  READ-ONLY — TestReadOnlyEnforcement PASS: both row-count and full mutable-content (sync_state/blocks/utxo_state/addresses) checks hold
+
+  PHASE BOUNDARY
+  migrations/: ZERO · store apply/reorg: ZERO · decode/: ZERO · script/: ZERO · chain/: ZERO · indexer/: ZERO
+
+  BRANCH
+  phase2d-read-api: Deleted (local + remote), after all merge/verification steps succeeded
+
+  WORKING TREE
+  Status: clean (only pre-existing, untracked local .claude/settings.local.json present — unrelated Claude Code tooling config, not a project file, untouched)
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop. Do not begin the next phase.
+
+✻ Cooked for 4m 8s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ What's next for Phase 2E?
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
