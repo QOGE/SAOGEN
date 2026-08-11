@@ -1,0 +1,93 @@
+● Now running the quality gates.
+ 
+  Ran 5 shell commands 
+
+● All pass, PostgreSQL executed. Now the race build.
+  
+  Ran 1 shell command 
+
+● All quality gates pass. Let's specifically confirm the two new tests and the P2QPK/confirmed-non-mutation reruns by name, then verify the phase boundary.
+  
+  Ran 1 shell command 
+
+● All eight named regressions pass. Now checking the phase boundary via diff against the previous review-fix head.
+  
+  Ran 1 shell command 
+
+● Exactly the anticipated scope, plus the acceptable comment-only internal/rpc/mempool.go clarification. Confirming zero diff outside the phase boundary:
+  
+  Ran 1 shell command 
+
+● Zero diff confirmed. Committing, pushing, and updating the PR.
+  
+  Committed bd82070, pushed to phase2f-mempool-foundation, ran 2 shell commands 
+
+● PR #9 confirmed updated to the new head.
+  
+  PHASE 2F.1 INTERNAL REVIEW FIX 2
+
+  Commit: bd82070 68ec44a115a05c47c3aaf62cfc4b0842d
+  PR head: bd8207068ec44a115a05c47c3aaf62cfc4b0842d (PR #9, OPEN)
+
+  CORE VSIZE SEMANTICS
+  - getrawmempool source: verified — src/rpc/mempool.cpp:270 (entryToJSON) → e.GetTxSize() → src/txmempool.cpp:106 → GetVirtualTransactionSize(nTxWeight, sigOpCost) → via src/policy/settings.h:27 (injects nBytesPerSigOp, default 20) → src/policy/policy.cpp:301: max(nWeight, nSigOpCost * bytes_per_sigop) rounded up to vbytes
+  - getrawtransaction source: verified — src/core_write.cpp:179 (TxToUniv): ceil(GetTransactionWeight(tx) / WITNESS_SCALE_FACTOR), no sigop term at all
+  - Sigop policy distinction: confirmed real — mempool vsize is mempool-policy metadata that can legitimately exceed BIP141 vsize for high-sigop-cost transactions
+  - Invalid equality removed: yes, entry.VSize == txn.VSize check deleted from fetchAndDecode
+  - Transaction vsize preserved: yes, CandidateTransaction.Transaction.VSize always comes from decoded getrawtransaction, never overwritten
+  - Mempool policy vsize treatment: retained on RawMempoolEntry.VSize as documented policy metadata, not compared, not persisted (no schema change — not needed for Phase 2F.1)
+
+  WEIGHT
+  - Equality check: retained — entryToJSON's e.GetTxWeight() and TxToUniv's GetTransactionWeight(tx) verified to trace to the same underlying quantity, no policy adjustment on either path
+  - Mismatch test: TestRefreshOnce_WeightMismatchRejected — PASS (previous snapshot retained, generation unchanged)
+
+  DEPENDENCIES
+  - Two-pass: preserved, unchanged
+  - Child before parent: TestReplaceSnapshot_DependencyOrderIndependent — PASS
+  - Synchronizer lexical order: TestRefreshOnce_ChildBeforeParentLexicalOrder — PASS
+  - Dangling dependency: TestReplaceSnapshot_DanglingDependencyRejected — PASS
+
+  RPC IDENTITY
+  - Requested txid: preserved, unchanged
+  - Mismatch rejection: TestRefreshOnce_RPCIdentityMismatchRejected — PASS
+
+  P2QPK
+  - v2/32 / 17088 / 32 / byte exact / txid≠wtxid: TestP2QPKAndP2TR_EndToEnd — PASS
+  - P2TR: distinct, confirmed
+
+  ATOMICITY
+  - Single transaction / state last / rollback / generation: all unchanged, untouched by this round
+
+  CONFIRMED STATE
+  - Non-mutation: TestConfirmedState_UnaffectedByMempoolReplacement — PASS, zero change
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all 10 packages pass (-count=1)
+  - go test -race: all 10 packages pass
+  - go build: clean
+  - PostgreSQL executed: YES
+
+  PHASE BOUNDARY
+  - query/: ZERO
+  - api/: ZERO
+  - web/: ZERO
+  - indexer/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - Diff confined to internal/mempool/sync.go, internal/mempool/sync_test.go, docs/ARCHITECTURE.md, and a comment-only clarification in internal/rpc/mempool.go. No migration change.
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2F.2.
+
+✻ Cooked for 6m 3s
+                        
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #9 · ← 1 agent
