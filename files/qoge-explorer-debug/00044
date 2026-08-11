@@ -1,0 +1,135 @@
+● Real Core smoke test passed against the live mainnet node (height 2,443,268) — real mempool is empty, initialized snapshot published, generation incremented across cycles. Cleaning up the throwaway harness.
+
+  Ran 1 shell command 
+
+● Clean. Now the final phase boundary check (item 24) against the same baseline, and then branch cleanup.
+
+  Ran 1 shell command 
+
+● Zero diff in forbidden dirs, expected changes exactly match. All gates passed — deleting the branch now.
+
+  Ran 3 shell commands 
+
+● PHASE 2F.1 MERGE
+
+  PR: 9
+  Reviewed head: bd8207068ec44a115a05c47c3aaf62cfc4b0842d
+  Merge method: normal merge commit (gh pr merge --merge)
+  Merge commit: 2de0b2f83550b0da8f294de04ed2ae4d70d49668
+
+  PRE-MERGE
+  - State: OPEN, merged=false, draft=false
+  - Mergeable: true (MERGEABLE)
+  - Base: main @ 026d91a82e1115d1406373aee89034e78fd173f9
+  - Head: phase2f-mempool-foundation @ bd8207068ec44a115a05c47c3aaf62cfc4b0842d — matched exactly
+  - Working tree: clean; origin/phase2f-mempool-foundation matched reviewed head
+  - Phase boundary: expected files only, zero diff in forbidden dirs
+
+  MAIN
+  - Local HEAD: 2de0b2f83550b0da8f294de04ed2ae4d70d49668
+  - origin/main: 2de0b2f83550b0da8f294de04ed2ae4d70d49668
+  - Match: yes
+  - Second parent: bd8207068ec44a115a05c47c3aaf62cfc4b0842d — matches reviewed head exactly
+
+  MIGRATION
+  - v1→v2: PASS
+  - v2→v1: PASS
+  - re-up: PASS
+  - Confirmed data preserved: yes — TestMigration_0002RoundTrip seeds a real confirmed block, round-trips 0002 down/up, confirms tip byte-identical before/after; 0001 tables untouched throughout
+
+  MEMPOOL STATE (real Core smoke)
+  - Initialized: true
+  - Generation: 3 (incremented across live cycles)
+  - Empty snapshot: real mempool was empty (0 entries) — valid, initialized, published against real Core tip height 2,443,268
+
+  DEPENDENCIES
+  - Two-pass: preserved
+  - Child-before-parent store: TestReplaceSnapshot_DependencyOrderIndependent — PASS
+  - Lexical synchronizer: TestRefreshOnce_ChildBeforeParentLexicalOrder — PASS
+  - Dangling rejection: TestReplaceSnapshot_DanglingDependencyRejected — PASS
+
+  RPC
+  - Identity check: TestRefreshOnce_RPCIdentityMismatchRejected — PASS
+  - Confirmation race: TestRefreshOnce_ListedTransactionBecameConfirmed — PASS
+  - Disappearance: TestRefreshOnce_ListedTransactionDisappears — PASS
+  - Anchor movement: TestRefreshOnce_CoreTipMovedDuringAcquisition / TestRefreshOnce_DBTipMovedDuringAcquisition — PASS
+  - Temporary error: TestRefreshOnce_TemporaryRPCErrorRetainsPreviousSnapshot — PASS
+
+  VSIZE
+  - Policy distinction: preserved (verified against QOGE/qogecoin source in prior fix round)
+  - Different vsize accepted: TestRefreshOnce_MempoolPolicyVSizeMayDifferFromTransactionVSize — PASS
+  - Persisted transaction vsize: 200 (decoded transaction's own value, never the mempool policy value 250)
+
+  WEIGHT
+  - Cross-check: preserved
+  - Mismatch rejection: TestRefreshOnce_WeightMismatchRejected — PASS
+
+  ATOMICITY
+  - Single transaction / state last / rollback / generation: all unchanged, test-verified via TestReplaceSnapshot_* suite
+
+  MONEY
+  - Exact parsing: TestRefreshOnce_ExactFeeParsing — PASS (accepts 0 / 0.00000001 / 1.00000000 / 12.34567890; rejects >8 decimals, negative, exponent, malformed)
+  - float64: NONE
+
+  P2QPK
+  - v2/32 / 17088 / 32 / byte exact / txid≠wtxid: TestP2QPKAndP2TR_EndToEnd — PASS
+  - Verification: NONE (no SLH-DSA signature verification performed)
+
+  P2TR
+  - Distinct: confirmed (v1/32 → p2tr, never p2qpk)
+
+  MULTISIG
+  - Destination semantics: TestMultisig_ParticipantsNotCreditedAsDestination — PASS
+  - Participants: identities only, no output_address row, no confirmed balance mutation
+
+  CONFIRMED STATE
+  - Non-mutation: TestConfirmedState_UnaffectedByMempoolReplacement — PASS, zero content change across all 12 confirmed tables
+
+  RUNTIME
+  - Index integration: mempool synchronizer wired only in runIndex (cmd/qoge-explorer/main.go)
+  - Serve Core dependency: runServe confirmed structurally PostgreSQL-only — no Core RPC client, no mempool import in its body
+  - Mempool failure isolation: Synchronizer.Run never returns an error; logs+retries internally
+  - Confirmed failure behavior: fatal idx.Run error still returns exit code 1 after cancelMempool() + mempoolWG.Wait()
+  - Historical sync: unaffected — indexer package has zero diff; mempool's ErrConfirmedIndexBehind gate (test-verified) skips publication independently
+
+  PUBLIC SURFACE
+  - Mempool API: NONE
+  - Mempool UI: NONE
+  - Pending balance: NONE
+  - (verified internal/web/live_test.go's /mempool/getrawmempool references are a pre-existing negative assertion forbidding such wiring, not an addition)
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all 10 packages pass (-count=1, real PostgreSQL)
+  - go test -race: all 10 packages pass
+  - go build: clean
+  - PostgreSQL executed: YES
+  - Real Core smoke: PASS (live mainnet node, height 2,443,268, empty mempool, initialized snapshot, generation incremented)
+
+  PHASE BOUNDARY
+  - query/: ZERO
+  - api/: ZERO
+  - web/: ZERO
+  - store confirmed semantics: ZERO
+  - indexer semantics: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+
+  BRANCH
+  - phase2f-mempool-foundation: Deleted (local and remote)
+
+  WORKING TREE
+  - Status: clean
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop.
+
+✻ Crunched for 6m 55s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
