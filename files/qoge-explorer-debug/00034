@@ -1,0 +1,124 @@
+● I'll fetch the PR metadata first to verify it, then download the diff for review.
+
+  Ran 2 shell commands 
+
+● All values match exactly. Downloading the diff now.
+
+  Read 1 file, ran 1 shell command 
+
+● I've now read all 3783 lines. Let me produce the report.
+
+  ---
+  PHASE 2E.1 FINAL INDEPENDENT REVIEW
+
+  PR head reviewed: b9da9e803e393e025f7d79d0e6bd5dd5b7e113e4
+  Verified against: PR #7, state open, merged false, base main (1aa7c30a34a94e9d671a59862a91b020fa2f357e), head branch phase2e-web-ui — all values match exactly.
+
+  Verdict: APPROVE
+
+  ---
+  Phase boundary: PASS. Zero diff in migrations/, internal/store/, internal/indexer/, internal/decode/, internal/script/, internal/chain/, or internal/api/. The only modified query-layer files are internal/query/status.go, blocks.go, addresses.go (refactored to *From helpers — behavior and signatures of Status/RecentBlocks/AddressSummary/AddressHistory are unchanged; each now delegates to a private querier-parameterized helper and all existing callers pass s.pool as before), plus new internal/query/composite.go. No write SQL added anywhere.
+
+  Web architecture: PASS. internal/web.Server holds only *query.Store and *slog.Logger — never internal/store.Store, internal/indexer, internal/rpc, or internal/decode. templates.go imports html/template exclusively, never text/template. Templates (templates/*.tmpl) and stylesheet (static/app.css) are both embedded via //go:embed — no working-directory dependency, no Node/npm/webpack build step, no external CDN. app.css comment explicitly states "No build step, no external fonts/CDNs: system font stack only." No SQL in any web handler — each calls exactly one s.q.* method. No Core RPC. No
+  Store write API. No indexer. No script classification. No accounting. doc.go and docs/ARCHITECTURE.md §20 explicitly state and newRootHandler's implementation confirms that internal/web never makes an HTTP call to internal/api.
+
+  Query extension — no behavior change: PASS. The *From refactor is exactly: (1) extract the existing function body into a private statusFrom(ctx, querier)/recentBlocksFrom(ctx, querier, ...)/addressSummaryFrom(ctx, querier, ...)/addressHistoryFrom(ctx, querier, ...) helper; (2) make the public method call the helper with s.pool. Same SQL, same scan logic, same return types, same error handling. internal/api continues calling the public methods with no change to its binary behavior. composite.go calls the helpers with an open pgx.Tx.
+
+  Composite snapshot isolation: PASS. ExplorerOverview: opens readTx (REPEATABLE READ + ReadOnly), calls statusFrom(ctx, tx) (first SELECT → snapshot fixed), calls fireSnapshotTestHook(), calls recentBlocksFrom(ctx, tx, nil, pageSize) (same tx). AddressDetail: opens readTx, calls addressSummaryFrom(ctx, tx, address) (first SELECT → snapshot fixed), calls fireSnapshotTestHook(), calls addressHistoryFrom(ctx, tx, address, ...) (same tx). Both use defer done() (Rollback). No SELECT FOR UPDATE, no checkpoint lock, no Store mutation, no duplicate accounting. handleHome calls ONLY ExplorerOverview —
+  never separate Status/RecentBlocks. handleAddress calls ONLY AddressDetail — never separate AddressSummary/AddressHistory.
+
+  Read-only enforcement: PASS. Every SQL statement in composite.go, status.go, blocks.go, addresses.go is SELECT. readTx uses AccessMode: pgx.ReadOnly. internal/web holds no write reference. TestReadOnlyEnforcement from Phase 2D.1 (already reviewed) guards the existing single-statement methods; the new composite methods open readTx (also ReadOnly) and call only those same helpers.
+
+  Overview concurrent-reorg test: PASS. TestSnapshotConsistency_ExplorerOverview_ConcurrentReorg: (1) builds genesis → A1 → A2 via real st.ApplyBlock; (2) goroutine starts q.ExplorerOverview(ctx, 10), which opens readTx, calls statusFrom (first SELECT), fires snapshotTestHook — snapshot fixed, goroutine blocks; (3) main calls ss.waitForSnapshot(t) — no sleep; (4) main commits real st.RollbackTo(genesis) + st.ApplyBlock(B1) + st.ApplyBlock(B2); (5) ss.release(); (6) r := <-done; (7) ss.disable() prevents the fresh call from re-triggering the hook; (8) asserts r.overview.Status.IndexedHash == 
+  a2.Hash AND r.overview.RecentBlocks.Blocks[0].Hash == a2.Hash — BOTH must be A-consistent; (9) fresh q.ExplorerOverview asserts Status.IndexedHash == b2.Hash AND RecentBlocks.Blocks[0].Hash == b2.Hash — BOTH B-consistent. No mixed A/B is possible under REPEATABLE READ.
+
+  Address concurrent-reorg test: PASS. TestSnapshotConsistency_AddressDetail_ConcurrentReorg: branch A pays qSnapshotAddress 30 QOGE in A1; in-flight q.AddressDetail snapshot fixes before real st.RollbackTo(genesis) + st.ApplyBlock(B1) (which pays a different address); in-flight asserts BalanceSatoshis == 30_00000000 AND A1's txid found in history — both must be A-consistent simultaneously; fresh call asserts BalanceSatoshis == 0 AND A1 absent. Proves summary and history cannot come from two different canonical states.
+
+  Home: PASS. handleHome calls s.q.ExplorerOverview(r.Context(), 10) (composite method). home.tmpl shows Status.IndexedHeight and Status.IndexedHash (DB truth, not Core's live tip), RecentBlocks (canonical only), and a search form. TestHome verifies empty-DB state ("No blocks indexed yet."), indexed-height display, and block links.
+
+  Blocks: PASS. handleBlocks calls s.q.RecentBlocks(r.Context(), before, limit) — canonical only, keyset cursor, no OFFSET. blocksPagination(limit, page.NextBeforeHeight) preserves the caller's requested limit in the next-page link. TestBlocksPagination asserts /blocks?before=4&amp;limit=2 (HTML-escaped &) in the rendered body, and two-page traversal.
+
+  Block canonical/orphan: PASS. Height → BlockByHeight (canonical only). Hash → BlockByHash (canonical or orphan, always returns explicit Canonical bool). block.tmpl shows <div class="banner banner-warning">Orphaned block &mdash; retained for historical/audit view.</div> when not .Canonical — clearly labeled, never styled to look canonical. Status row always shows "Canonical" or "Orphaned". Transaction order: {{range .Transactions}} with {{.Index}} — tx_index-ordered, same as blockTxRefs's ORDER BY tx_index. TestBlockDetail_OrphanByHash_NotByHeight asserts: height 1 post-reorg returns B1 hash
+  only (A1 absent); A1 by hash returns 200 with "Orphaned block".
+
+  Transaction: PASS. tx.tmpl renders TxID, WTxID, Version, LockTime, Size/VSize/Weight, Coinbase, Fee (conditional), Occurrences with per-row canonical/orphaned status, Inputs with VinIndex ordering, coinbase data, prev output link, ScriptSig, Sequence, Witness items (size-only by default, hex opt-in), Outputs with VoutIndex ordering, ScriptType, Value (exact QOGE + sats), Address, Status via spentLabel, ScriptPubKey, WitnessVersion, WitnessProgram, Participants. No script classification in web — all fields from query.Store.
+
+  txid/wtxid: PASS. handleTx: tries TransactionByTxID first, falls back to TransactionByWTxID on ErrNotFound. Response always renders both {{.TxID}} and {{.WTxID}} distinctly. TestTransaction_ByDistinctWTxID uses buildDecodedFixture which creates rawSpendTx("web-dec-spend", ...) where TxID = fakeHash("web-dec-spend-tx") and Hash = fakeHash("web-dec-spend-wtx") — structurally distinct. Guard: f.spendTxid == f.spendWtxid → t.Fatalf. /tx/spendTxid → 200 with both in body. /tx/spendWtxid → TransactionByTxID misses → TransactionByWTxID hits → 200 with both in body. Coinbase tests (txid==wtxid) do
+  NOT serve as proof of the fallback path.
+
+  Inputs/outputs: PASS. {{range .Inputs}} with Input #{{.VinIndex}} — vin ordering from DB (ORDER BY vin_index). {{range .Outputs}} with Output #{{.VoutIndex}} — vout ordering. {{range .Witness}} with Item {{.ItemIndex}} — witness item ordering. TestTransaction_OrderingAndMoney asserts "Input #0" appears before "Output #0" in document order. Coinbase bytes shown as {{.CoinbaseHex}}. ScriptSig as {{.ScriptSigHex}}. All ordering preserved.
+
+  Exact money: PASS. All monetary template interpolations use {{.BalanceQOGE}} QOGE ({{.BalanceSatoshis}} sats), {{.ValueQOGE}} QOGE ({{.ValueSatoshis}} sats), {{.FeeQOGE}} QOGE ({{.FeeSatoshis}} sats) — string + int64, never float64. {{.Difficulty}} is float64 (block metadata, not money). TestTransaction_OrderingAndMoney asserts "12.34567890 QOGE" and "(1234567890 sats)" — exact, never rounded.
+
+  P2QPK presentation: PASS. tx.tmpl outputs section: Output #{{.VoutIndex}} &mdash; {{.ScriptType}} (from DB column, never re-classified), Witness version: {{.WitnessVersion}} (2 for P2QPK), Witness program: {{.WitnessProgram}} (32-byte hex from DB) — labeled "Witness program", NOT "public key" or "SLH-DSA public key". Address comes from output_addresses.address (Core-provided, persisted). TestTransaction_P2QPKAndP2TRPresentation asserts "Output #0 &mdash; p2qpk", "Witness version: 2", full hex.EncodeToString(f.p2qpkProgram), and "qWebDecP2QPKDest". The buildDecodedFixture pipeline runs
+  decode.DecodeBlock to assign script_type — web layer reads from the DB column only.
+
+  P2QPK default witness: PASS. Default handleTx calls TransactionByTxID(id, false) → witnessByVin uses octet_length(data) only → DataHex = nil. tx.tmpl: {{if .DataHex}} → only rendered on opt-in. Default shows "Item {{.ItemIndex}}: {{.SizeBytes}} bytes" + "(raw data hidden by default)" span. Toggle link: "Show raw witness data (may be large)". TestTransaction_P2QPKWitnessDefaultHiddenOptInExact: bodyNotContains(sigHex) ✓, bodyContains("17088 bytes") ✓, bodyContains("(raw data hidden by default)") ✓, bodyContains("?include_witness=true") ✓. No SLH-DSA verification anywhere in internal/web.
+
+  P2QPK raw witness: PASS. With ?include_witness=true: TransactionByTxID(id, true) → SELECT data → hex.EncodeToString → DataHex non-nil → tx.tmpl renders <pre class="raw-hex"><code>{{.DataHex}}</code></pre>. pre.raw-hex CSS: overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-width: 100% — 17,088-byte hex cannot force viewport expansion. Test asserts bodyContains(sigHex) (full 34,176-char hex of 17,088 0xab bytes) and bodyContains(pubHex) (64-char hex of 32 0xcd bytes) — byte-exact. ?include_witness=maybe → strconv.ParseBool error → parseIncludeWitness returns (false, false) →
+  renderBadRequest → 400. ✓
+
+  P2TR distinction: PASS. buildDecodedFixture: vout0 = witnessProgramScript(2, p2qpkProgram) (OP_2/v2/32-byte) → script.Classify assigns TypeP2QPK; vout1 = witnessProgramScript(1, p2trProgram) (OP_1/v1/32-byte) → script.Classify assigns TypeP2TR. TestTransaction_P2QPKAndP2TRPresentation: "Output #0 &mdash; p2qpk", "Output #1 &mdash; p2tr", "Witness version: 2", "Witness version: 1" — all present and distinct. No classification in internal/web.
+
+  Address balance: PASS. handleAddress calls s.q.AddressDetail(...) → AddressDetail.Summary comes from addressSummaryFrom → reads addresses WHERE address = $1 (Store-maintained canonical cache). address.tmpl renders BalanceQOGE/BalanceSatoshis/TotalReceivedQOGE/TotalSentQOGE/TxCount/FirstSeenHeight/LastSeenHeight directly from the Summary. Unused address: pgx.ErrNoRows → all-zero summary → "0.00000000 QOGE", not a 404 — confirmed by TestAddress_Summary.
+
+  Address history: PASS. AddressDetail.History comes from addressHistoryFrom → same canonical-join SQL (output_addresses → block_transactions → blocks WHERE canonical, not through utxo_state). address.tmpl renders {{range .History}} with /tx/{{.TxID}} and /block/{{.BlockHash}} links. Orphan receives/spends excluded. TestAddress_History_ReorgAndFlipBack covers A→B (history empty) and B→A (history restored). TestAddress_History_PaginationPreservesLimit asserts "limit=2" in next-page link.
+
+  Genesis edge: PASS. TestAddress_GenesisDestinationZeroBalanceVisibleHistory: real p2pkScript("gad-web") (PUSH33 <33-byte key> OP_CHECKSIG), ScriptType: script.TypeP2PK, address "qGADWebGenesis" built through store.ApplyBlock. /address/qGADWebGenesis: bodyContains("0.00000000 QOGE") (no utxo_state row → zero balance), bodyContains("/tx/"+txid) (output_addresses row → canonical history visible), bodyNotContains("No canonical history for this address."). No invented UTXO.
+
+  Multisig separation: PASS. tx.tmpl: {{if .Participants}}<div>Participants (not independent balance owners): <ul>...</ul></div>{{end}} — structurally separate from Address field, explicit disclaimer label. TestMultisig_ParticipantsVisuallySeparate: tx page shows "Participants (not independent balance owners):" with both participant links ✓; each participant's /address/ page shows "0.00000000 QOGE" and "No canonical history for this address." ✓
+
+  Search: PASS. handleSearch: (1) len(raw) > 128 → 400; (2) empty after trim → 400; (3) parseHeight(q) → decimal integer → redirect /block/{height} (no existence check in search); (4) isHash64(q) → 64 lowercase hex → tries BlockByHash, then TransactionByTxID(q, false), then TransactionByWTxID(q, false) in fixed order — first hit redirects, no hit → search.tmpl "No block, transaction, or witness transaction matched"; (5) isValidAddressShape(q) → redirect /address/{url.PathEscape(q)}; (6) else → 400. No Core query. No broad SQL search. Input length bounded at 128. TestSearch_ByDistinctWTxID uses
+  buildDecodedFixture with f.spendTxid != f.spendWtxid guard — confirms TransactionByWTxID branch actually runs and redirects to /tx/{wtxid}.
+
+  Pagination: PASS. Blocks: blocksPagination(limit, page.NextBeforeHeight) → keyset on height, no OFFSET, limit preserved if > 0. Address: addressPagination(address, limit, nextHeight, nextTxID) → keyset on (height, txid), no OFFSET, limit preserved if > 0. MaxPageSize = 100 enforced by clampPageSize in the query layer regardless of web-layer input. Malformed before or limit → renderBadRequest. Cursor pair (both or neither) enforced. Both test cases confirm limit preservation in rendered next-page links.
+
+  HTML escaping: PASS. templates.go uses template.New("layout").Funcs(templateFuncs).ParseFS(...) — html/template package throughout. No template.HTML cast for any blockchain-derived value. All template funcs (formatTimeUTC, spentLabel, yesNo) return plain string. errorView.Message is always a hardcoded literal from renderBadRequest/renderNotFound/etc. searchView.Query rendered as {{.Query}} — auto-escaped. TestEscaping_AddressContainingHTMLSpecialCharacters: evil address <script>alert(1)</script>&"' written through real store.ApplyBlock (not ad-hoc SQL — addresses are opaque strings at every
+  layer). /address/url.PathEscape(evilAddress) and /tx/txid both: strings.Contains(body, "<script>alert(1)</script>") == false ✓ AND strings.Contains(body, "&lt;script&gt;") == true ✓ — not a vacuous absence check. Pagination href values with & in query strings are HTML-escaped to &amp; in attribute context by html/template.
+
+  CSP/security headers: PASS. Server.ServeHTTP sets headers before every request (before the mux): X-Content-Type-Options: nosniff, Referrer-Policy: no-referrer, Content-Security-Policy: default-src 'self'; style-src 'self'; img-src 'self'. No inline scripts, no inline styles, no external CDN references in any template. CSS served from /static/app.css (embedded, 'self' compliant). TestSecurityHeaders verifies all three headers on GET /. TestStaticAssets confirms /static/app.css → 200 without working-directory dependency.
+
+  HTML errors: PASS. 400: renderBadRequest → HTML error.tmpl with "Bad Request" title + fixed message. 404: renderNotFound → "Not Found". 405: bare-pattern fallback sets Allow: GET header + renderError(405, "Method Not Allowed", ...). Unknown route ("/catch-all):renderError(404, "Not Found", ...)— no Allow header. 500:renderInternalErrorlogs real error server-side (never to client), renders "Something went wrong. Please try again later."TestMethodNotAllowed_HTML405: POST /blocks → 405, text/html, Allow: GET✓; GET /no-such-page → 404,Allowheader empty 
+  ✓.TestMalformedIdentifier_HTML400andTestUnknownObject_HTML404` confirm HTML content-type and correct status/message. No SQL/DB URL/RPC credentials/stack traces ever rendered.
+
+  API regression: PASS. internal/api/ has ZERO diff. newRootHandler wires /api/, /healthz, /readyz to the same unmodified api.New(q, log) handler. All 6 existing JSON routes (/api/v1/status, /api/v1/blocks, /api/v1/block/{id}, /api/v1/tx/{id}, /api/v1/address/{address}, /api/v1/address/{address}/transactions) are served identically. TestRootHandler_APIRoutesStayJSON confirms all 6 return application/json with valid JSON bodies. TestRootHandler_HealthzReadyzUnchanged confirms /healthz and /readyz return 200 with application/json and non-empty status field — unchanged from Phase 2D.1.
+
+  Health/readiness: PASS. Both /healthz and /readyz are routed to apiHandler (the Phase 2D.1 api.New(...) handler), not re-implemented by internal/web. Serve tests confirm their JSON contract is byte-for-byte unchanged.
+
+  Serve/index separation: PASS. runServe adds web.New(query.New(pool), log) as a sibling alongside api.New(query.New(pool), log) — same pool, one listener, no second process. runServe still requires only QOGE_DATABASE_URL. Core RPC credentials never required for serve. No indexer imported or started by runServe. Default bind remains cfg.HTTPAddr (default 127.0.0.1:8532).
+
+  Responsive/basic usability: PASS. @media (max-width: 640px) responsive rule: flex-column header, stacked nav. .table-scroll { overflow-x: auto } wraps every table.data-table — tables scroll horizontally without expanding viewport. table.data-table { min-width: 520px } inside .table-scroll (contained). .wrap { overflow-wrap: anywhere; word-break: break-all } keeps long hashes/addresses within their cells. pre.raw-hex { overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-width: 100% } — large witness hex contained. No <script> tags in any template — full functionality without
+  JavaScript. No external fonts or CDN — no network dependency at render time.
+
+  Tests: PASS.
+  - Overview concurrent reorg snapshot: TestSnapshotConsistency_ExplorerOverview_ConcurrentReorg — real Store.RollbackTo + two ApplyBlocks, channel sync (no sleep), BOTH Status.IndexedHash and RecentBlocks[0].Hash asserted A-consistent in-flight and B-consistent fresh. ✓
+  - Address concurrent reorg snapshot: TestSnapshotConsistency_AddressDetail_ConcurrentReorg — real reorg, BalanceSatoshis AND A1 txid presence both asserted; fresh asserts 0 balance AND A1 absent. ✓
+  - txid ≠ wtxid fallback: TestTransaction_ByDistinctWTxID and TestSearch_ByDistinctWTxID both guard f.spendTxid == f.spendWtxid → t.Fatalf, exercise both paths, verify both identities in response. ✓
+  - P2QPK default hidden witness: bodyNotContains(sigHex) + positive assertions on size/metadata/toggle link. ✓
+  - Explicit 17,088/32-byte witness: bodyContains(sigHex) (full 34,176-char hex) and bodyContains(pubHex) — byte-exact. ✓
+  - P2TR separation: TestTransaction_P2QPKAndP2TRPresentation — decoder-assigned script_type and witness version checked for both outputs. ✓
+  - Genesis balance/history: TestAddress_GenesisDestinationZeroBalanceVisibleHistory — zero balance AND "/tx/"+txid in body simultaneously. ✓
+  - Reorg + flip-back UI: TestAddress_History_ReorgAndFlipBack — A→B (link absent), B→A (link restored). ✓
+  - Multisig separation: TestMultisig_ParticipantsVisuallySeparate — label present, participants have zero balance and empty history. ✓
+  - Pagination limit preservation: TestBlocksPagination → "/blocks?before=4&amp;limit=2" in rendered body; TestAddress_History_PaginationPreservesLimit → "limit=2" in body. ✓
+  - HTML escaping: TestEscaping_AddressContainingHTMLSpecialCharacters — two pages tested, raw <script> absent, escaped &lt;script&gt; present. ✓
+  - 405 Allow header: TestMethodNotAllowed_HTML405 — Allow: GET on known route; empty Allow on unknown route. ✓
+  - API routes remain JSON: TestRootHandler_APIRoutesStayJSON — 6 routes confirmed. ✓
+  - TestTemplatesParse — every page template parsed at test time (build-time invariant check). ✓
+
+  Data-loss/corruption risks: None found. No path in internal/web mutates PostgreSQL (query.Store SELECT-only, ReadOnly txn). No orphan data presented as canonical (height canonical-only; hash always tagged; orphan banner always shown). No snapshot mixing on one page (composite methods use single REPEATABLE READ transaction). No txid/wtxid conflation (separate fallback logic; both fields always rendered). No fabricated genesis spendability (spentLabel(nil) = "not tracked (unspendable or genesis)"). No multisig participants credited with ownership (explicit "not independent balance owners"
+  label; participants absent from address balance/history). Full P2QPK witness hidden by default (default includeWitness = false throughout). Monetary rounding impossible (no float64 money path). SQL/credentials never in client-facing responses (renderInternalError logs only).
+
+  Core/P2QPK discrepancies: None. The web layer is strictly a presentation veneer over the already-reviewed query.Store. No consensus re-derivation. No SLH-DSA verification. No address re-derivation. No activation-state logic. No classification. P2QPK is identified in the web layer solely by the script_type = "p2qpk" column value the already-reviewed decoder+Store pipeline writes.
+
+  Architecture concerns: None. The snapshotTestHook/fireSnapshotTestHook pattern is extended correctly to the two new composite methods — same nil-check, same production-inert behavior, same test cleanup via disable(). The *From refactor is the minimum necessary change to enable the composite snapshot without duplicating SQL; it does not alter any public method contract. The web-as-sibling-of-API architecture avoids the loopback-HTTP anti-pattern explicitly. The root mux prefix-routing correctly preserves API semantics.
+
+  ---
+  No blocking Core/P2QPK/query/web discrepancy found. Phase 2E.1 is safe to merge.
+
+✻ Worked for 8m 6s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  9% until auto-compact
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
