@@ -1,0 +1,123 @@
+● I'll fetch the PR #8 metadata and diff from GitHub to verify the target and begin the review.
+
+  Ran 1 shell command 
+
+● All 6 metadata fields match exactly. Now fetching the diff.
+
+  Read 1 file, ran 2 shell commands 
+
+● I've now read all 827 lines of the diff. Let me complete the analysis and write the report.
+
+  The full set of changed files:
+  - docs/ARCHITECTURE.md — §20 update + new §21
+  - internal/web/handlers_blocks.go — FirstPage: before == nil
+  - internal/web/live_test.go — new (227 lines)
+  - internal/web/static/app.css — .live-banner CSS
+  - internal/web/static/live.js — new (172 lines)
+  - internal/web/templates.go — embed directive update
+  - internal/web/templates/blocks.tmpl — conditional data-live-refresh="blocks" wrapper
+  - internal/web/templates/blocktable.tmpl — data-block-height/data-block-hash on <tr>
+  - internal/web/templates/home.tmpl — data attributes on <section class="hero">
+  - internal/web/templates/layout.tmpl — <script defer> + hidden banner div
+  - internal/web/viewmodels.go — FirstPage bool in blocksView
+  - internal/web/web.go — CSP gains script-src 'self'
+
+  Zero diff confirmed in: migrations/, internal/store/, internal/indexer/, internal/decode/, internal/script/, internal/chain/, internal/query/, internal/api/, internal/rpc/, cmd/qoge-explorer/.
+
+  ---
+  PHASE 2E.2 FINAL INDEPENDENT REVIEW
+
+  PR head reviewed: 0d40c834decea3a83049d314dcc9192b345090d8
+  Verified against: PR #8, state open, merged false, base main (d5c123d8f4d86357aa40124ba64b50d9128b6ecd), head branch phase2e-live-chain-ui — all 6 fields match exactly.
+
+  Verdict: APPROVE
+
+  ---
+  Phase boundary: PASS. Zero diff in migrations/, internal/store/, internal/indexer/, internal/decode/, internal/script/, internal/chain/, internal/query/, internal/api/, internal/rpc/, and cmd/qoge-explorer/. All production changes are confined to internal/web/ and docs/ARCHITECTURE.md, exactly as expected for this phase.
+
+  Architecture: PASS. The SSR architecture is unchanged: every page is still rendered by a single coherent server round-trip through query.Store. live.js (an IIFE) is a pure notifier: it polls exactly one existing endpoint, performs exactly two possible DOM operations (banner.hidden = false and bannerMessage.textContent = "…"), and its only canonical-update mechanism is window.location.reload(). It never issues a second fetch, never reconstructs blockchain state in the DOM, adds no WebSockets, no SSE, no Core RPC, no background indexer, and no new persistence.
+
+  Status source: PASS. var STATUS_URL = "/api/v1/status" (live.js:571). The fetch call uses cache: "no-store" and "Accept": "application/json" (lines 692–694). Only indexed_height (line 659, type-checked as "number") and indexed_block_hash (line 663, type-checked as "string") are read from the response. No new /live, /status, or polling-specific API endpoint was added — zero diff in internal/api/.
+
+  Polling: PASS. POLL_INTERVAL_MS = 10000 (10 seconds, line 572). requestInFlight (line 574) prevents overlap: poll() returns immediately if requestInFlight || document.hidden (line 688). requestInFlight = false is reset in a final .then chained after .catch (lines 706–708) — this mirrors a finally block and always runs on success or failure, so the in-flight guard is never left stuck. Failure path: the .catch handler (lines 703–706) swallows silently — no console log, no state mutation, no reload. requestInFlight = false still fires via the final .then. ✓
+
+  Hidden-tab behavior: PASS. poll() checks document.hidden at line 688 and returns without issuing a request if true — a backgrounded tab generates zero network load. document.addEventListener("visibilitychange", ...) (lines 711–715) triggers an immediate poll() the moment the tab becomes visible, ensuring the notification/reload decision is never stale by a full poll interval.
+
+  Failure behavior: PASS. Network errors or non-resp.ok HTTP status cause the chain .then(fn).catch(fn) to route into the .catch (lines 703–706), which is a no-op. handleStatus is never called. lastKnownHash and hasStatusBaseline are never mutated. The previous baseline is retained. No false banner. No reload. No console spam. Subsequent polls retry normally. ✓
+
+  Auto-page baseline: PASS. For refreshMode === "home" (lines 619–622): reads data-indexed-height/data-indexed-hash from refreshEl, sets hasStatusBaseline = true before any poll fires. For refreshMode === "blocks" (lines 623–628): reads first block row's data-block-height/data-block-hash, sets hasStatusBaseline = true. In both cases the baseline is valid immediately from page load — including the legitimate null/-1 empty-DB case. The first poll can therefore detect a block indexed in the gap between HTML render and the first request. ✓
+
+  Notify-only baseline: PASS. Every page without a [data-live-refresh] element yields refreshEl = null, refreshMode = null, hasStatusBaseline = false (lines 576–617). In handleStatus (lines 667–671): if (!hasStatusBaseline) { lastKnownHash = hash; hasStatusBaseline = true; return; } — the first successful response silently establishes lastKnownHash and flips the flag, producing no banner and no reload. Only a subsequent response with a different hash triggers the banner. ✓
+
+  Empty-chain baseline: PASS. home.tmpl renders data-indexed-height="{{.Status.IndexedHeight}}" (always, including -1) and {{if .Status.IndexedHash}} data-indexed-hash="{{.Status.IndexedHash}}"{{end}} (absent when nil). live.js for refreshMode = "home": baselineHeight = parseIntAttr(refreshEl, "data-indexed-height") → -1; baselineHash = refreshEl.getAttribute("data-indexed-hash") || null → null. hasStatusBaseline = true is still set (explicit flag, not lastKnownHash == null check). When genesis is indexed and first poll returns hash G: G !== null (lastKnownHash) → triggers; baselineHeight === null is false (-1 !==
+  null), but height (0) >= baselineHeight (-1) → true → reloadPage(). TestLive_HomeExposesBaselineTip confirms: empty DB → data-indexed-height="-1" present, data-indexed-hash= absent. ✓
+
+  First-poll false-banner fix: PASS. The hasStatusBaseline guard is the correct fix. Without it, a detail page's first real status response would compare a real hash against null, find them different, and show a banner. With it, the first successful response on any notify-only page (lines 667–671) silently establishes the baseline and returns. A failed response never reaches handleStatus at all, so hasStatusBaseline stays false until a later success. The guard is both present in the source (confirmed by TestLive_ScriptContract's "hasStatusBaseline" check) and correctly implemented (state machine review below). ✓
+
+  Home: PASS. home.tmpl hero section: data-live-refresh="home" (live-refresh marker), data-indexed-height="{{.Status.IndexedHeight}}", data-indexed-hash="{{.Status.IndexedHash}}" (conditional). On tip hash change with height >= baseline: reloadPage(). On height < baseline (transient rollback): showBanner(). No partial DOM update — only window.location.reload() or banner.hidden = false. TestLive_HomeExposesBaselineTip verifies both the empty-DB attribute pattern and the post-genesis attribute values. ✓
+
+  Blocks: PASS. handlers_blocks.go sets FirstPage: before == nil. blocks.tmpl: when FirstPage=true, wraps {{template "blocktable" .Blocks}} in <div data-live-refresh="blocks">; when FirstPage=false (historical), renders blocktable without the wrapper. live.js reads the first [data-block-height] element inside refreshEl as the baseline for blocks pages. TestLive_BlockRowsExposeDataAndFirstPageOnly confirms: /blocks carries data-live-refresh="blocks" and row data attributes; /blocks?before=1 does not carry data-live-refresh. ✓
+
+  Historical blocks: PASS. /blocks?before=N sets FirstPage=false → no data-live-refresh wrapper → refreshEl = null → refreshMode = null → notify-only mode. A global tip change will show a banner but never trigger auto-reload of a historical page. Row-level data-block-height/data-block-hash attributes are still rendered (harmless), but the data-live-refresh eligibility wrapper is absent. ✓
+
+  Detail pages: PASS. block.tmpl, tx.tmpl, and address.tmpl have zero diff. No data-live-refresh attribute is added to any of them. All three are notify-only: hasStatusBaseline = false initially; first success silently establishes baseline; subsequent tip change shows banner; reloadPage() is never called (requires refreshMode === "home" || "blocks"). ✓
+
+  Raw P2QPK witness page: PASS. /tx/{id}?include_witness=true uses tx.tmpl (zero diff). No data-live-refresh attribute → notify-only mode. First successful poll: silent baseline. Subsequent tip change: banner, never reload. live.js never fetches witness data, never reads DataHex, never modifies the witness rendering. Phase 2E.1 witness behavior fully preserved: default hides 17,088-byte hex; ?include_witness=true shows exact 17,088 + 32 bytes. No truncation, no SLH-DSA verification. ✓
+
+  Tip-change semantics: PASS. Signal: hash !== lastKnownHash (line 673) — purely hash-equality, not height comparison. A same-height reorg (different canonical block at the same height) produces a different hash → correctly triggers. lastKnownHash is updated immediately at line 676 (lastKnownHash = hash) before deciding reload vs. banner, so the decision always reflects the current observation. Banner text: "The indexed canonical tip changed." (line 641, hardcoded literal) — neutral, no "New block" claim. No client-side reorg classification. ✓
+
+  Transient reorg handling: PASS. For an auto-refresh page with baselineHeight=100, lastKnownHash=A100: poll observes height=99, hash=A99 → A99 !== A100 → lastKnownHash = A99 (updated) → 99 >= 100 is false AND 100 === null is false → condition false → showBanner() (no reload). Later stabilized tip: height=100, hash=B100 → B100 !== A99 → lastKnownHash = B100 → 100 >= 100 → reloadPage(). The lastKnownHash = A99 update during the transient is essential — it allows B100 !== A99 to fire the reload. ✓
+
+  Banner/accessibility: PASS. layout.tmpl: <div id="live-chain-banner" class="container live-banner" hidden role="status" aria-live="polite"> — hidden attribute present (never visible without JS), role="status" and aria-live="polite" (no focus stealing), real <button type="button" data-live-banner-refresh>Refresh</button> (not a div with click handler). live.js: bannerMessage.textContent = "…" (line 641, never innerHTML), banner.hidden = false to show. TestLive_BannerHiddenAndAccessible verifies all four properties including the hidden attribute by inspecting the opening tag. ✓
+
+  CSP/security: PASS. web.go CSP: "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'" — explicit script-src 'self' added, no unsafe-inline, no unsafe-eval, no external host. layout.tmpl uses only <script src="/static/live.js" defer></script> (same-origin, no inline). live.js IIFE: no eval(, no new Function, no innerHTML, no document.write, no http:///https:// literals, no external resource. All confirmed by TestLive_ScriptContract's forbidden-substring scan and TestLive_CSPPermitsSelfScript's header check. Blockchain/API data (indexed_height as a number, indexed_block_hash as a string used
+  only for equality comparison) never becomes executable code. ✓
+
+  JS-independent SSR: PASS. <script defer> does not block rendering. With JS disabled: the hidden attribute on the banner is never cleared, so it stays invisible. All navigation, block/tx/address display, search, exact money, P2QPK/P2TR display remain fully server-rendered and functional without JS. TestLive_PagesRemainJSIndependent verifies meaningful content ("Indexed height <strong>1</strong>", "50.00000000 QOGE", genesis hash) is present in raw SSR HTML. ✓
+
+  Client-side state reconstruction: PASS. live.js issues exactly one type of fetch: GET /api/v1/status. No fetch to /api/v1/blocks, /api/v1/block/, /api/v1/tx/, /api/v1/address/, or any witness endpoint. No monetary arithmetic. No balance computation. No DOM writes of blockchain-derived data — bannerMessage.textContent receives a hardcoded literal, never an API response field. window.location.reload() is the only canonical-update mechanism, preserving the server-side coherent snapshot guarantee. ✓
+
+  Mempool exclusion: PASS. Zero diff in any backend file. live.js contains no /mempool, getrawmempool, unconfirmed-tx logic, or unconfirmed-balance logic. TestLive_ScriptContract explicitly checks "/mempool" and "getrawmempool" are absent from the source. ✓
+
+  P2QPK regression: PASS. Zero diff in internal/script/, internal/decode/, internal/query/, tx.tmpl, address.tmpl. Witness version 2 / 32-byte program → p2qpk classification unchanged. live.js reads no script bytes, no witness data, no transaction fields. ✓
+
+  P2TR regression: PASS. Same: zero diff in classification pipeline. Witness version 1 / 32-byte program → p2tr unchanged. No JS classification. ✓
+
+  Snapshot regression: PASS. Zero diff in internal/query/snapshot_test.go and all four snapshot methods (ExplorerOverview, AddressDetail, TransactionDetail, BlockDetail). readTx REPEATABLE READ isolation is unchanged. The live layer adds no new queries and no new transactions against the Store. ARCHITECTURE.md §21 explicitly confirms all four snapshot tests continue passing. ✓
+
+  API regression: PASS. Zero diff in internal/api/. The CSP change applies only to internal/web.Server.ServeHTTP, not to apiHandler's response headers. cmd/qoge-explorer/main.go is zero diff, so all routes remain wired identically. TestLive_ScriptContract and TestLive_ScriptServedCorrectly do not modify any API behavior. ✓
+
+  Web regression: PASS. Changes to existing web files are additive-only: handlers_blocks.go adds one struct field; viewmodels.go adds FirstPage bool; templates/blocks.tmpl adds a conditional wrapper that renders the same blocktable in both branches; templates/blocktable.tmpl adds data attributes to <tr> (harmless); templates/home.tmpl adds data attributes to the hero <section> (harmless); templates/layout.tmpl adds a defer script tag and a hidden banner div; web.go tightens CSP. All Phase 2E.1 behaviors (canonical/orphan, txid/wtxid, P2QPK/P2TR, address summary/history, genesis, multisig, pagination, escaping,
+  HTML errors, security headers, API/web composition) remain fully intact. ✓
+
+  Tests: PASS. live_test.go covers all required items: script tag with defer (A), banner hidden/role="status"/aria-live="polite" (B/C), home baseline data attributes including empty-DB case (D), block row data attributes and first-page-only data-live-refresh guard (E), script served 200 with JavaScript MIME type and /api/v1/status in body (F/G), script-src 'self' in CSP with no unsafe-* (H), no external script/CDN in rendered pages (I), pages render meaningful content without JS (J), and TestLive_ScriptContract pins required substrings (/api/v1/status, no-store, indexed_height, indexed_block_hash,
+  hasStatusBaseline) and forbidden substrings (WebSocket, EventSource, /mempool, getrawmempool, innerHTML, eval(, new Function, http://, https://). The hasStatusBaseline guard is verified as correctly implemented (state machine review, items 5–7 and 22) — not merely present as a string. All Phase 2E.1 tests remain unmodified and continue passing.
+
+  State-machine review (manual):
+
+  A — Notify-only normal load: Init: hasStatusBaseline=false, lastKnownHash=null. First success H1: !hasStatusBaseline → lastKnownHash=H1, hasStatusBaseline=true, return → no banner, no reload. Next success H1: H1===H1 → return. Next success H2: H2!==H1 → lastKnownHash=H2 → not auto-refresh → showBanner(). ✓
+
+  B — Notify-only initial failure: .catch fires, does nothing. hasStatusBaseline stays false. Later first success H1: !hasStatusBaseline → silently establishes baseline. ✓
+
+  C — Home gap detection: hasStatusBaseline=true, baselineHeight=1, lastKnownHash=H1. First poll returns H2 (height 2): H2!==H1 → lastKnownHash=H2 → refreshMode="home" AND 2>=1 → reloadPage(). ✓
+
+  D — Empty home: hasStatusBaseline=true, baselineHeight=-1, lastKnownHash=null. First poll returns genesis G (height 0): G!==null → lastKnownHash=G → refreshMode="home" AND 0>=-1 (true) → reloadPage(). ✓
+
+  E — Auto-page transient rollback: baselineHeight=100, lastKnownHash=A100. Poll height=99, hash=A99: A99!==A100 → lastKnownHash=A99 → 99>=100 false → showBanner(). Later height=100, hash=B100: B100!==A99 → lastKnownHash=B100 → 100>=100 → reloadPage(). ✓
+
+  Data-loss/corruption risks: None found. The entire live layer is read-only with respect to PostgreSQL — zero write calls to query.Store. The page reload fetches fresh server-rendered HTML through the same coherent-snapshot path Phase 2E.1 already guarantees. Blockchain-derived strings from the status response (indexed_block_hash) are used only for equality comparison and never written to the DOM or executed. ✓
+
+  Core/P2QPK discrepancies: None. The live layer is indifferent to script type, witness version, and signature scheme. It observes only the block hash cursor already maintained by the existing indexer. No P2QPK-specific logic anywhere in the new code. ✓
+
+  Architecture concerns: None. The architectural choice — notifier, not second engine — is correctly implemented and enforced both by the code and by the TestLive_ScriptContract forbidden-substring test, which acts as a regression guard preventing the script from growing into a client-side explorer. The requestInFlight / document.hidden guards are correct and complete. The hasStatusBaseline two-mode design correctly handles the false-first-poll problem without introducing any new state complexity.
+
+  ---
+  No blocking Core/P2QPK/live-UI discrepancy found. Phase 2E.2 is safe to merge.
+
+✻ Cogitated for 4m 59s
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
+
