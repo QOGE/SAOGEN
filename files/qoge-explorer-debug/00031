@@ -1,0 +1,69 @@
+    
+● Now let's do the final quality gate pass before committing.
+
+  Ran 3 shell commands 
+
+● All clean. Final phase-boundary check and diff summary before committing.
+     
+  Ran 1 shell command 
+
+● Phase boundary is clean: zero diff on all frozen paths, and zero diff on internal/api too. Let's stage, commit, push, and open the PR.
+
+  Committed 0628f98, ran 1 shell command 
+  ⎿  PostToolUse:Bash says: Tip: Run /ultrareview before you push to catch bugs with a cloud-based multi-agent review — 3 free reviews left.
+
+● Now let's push and create the PR.
+
+  Pushed to phase2e-web-ui, created PR #7, ran 1 shell command 
+
+● PHASE 2E.1 — WEB UI
+
+  Branch: phase2e-web-ui | Commit: 0628f98 | PR: #7 (OPEN, not merged, base=main)
+
+  ARCHITECTURE
+  - Web package: internal/web — depends only on internal/query, no SQL, no script classification
+  - Rendering: html/template only, layout+partials-per-page idiom
+  - Embedded assets: templates + app.css via go:embed, no working-directory dependency
+  - Node/npm dependency: NONE
+  - API/web composition: sibling handlers over one *query.Store, composed by path prefix in cmd/qoge-explorer/main.go's new newRootHandler (never a loopback HTTP call between them)
+
+  ROUTES
+  HTML: /, /blocks, /block/{id}, /tx/{id}, /address/{address}, /search, /static/{path}
+  Preserved API/system: /api/v1/*, /healthz, /readyz — unchanged, byte-for-byte, served by internal/api
+
+  HOME — Status ✓ (indexed height/tip) · Recent blocks ✓ (canonical-only, RecentBlocks) · Search field in shared header ✓
+
+  BLOCKS — List ✓ · Pagination: height cursor only, no OFFSET ✓ · Canonical ✓ · Orphan: reachable by hash with visible banner, never by height ✓
+
+  TRANSACTIONS — txid ✓ · wtxid (distinct-identity fallback proven via real decode pipeline) ✓ · Inputs ✓ · Outputs ✓ · Occurrences (canonical/orphan per-row) ✓ · Money: exact QOGE strings + sats, no float ✓
+
+  P2QPK — Output presentation: type p2qpk ✓ · Witness v2 ✓ · Program: 32-byte, decoder-assigned ✓ · Default raw witness: hidden, size shown ✓ · Explicit raw witness: byte-exact ✓ · 17,088 bytes ✓ · 32-byte pubkey ✓
+
+  P2TR — v1/32 ✓ · Distinct from P2QPK (separate output cards, separate witness versions) ✓
+
+  ADDRESSES — Summary ✓ · History ✓ · Genesis edge (zero balance + visible history) ✓ · Reorg ✓ · Flip-back ✓ · Multisig (separate "Participants" label, never balance/history) ✓
+
+  SEARCH — Height ✓ · Block hash ✓ · txid ✓ · wtxid (distinct) ✓ · Address redirect ✓ · Unmatched hash → HTML result page, no guessing ✓
+
+  HTML SAFETY — html/template throughout ✓ · Escaping: proven via real <script>alert(1)</script>&"' address round-tripped through Store.ApplyBlock ✓ · Security headers: X-Content-Type-Options, Referrer-Policy, self-only CSP ✓ · 500 privacy: generic message, real error logged server-side only ✓
+
+  RESPONSIVE UI — CSS uses overflow-wrap/word-break/horizontally-scrollable tables; mobile breakpoint for header/nav; manually verified via rendered HTML/CSS (no headless-browser viewport test in this phase)
+
+  TESTS — A–AF: all present and passing (30 tests in internal/web, 3 in cmd/qoge-explorer for AE/AF) · PostgreSQL: actually executed (real timings, no skips) · API regression: internal/api's own suite untouched and still passing · Escaping: dedicated regression test · P2QPK: dedicated presentation + witness-policy tests
+
+  QUALITY — gofmt clean · go vet clean · go test: all packages pass · go test -race: all packages pass, first attempt · go build clean · Manual smoke: /, /blocks, block page, tx page, address page, /search, /api/v1/status, /healthz, /readyz all verified against a seeded database via the actual serve binary
+
+  PHASE BOUNDARY
+  migrations/: ZERO · store/: ZERO · indexer/: ZERO · decode/: ZERO · script/: ZERO · chain/: ZERO · query/: ZERO · api/: ZERO (achieved, not just "prefer")
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop. Do not merge. Do not begin Phase 2E.2.
+
+✻ Cooked for 21m 57s
+                        
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #7 · ← 1 agent
