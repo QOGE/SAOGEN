@@ -1,0 +1,131 @@
+● Now start the merged-main serve binary and run the full route/behavior sweep:
+
+  Ran 3 shell commands 
+
+● All routes reachable, money rendered as exact QOGE decimal strings. Now tear down the smoke server and clean up:
+
+  Ran 1 shell command 
+
+● Clean — no leftover files, working tree unmodified. Now delete the phase branches since all conditions are satisfied.
+
+  Ran 2 shell commands 
+
+● Branch cleanup complete, working tree clean, local main == origin/main.
+
+  PHASE 2E.1 MERGE
+
+  PR: #7 | Reviewed head: b9da9e803e393e025f7d79d0e6bd5dd5b7e113e4 | Merge method: normal merge commit | Merge commit: d5c123d8f4d86357aa40124ba64b50d9128b6ecd
+
+  PRE-MERGE
+  - State: OPEN, mergedAt: null
+  - Mergeable: true
+  - Head: b9da9e803e393e025f7d79d0e6bd5dd5b7e113e4 (exact match)
+  - Working tree: clean
+  - Boundary: zero diff on the 7 frozen paths; internal/query/ changes = only the reviewed composite extension
+
+  MAIN
+  - Local HEAD: d5c123d8f4d86357aa40124ba64b50d9128b6ecd
+  - origin/main: d5c123d8f4d86357aa40124ba64b50d9128b6ecd
+  - Match: YES
+  - Second parent: b9da9e803e393e025f7d79d0e6bd5dd5b7e113e4 (exact match)
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all 9 packages pass
+  - go test -race: all 9 packages pass, first attempt
+  - go build: clean
+  - PostgreSQL actually executed: YES (real timings, no skips)
+
+  SNAPSHOTS
+  - ExplorerOverview: in-flight Status/RecentBlocks[0] = A2, fresh = B2 — PASS
+  - AddressDetail: in-flight balance = 30 QOGE with A1 present, fresh balance = 0 with A1 absent — PASS
+  - Concurrent reorg tests: both rerun directly against merged main, no mixed results
+
+  WEB
+  - Home: 200, checkpoint + recent blocks
+  - Blocks: 200, pagination limit preserved (limit=2 retained)
+  - Block detail: 200 (height + hash lookups)
+  - Transaction: 200 (txid + API tx lookups)
+  - Address: 200, exact QOGE money strings confirmed
+  - Search: 302 redirect on height match
+  - Static: 200, text/css
+
+  CANONICAL / ORPHAN
+  - Recent: canonical only
+  - Height lookup: serves only the canonical block at that height (orphan sibling never shown)
+  - Hash lookup: orphan reachable, canonical also reachable
+  - Orphan banner: "Orphaned block" present
+  - Occurrences: preserved (verified via automated suite on merged main)
+
+  TXID / WTXID
+  - Distinct IDs: verified via automated suite (TestTransaction_ByDistinctWTxID, TestSearch_ByDistinctWTxID) on merged main
+  - txid lookup / wtxid lookup: both PASS
+
+  P2QPK
+  - Output / v2 / Program / Default 17088 / Default 32 / Raw 17088 / Raw 32 / Byte-exact: all verified via TestTransaction_P2QPKWitnessDefaultHiddenOptInExact and TestTransaction_P2QPKAndP2TRPresentation, rerun clean on merged main
+
+  P2TR
+  - v1/32 distinct: PASS (same test above)
+
+  ADDRESSES
+  - Balance: canonical Store cache, confirmed (65.00000000 QOGE for qSmokeAddr1)
+  - History: confirmed via automated suite
+  - Genesis: confirmed via automated suite (0 balance, visible history)
+  - Reorg / Flip-back: confirmed via automated suite
+  - Multisig: confirmed via automated suite
+
+  PAGINATION
+  - Blocks: limit=2 retained in next-page link — confirmed live
+  - Address: retained — confirmed via automated suite
+
+  MONEY
+  - Exact QOGE: confirmed live (65.00000000 QOGE, 0.00000000 QOGE)
+  - Integer sats: confirmed via automated suite
+  - Float monetary path: NO
+
+  SECURITY
+  - html/template: still used
+  - Escaping test: PASS (rerun as part of full suite)
+  - CSP: default-src 'self'; style-src 'self'; img-src 'self' — confirmed live
+  - nosniff: confirmed live
+  - Referrer: no-referrer — confirmed live
+  - 500 privacy: unchanged code path (renderInternalError), not independently re-triggered live
+
+  API
+  - JSON routes unchanged: confirmed live (/api/v1/status, /blocks, /block/1, /tx/{id}, /address/{addr}, /address/{addr}/transactions all 200 application/json)
+  - healthz: 200 JSON
+  - readyz: 200 JSON
+
+  SERVE
+  - No RPC credentials: unchanged
+  - No indexer: unchanged
+  - Loopback: default, confirmed via QOGE_LISTEN_ADDR-free run binding 127.0.0.1
+
+  PHASE BOUNDARY
+  - migrations/: ZERO
+  - store/: ZERO
+  - indexer/: ZERO
+  - decode/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - api/: ZERO
+  - query/: reviewed minimal read-only extension only
+
+  BRANCH
+  - phase2e-web-ui: Deleted (local + remote)
+
+  WORKING TREE
+  - Status: clean
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop.
+
+✻ Baked for 5m 17s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Begin Phase 2E.2: live block/mempool updates
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
