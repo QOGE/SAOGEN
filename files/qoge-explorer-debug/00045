@@ -1,0 +1,114 @@
+● Now let's re-run the full quality gates one final time after the doc change, then commit, push, and open the PR.
+
+  Ran 2 shell commands 
+
+● Phase boundary confirmed clean. Committing.
+
+  Committed 8a19749, pushed to phase2f-mempool-read-ui, created PR #10, ran 1 shell command 
+
+● PHASE 2F.2 — READ-ONLY MEMPOOL EXPLORER
+
+  Branch: phase2f-mempool-read-ui
+  Commit: 8a19749
+  PR: https://github.com/QOGE/qoge-explorer/pull/10 (OPEN, base main)
+
+  BASELINE
+  - main: 2de0b2f83550b0da8f294de04ed2ae4d70d49668 (confirmed exact)
+  - working tree: clean
+
+  ARCHITECTURE
+  - Serve Core dependency: NONE — verified via real binary smoke, no Core process reachable
+  - Writer changes: ZERO
+  - Schema changes: ZERO
+  - Read-only model: internal/query reads mempool_* tables directly, never imports internal/mempool's writer Store in production code
+
+  MEMPOOL STATE
+  - Uninitialized: explicit status="uninitialized", stale always false
+  - Initialized empty: distinguished (status="fresh"/"stale", tx_count=0)
+  - Generation: exposed on state, list page, and detail
+  - Core anchor / Confirmed tip: both exposed side by side
+  - Fresh/stale: derived in one repeatable-read snapshot comparing mempool_state vs sync_state
+
+  QUERY
+  - Overview/detail snapshot: one readTx (REPEATABLE READ, READ ONLY) per response
+  - txid/wtxid lookup: both work, identities preserved exactly
+  - Witness default: hidden; opt-in: byte-exact, never truncated
+  - Dependencies: deterministic (lexicographic) order
+  - Multisig: participants separate, no destination fabrication
+  - Pagination: keyset (entry_time, txid) DESC
+  - Generation cursor: MempoolCursor{Generation, EntryTime, TxID}, rejected on mismatch
+
+  API
+  - /api/v1/mempool: state + paginated transactions, one snapshot
+  - /api/v1/mempool/tx/{id}: txid→wtxid fallback, ?include_witness=true
+  - Uninitialized: HTTP 200, initialized:false
+  - Stale: HTTP 200, stale:true, anchor + confirmed tip both shown
+  - 404: missing tx, no Core fallback
+  - 409 cursor: mempool_generation_changed
+  - Existing API regression: all confirmed endpoints unchanged, full suite green
+
+  WEB
+  - /mempool: state summary + paginated table
+  - /mempool/tx/{id}: UNCONFIRMED/MEMPOOL when fresh; qualified stale wording otherwise
+  - Search fallback: mempool tried last, confirmed always wins
+  - Navigation: one "Mempool" link added
+  - Stale wording: present and asserted in tests
+  - JS dependency: none added; live.js unchanged
+  - UI polish: none attempted beyond functional/utilitarian
+
+  P2QPK
+  - v2/32: visible by default
+  - Default 17088/32 hidden: confirmed
+  - Raw 17088/32: byte-exact, confirmed via query/API/web
+  - Program wording: never called a public key
+  - Verification: NONE
+
+  P2TR
+  - Distinct from P2QPK through query/API/web: confirmed
+
+  MONEY
+  - Exact satoshis: int64 throughout, QOGE strings via chain.Amount
+  - float64: NONE
+  - Policy-feerate confusion: none — fee and vsize shown separately, no derived feerate
+
+  SNAPSHOTS
+  - Mempool overview concurrent replacement: TestSnapshotConsistency_MempoolOverview_ConcurrentReplacement — PASS
+  - Mempool detail concurrent replacement: TestSnapshotConsistency_MempoolDetail_ConcurrentReplacement — PASS
+  - Confirmed overview/address/transaction/block: all 4 rerun — PASS
+
+  ADDRESS
+  - Pending balance: NONE
+  - Pending activity: NONE
+
+  SECURITY
+  - Escaping: html/template auto-escaping, tested with HTML-special-char address
+  - CSP: unchanged, inherited
+  - GET-only: enforced, tested
+  - 404/405: tested for both new routes
+
+  PHASE 2F.1 REGRESSION
+  - Dependency ordering, RPC identity, vsize distinction, weight, P2QPK, confirmed non-mutation: all rerun — PASS
+
+  QUALITY
+  - gofmt / go vet / go build: clean
+  - go test: all 10 packages pass (-count=1, real PostgreSQL)
+  - go test -race: all 10 packages pass
+  - PostgreSQL executed: YES
+  - Serve smoke: PASS (12/12 routes 200, no Core reachable; manual fresh→stale→fresh cycle verified via API + SSR)
+
+  PHASE BOUNDARY
+  - migrations/: ZERO
+  - mempool writer/: ZERO
+  - rpc/: ZERO
+  - store/: ZERO
+  - indexer/: ZERO
+  - decode/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - cmd/: ZERO (no change needed)
+                                                                                                                                                                                                                                                                                                          Jump to bottom (ctrl+End) ↓ 
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #10 · ← 1 agent
