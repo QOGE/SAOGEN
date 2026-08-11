@@ -1,0 +1,163 @@
+● Now let's move to full quality gates, regression, and manual smoke test.
+
+  Ran 1 shell command 
+
+● gofmt clean. Now go vet, full test suite, race, build:
+
+  Ran 2 shell commands 
+
+● All 9 packages pass. Now -race:
+
+  Ran 1 shell command 
+
+● All pass with -race, first attempt. Build:
+
+  Ran 1 shell command 
+
+● Explicitly rerun the composite snapshot tests as required:
+
+  Ran 1 shell command 
+
+● All four snapshot tests pass, no mixed results. Now verify the phase boundary — zero diff on all frozen packages:
+
+  Ran 1 shell command 
+
+● Zero diff on all frozen packages — only internal/web/, cmd/qoge-explorer (untouched, as predicted), and docs/ARCHITECTURE.md changed. Now the manual smoke test against the actual serve binary.
+
+  Ran 5 shell commands 
+
+● Now the optional manual live-check (section 28): confirm the old page's embedded baseline stays A while /api/v1/status sees the new tip B until a fresh page fetch:
+
+  Ran 1 shell command 
+
+● This exactly confirms the intended model from section 28: the old page's embedded baseline stayed at A, /api/v1/status correctly saw B, and a fresh page load obtained the new coherent snapshot B — without any client-side mixed A/B DOM. Now tear down and clean up:
+
+  Ran 1 shell command 
+
+● Clean — no leftover smoke files. Now commit, push, and create the PR.
+
+  Committed 41ab199, pushed to phase2e-live-chain-ui, created PR #8, ran 2 shell commands 
+  ⎿  PostToolUse:Bash says: Tip: Run /ultrareview before you push to catch bugs with a cloud-based multi-agent review — 3 free reviews left.
+
+● PR #8 created, OPEN, unmerged. Final report:
+
+  PHASE 2E.2 — CONFIRMED-CHAIN LIVE UI
+
+  Branch: phase2e-live-chain-ui | Commit: 41ab199 | PR: #8
+
+  BASELINE
+  - main baseline: d5c123d8f4d86357aa40124ba64b50d9128b6ecd (exact match, verified before branching)
+  - Working tree: clean
+
+  ARCHITECTURE
+  - Status source: existing GET /api/v1/status, unchanged
+  - Polling interval: 10 seconds
+  - Client role: notifier only — never fetches additional API objects, never reconstructs canonical state client-side
+  - SSR authority: full-page reload is the only "update" mechanism, obtaining a fresh coherent query.Store snapshot
+  - WebSocket: none
+  - SSE: none
+  - Core RPC: none (unchanged in serve)
+  - Mempool: none, explicitly excluded
+
+  LIVE SCRIPT
+  - Path: internal/web/static/live.js
+  - Embedded: yes, via go:embed (same mechanism as app.css)
+  - Cache mode: cache: "no-store"
+  - Hidden-tab behavior: poll exits immediately while document.hidden; immediate catch-up poll on visibilitychange to visible
+  - Overlap prevention: in-flight boolean flag
+  - Failure behavior: silent — retains last known checkpoint, no reload, no false banner, no console spam
+
+  HOME
+  - Initial tip: data-indexed-height/data-indexed-hash on hero section, sourced from Status
+  - Change detection: indexed_block_hash change
+  - Auto-refresh: yes, when new height ≥ baseline height
+  - Lower-height/reorg-safe behavior: shows banner instead of reloading, waits for next poll to observe stabilized tip
+
+  BLOCKS
+  - First page: live-refresh eligible (data-live-refresh="blocks", FirstPage = before == nil)
+  - Historical pages (?before=...): never auto-reload, no eligibility marker
+  - Limit/pagination preserved: unaffected (unchanged from Phase 2E.1)
+
+  DETAIL PAGES
+  - Block: notify-only, no auto-refresh
+  - Transaction: notify-only, no auto-refresh
+  - Address: notify-only, no auto-refresh
+  - Raw P2QPK witness (?include_witness=true): notify-only, never auto-refreshes
+  - Auto-refresh: disabled on all of the above by construction (no data-live-refresh marker present)
+  - Banner: shown on tip change, user-controlled Refresh button
+
+  BANNER
+  - ARIA: role="status" aria-live="polite"
+  - Message: neutral — "The indexed canonical tip changed." (never claims "new block")
+  - Refresh control: real <button>, keyboard accessible
+  - No focus stealing: confirmed — banner only unhidden, never .focus()ed
+
+  SECURITY
+  - CSP: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'
+  - script-src: 'self' only
+  - No inline JS: confirmed (<script src="/static/live.js" defer>, no inline blocks)
+  - No eval: confirmed (TestLive_ScriptContract)
+  - No innerHTML: confirmed (TestLive_ScriptContract, uses textContent)
+  - No external JS: confirmed (TestLive_NoExternalScriptOrCDN)
+
+  P2QPK
+  - Default 17088 hidden: unchanged
+  - Default 32 hidden: unchanged
+  - Raw 17088 exact: unchanged
+  - Raw 32 exact: unchanged
+  - Auto-refresh disabled: yes, ?include_witness=true carries no live-refresh marker
+
+  P2TR
+  - Distinct: unchanged from Phase 2E.1
+
+  SNAPSHOTS
+  - ExplorerOverview: PASS, rerun explicitly
+  - AddressDetail: PASS, rerun explicitly
+  - Transaction: PASS (TestSnapshotConsistency_TransactionDetail_ConcurrentReorg)
+  - Block: PASS (TestSnapshotConsistency_BlockDetail_ConcurrentReorg)
+  - Regression tests: all 4 pass, no mixed-branch results
+
+  API
+  - status: unchanged JSON shape/behavior
+  - Other routes: unchanged
+  - Behavior changed: NO
+
+  TESTS
+  - HTML contract: A–J covered in live_test.go
+  - live.js contract: TestLive_ScriptContract (required + forbidden substrings)
+  - PostgreSQL: actually executed (real timings, no skips)
+  - Existing web regression: all pass unmodified
+  - API regression: all pass unmodified
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all 9 packages pass
+  - go test -race: all 9 packages pass, first attempt
+  - go build: clean
+  - Manual smoke: seeded isolated schema, ran serve binary, confirmed all routes, live.js inclusion, banner markup, initial tip data attributes; optional live check confirmed old-page baseline (A) stayed fixed while /api/v1/status reported the new tip (B) and a fresh request returned the coherent B snapshot; schema dropped afterward
+
+  PHASE BOUNDARY
+  - migrations/: ZERO
+  - store/: ZERO
+  - indexer/: ZERO
+  - decode/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - query/: ZERO
+  - api/: ZERO
+  - rpc/: ZERO
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop.
+  Do not merge.
+  Do not begin mempool work.
+
+✻ Baked for 11m 15s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Stop for internal review
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #8 · ← 1 agent
