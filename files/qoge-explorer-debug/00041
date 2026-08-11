@@ -1,0 +1,75 @@
+● Now let's verify the phase boundary is still respected and check the diff.
+
+  Ran 1 shell command 
+
+● Zero diff in all frozen paths, changes confined exactly to internal/mempool/ and docs/ARCHITECTURE.md as required. Let's commit and push.
+
+  Committed 0e067a0, pushed to phase2f-mempool-foundation, ran 2 shell commands 
+
+● PR #9 updated to the new head. Working tree is clean.
+
+  Ran 1 shell command 
+
+● PHASE 2F.1 INTERNAL REVIEW FIX
+
+  Commit: 0e067a0c954652d37d7bbc34eaa0d5613e107f0a
+  PR head: 0e067a0c954652d37d7bbc34eaa0d5613e107f0a (PR #9, updated)
+
+  DEPENDENCY ORDERING
+  - Old failure: confirmed root cause — mempool_dependencies FKs into mempool_transactions(txid) broke on child-before-parent lexicographic insertion
+  - Two-pass insertion: implemented (insertCandidateTransactionBody then insertCandidateDependencies, same transaction)
+  - Parent existence: guaranteed before any dependency row is inserted
+  - Candidate order independent: yes, proven for arbitrary slice order
+  - Child-before-parent PostgreSQL test: TestReplaceSnapshot_DependencyOrderIndependent — PASS
+  - Synchronizer lexical-order test: TestRefreshOnce_ChildBeforeParentLexicalOrder — PASS (real getrawmempool → lexical sort → decode → ReplaceSnapshot pipeline)
+  - Dangling dependency rejection: unchanged, still rejected (TestReplaceSnapshot_DanglingDependencyRejected — PASS)
+
+  RPC IDENTITY
+  - Requested txid check: added (txn.TxID != txid after decode)
+  - Mismatch behavior: whole candidate discarded via new ErrRPCIdentityMismatch (distinct from ErrMempoolRace)
+  - Mismatch test: TestRefreshOnce_RPCIdentityMismatchRejected — PASS (previous snapshot retained, generation unchanged)
+  - vsize/weight consistency decision: checked live — Core's own help getrawmempool documents vsize/weight as always-present (not marked "optional", unlike fee/modifiedfee/etc.); added a cross-check against decoded VSize/Weight when Core supplies them, rejecting on disagreement, skipped only if the field is absent
+
+  ATOMICITY
+  - Single transaction: preserved
+  - State last: preserved
+  - Rollback: preserved (failed replacement leaves prior snapshot byte-identical)
+  - Generation: unchanged semantics — increments only on success
+
+  P2QPK
+  - v2/32 / 17088 / 32 / byte-exact / txid≠wtxid: all reconfirmed, TestP2QPKAndP2TR_EndToEnd — PASS
+  - P2TR: distinct from P2QPK, confirmed
+
+  CONFIRMED STATE
+  - Non-mutation test: TestConfirmedState_UnaffectedByMempoolReplacement — PASS, zero change across all 12 confirmed tables
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all 10 packages pass (-count=1)
+  - go test -race: all 10 packages pass
+  - go build: clean
+  - PostgreSQL executed: YES (real timings, no skips)
+
+  PHASE BOUNDARY
+  - query/: ZERO
+  - api/: ZERO
+  - web/: ZERO
+  - indexer/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - confirmed Store behavior: ZERO
+  - (migrations/0002 unchanged — two-pass insertion needed no schema change, as anticipated)
+  - Diff confined to internal/mempool/ + docs/ARCHITECTURE.md
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop. Do not merge. Do not begin Phase 2F.2.
+
+✻ Sautéed for 7m 33s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #9 · ← 1 agent
