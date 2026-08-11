@@ -1,0 +1,85 @@
+● Now let's rerun gofmt/build to confirm doc edits didn't break anything (docs are markdown, but let's do a final full sanity pass) and check the phase boundary one more time:
+
+  Ran 1 shell command 
+
+● Exactly the three expected files. Now commit, push, and update the PR.
+
+  Committed 0d40c83, pushed to phase2e-live-chain-ui, ran 1 shell command 
+
+● PR #8 updated, still OPEN, not merged.
+
+  PHASE 2E.2 INTERNAL REVIEW FIX
+
+  Commit: 0d40c83 | PR head: 0d40c834decea3a83049d314dcc9192b345090d8
+
+  BASELINE MODES
+  - Home rendered baseline: hasStatusBaseline = true immediately, from rendered data-indexed-height/data-indexed-hash
+  - Blocks rendered baseline: hasStatusBaseline = true immediately, from rendered data-block-height/data-block-hash on first row
+  - Notify-only first-poll baseline: hasStatusBaseline starts false; first successful response silently sets it, no banner/reload
+  - Empty-chain distinction: preserved — auto pages use an explicit flag, not a null check, so -1/null baseline still auto-refreshes correctly on the first real block
+
+  DETAIL PAGES
+  - First successful poll: silently establishes baseline, no banner
+  - Unchanged tip banner: stays hidden
+  - Subsequent changed tip: banner appears
+  - Auto-reload: never
+
+  RAW P2QPK
+  - First poll: no false banner (verified via Node-vm harness pattern + live curl check confirming no data-live-refresh marker)
+  - Tip change banner: appears on real change
+  - Auto-reload: never
+  - Witness behavior unchanged: yes — no diff to tx templates/handlers
+
+  AUTO PAGES
+  - Home: unchanged — same-tip first poll produces no banner/reload; verified
+  - First blocks page: unchanged — same logic path as home
+  - Rendered-baseline detection: first poll still detects a gap block indexed between render and first request, verified
+  - Lower-height reorg behavior: unchanged — banner only, no reload, verified
+
+  FAILURE
+  - Failure before baseline: baseline stays uninitialized, no banner
+  - Later first success: becomes baseline silently, verified
+
+  TESTS
+  - Initialization contract: TestLive_ScriptContract now asserts hasStatusBaseline is present in the shipped source
+  - Existing live tests: all pass unmodified
+  - P2QPK: unchanged, confirmed via full regression pass
+  - Snapshot regression: all 4 explicitly rerun, PASS
+  - PostgreSQL: actually executed (real timings, no skips)
+
+  Additionally: the actual state machine (not just source-grep) was verified by executing the real, unmodified live.js under Node's built-in vm module in a throwaway, uncommitted scratch harness — 13 assertions covering both baseline modes, failure-before-first-success, and all three home-page tip-change cases, all PASS. No npm/jsdom/package.json was added anywhere in the repo.
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all 9 packages pass
+  - go test -race: all 9 packages pass, first attempt
+  - go build: clean
+
+  PHASE BOUNDARY
+  - migrations/: ZERO
+  - store/: ZERO
+  - indexer/: ZERO
+  - decode/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - query/: ZERO
+  - api/: ZERO
+  - rpc/: ZERO
+  - cmd/: ZERO
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop.
+  Do not merge.
+  Do not begin mempool work.
+
+✻ Crunched for 7m 2s
+
+※ recap: Building the QOGE Go Explorer's server-rendered UI in phases; just pushed a fix for a false live-refresh banner on detail pages to PR #8. Next: wait for further review/merge instructions before continuing. (disable recaps in /config)
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Merge PR #8 and run post-merge verification.
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #8 · ← 1 agent
