@@ -1,0 +1,61 @@
+● Documentation is now corrected and expanded. Let's mark this task complete and move to the final quality gates.
+
+  Ran 4 shell commands 
+
+● All plain tests pass. Now -race:
+
+  Ran 1 shell command 
+
+● Clean pass on the first attempt this time — no retry needed. Now let's verify the phase boundary is still zero-diff.
+  
+  Ran 1 shell command 
+
+● All frozen paths remain zero-diff. Let's also confirm P2QPK and money-representation preservation explicitly, and check the overall diffstat before committing.
+
+  Ran 1 shell command 
+
+● Everything checks out. Let's review the full diff before staging/committing.
+ 
+  Ran 2 shell commands 
+
+● All within internal/query, internal/api, and docs/. No files outside the project. Let's stage and commit.
+
+  Committed 131fff6, pushed to phase2d-read-api, ran 2 shell commands 
+
+● PR #6 updated with head 131fff6, still open, not merged.
+
+● PHASE 2D.1 REVIEW FIXES
+
+  Commit: 131fff6 | PR head: 131fff6ebffb7da5d04905e7ac5cd34a4b3b1fbb (PR #6, OPEN, not merged)
+  
+  READ SNAPSHOTS
+  - Isolation: pgx.RepeatableRead + AccessMode: ReadOnly via Store.readTx
+  - Read-only: never acquires lockCheckpoint; rolled back (never committed) — nothing to persist
+  - Transaction detail: TransactionByTxID/TransactionByWTxID — identity resolution + all detail reads share one snapshot
+  - Block detail: BlockByHeight/BlockByHash — header + tx-refs share one snapshot
+  - Concurrent-reorg test: snapshot_test.go, deterministic hook-based sync (no sleep), passes under -race ×5 repeats
+
+  ADDRESS HISTORY
+  - Receive source: output_addresses → transaction_outputs → block_transactions → blocks WHERE canonical
+  - Spend source: output_addresses → transaction_inputs (prevout match) → spending tx's block_transactions → blocks WHERE canonical
+  - Genesis destination: now visible in history despite zero balance (new test)
+  - Canonical filtering / orphan exclusion: preserved, reorg + flip-back tested
+  - Multisig separation: preserved, explicit regression test added
+
+  HTTP ERRORS — 400/404/405 all JSON; Allow header on 405; routing precedence verified (GET→handler, other methods→405, unknown path→404 regardless of method)
+
+  READ-ONLY ENFORCEMENT — now compares exact mutable content (sync_state, blocks canonical/orphaned_at, full utxo_state rows, full addresses rows) via reflect.DeepEqual, not just row counts; verified (throwaway test, removed) that it actually catches an injected UPDATE-only mutation
+
+  P2QPK / MONEY — unchanged and re-verified: default omits raw witness, opt-in returns byte-exact 17,088/32-byte items, P2QPK/P2TR stay distinct, _sats/_qoge exact, no float64
+
+  QUALITY — gofmt/vet/build clean; go test and go test -race pass across all packages on the first attempt; phase boundary confirmed zero-diff on all six frozen paths
+
+  Stop. Not merged. Branch phase2d-read-api intact. Web UI not started.
+
+✻ Baked for 17m 15s
+                                                                    
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #6 · ← 1 agent
+
