@@ -1,0 +1,116 @@
+● Now let's run the crash → restart sequence as two separate process invocations.
+
+  Ran 1 shell command 
+
+● Process 1 published up to generation 3 and exited without cleanup. Now let's verify the schema is genuinely intact (no process running) before restarting.
+
+  Ran 1 shell command 
+
+● Confirmed independently: generation=3 persists with no process running. Now restart and verify continuation.
+
+  Ran 1 shell command 
+
+● Crash/restart semantics confirmed: before (phase=restart): initialized=true generation=3 — the process picked up exactly where it left off (no clearing-on-start), then continued to generation 6. Now let's clean up the throwaway harness.
+
+  Ran 1 shell command 
+
+● Clean. Let's re-run full quality gates one final time before committing, since docs were edited after the last full run.
+
+  Ran 2 shell commands 
+
+● All green. Now let's verify the phase boundary — confirm zero diff in the frozen paths.
+
+  Ran 1 shell command 
+
+● Phase boundary confirmed clean — zero diff in every frozen path; only cmd/qoge-explorer/main.go, docs/ARCHITECTURE.md, and the minimal internal/rpc/block.go extension changed, plus new files. Let's commit and push.
+
+  Committed a5d0ab1, pushed to phase2f-mempool-foundation, created PR #9, ran 1 shell command 
+  ⎿  PostToolUse:Bash says: Tip: Run /ultrareview before you push to catch bugs with a cloud-based multi-agent review — 3 free reviews left.
+
+● PR #9 created. Let's gather the final head SHA and file-boundary facts for the report.
+
+  Ran 1 shell command 
+
+● PHASE 2F.1 — MEMPOOL FOUNDATION
+
+  Branch: phase2f-mempool-foundation
+  Commit: a5d0ab16ddfb39bbba5d66d2e4f504cd5ef4d6fd
+  PR: https://github.com/QOGE/qoge-explorer/pull/9 (OPEN, mergeable, base main)
+
+  BASELINE
+  - main: 026d91a82e1115d1406373aee89034e78fd173f9 (confirmed exact)
+  - working tree: clean
+
+  ARCHITECTURE
+  - Confirmed state: unchanged, zero diff
+  - Mempool state: dedicated mempool_* tables, no required FK into confirmed tables
+  - Serve Core dependency: unchanged — serve still requires only PostgreSQL
+  - Index integration: Synchronizer.Run as a second goroutine in runIndex, own cancellable context, wg.Wait()'d before exit
+  - Failure isolation: Synchronizer.Run never returns an error; every failure is logged and retried
+
+  MIGRATION
+  - Version: 0002_mempool_cache
+  - 0001 unchanged: confirmed (zero diff)
+  - Up/Down/Re-up: all verified (TestMigration_0002RoundTrip, plus existing store migration tests exercising the same files)
+
+  MEMPOOL STATE
+  - Initialized distinction: explicit boolean, CHECK-enforced, no fake anchor hash
+  - Generation: increments only on successful commit, including non-empty→empty
+  - Observed at / Core anchor / Count / vsize / fees: all persisted and verified
+
+  TABLES
+  Transactions/Inputs/Witness/Outputs/Addresses/Participants/Dependencies: all present, cascade-linked, structurally isolated from confirmed schema
+
+  RPC
+  - getrawmempool: GetRawMempoolVerbose, confirmed against live Core
+  - getrawtransaction: reused existing helper
+  - Verbose DTO: RawMempoolEntry/MempoolFees
+  - Exact fee parsing: via decode.DecodeAmount, never float64
+  - Confirmed-tx detection: new optional RawTransaction.BlockHash
+
+  SNAPSHOT ACQUISITION
+  - Initial/final DB+Core anchors: checked before and after acquisition
+  - Tip movement / tx disappearance / tx confirmation race: all discard the candidate (ErrMempoolRace), verified by deterministic fixtures
+  - Bounded RPC work: sequential fetch, no unbounded goroutines
+
+  ATOMIC REPLACEMENT
+  - One DB transaction, state updated last, FOR UPDATE row lock
+  - Failed replacement leaves prior snapshot byte-identical (test-verified)
+  - Empty snapshot / generation semantics: correct per spec
+
+  CONFIRMED NON-MUTATION
+  Exact per-table content comparison (not row counts) before/after mempool writes — zero change across all 12 confirmed tables
+
+  P2QPK
+  Structural v2/32, 17,088+32-byte witness, byte-exact read-back, program≠pubkey confirmed, verification: NONE (as required)
+
+  P2TR: distinct from P2QPK, confirmed
+  TXID/WTXID: explicit distinct-fixture guard, persisted independently
+  MULTISIG: no destination row, participants stored separately, confirmed balances unaffected
+
+  FAILURE BEHAVIOR
+  RPC failure / mempool race / confirmed-index-behind: all preserve previous snapshot, confirmed indexing never halted (verified live and by fixture)
+
+  RUNTIME
+  10s default poll, historical-sync skip via anchor mismatch, clean cancellation, no goroutine leak
+
+  PUBLIC SURFACE
+  Query/API/Web changes: ZERO. Mempool UI: NONE
+
+  TESTS: 23 tests, all passing (migration, atomicity ×10, race fixtures ×6, money ×8 subtests, P2QPK/P2TR/txid-wtxid, multisig, OP_RETURN, confirmed non-mutation)
+  QUALITY: gofmt/vet/build clean; go test/go test -race all packages pass with PostgreSQL actually executing
+  Real Core check: live mainnet node (height ~2,442,810) — synchronizer published real snapshots end-to-end; crash/restart smoke confirmed generation continuity with no clearing-on-start (independently verified via psql with no process running)
+
+  PHASE BOUNDARY: zero diff in migrations/0001, store/, indexer/, decode/ (behavior), script/, chain/, query/, api/, web/ — changes confined to internal/mempool/ (new), internal/rpc/ (new file + one optional field), cmd/qoge-explorer/main.go, docs/ARCHITECTURE.md
+
+  FILES OUTSIDE PROJECT: NONE (throwaway .smoketmp/ harness deleted after use)
+
+  Stop. Do not merge. Do not begin Phase 2F.2.
+
+✻ Baked for 30m 10s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #9 · ← 1 agent
+
