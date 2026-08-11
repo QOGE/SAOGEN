@@ -1,0 +1,79 @@
+● Now let's build and run the tests to verify everything compiles and passes.
+
+  Ran 1 shell command 
+
+● Clean. Now let's run the test suites with the real database.
+
+  Searched for 1 pattern, ran 1 shell command 
+
+● All targeted tests pass. Now let's run the full quality gate suite.
+
+  Ran 1 shell command 
+
+● All packages pass. Now let's run with -race.
+
+  Ran 1 shell command 
+
+● All packages pass cleanly under -race on the first attempt. Now let's confirm the phase boundary is still zero-diff on all six frozen paths.
+
+  Ran 1 shell command 
+
+● Zero diff on all six frozen paths, and only test files touched. Now let's stage, commit, and push.
+
+  Committed a963423, pushed to phase2d-read-api, ran 2 shell commands 
+
+● PHASE 2D.1 FIXTURE HARDENING
+
+  Commit: a963423 | PR head: a9634230d1e8a574329e153a6ad86c70f7c735bc (PR #6, OPEN)
+
+  HTTP P2QPK PIPELINE
+  - Raw RPC DTO: rawBlockFixture/rawSpendTx/rawVout in new internal/api/decodedfixtures_test.go
+  - DecodeBlock: real decode.DecodeBlock call, fakeAddressResolver satisfies the interface (unused here — Core reports P2QPK's address directly)
+  - Store: real st.ApplyBlock
+  - Query: real query.Store via newTestServer
+  - HTTP: real httptest request against s.ServeHTTP
+  - Structural OP_2/PUSH32: witnessProgramScript(script.P2QPKWitnessVersion, program) — decoder assigns script.TypeP2QPK, not the fixture
+  - 17,088 bytes: w[0].SizeBytes == script.P2QPKSignatureLength, default DataHex == nil; opt-in DataHex decodes to exactly 17,088 bytes, byte-exact
+  - 32 bytes: same pattern for w[1] (pubkey) and witness_program
+  - Address: qDP2QPKDest, asserted from JSON address field
+  - Witness program: asserted byte-exact via decoded hex, not substring match
+
+  HTTP WTXID
+  - txid != wtxid: enforced by t.Fatalf guard in the fixture-consuming tests
+  - txid lookup: GET /api/v1/tx/<txid> — direct TransactionByTxID hit
+  - wtxid lookup: GET /api/v1/tx/<wtxid> — new TestTransactionEndpoint_WTxIDFallback
+  - Actual fallback exercised: confirmed (TransactionByTxID misses, TransactionByWTxID resolves); old coincidental txid==wtxid check in TestTransactionEndpoint relabeled, not removed
+
+  GENESIS P2PK
+  - Raw script: p2pkScript(label) — PUSH33/33-byte pubkey/OP_CHECKSIG, replacing the mismatched p2pkhScript
+  - ScriptType: script.TypeP2PK, now structurally consistent with the script bytes
+  - Genesis zero balance: unchanged, still passes
+  - Genesis history: unchanged, still passes
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all packages pass (api 6.8s, chain, decode, indexer 19.2s, query 15.8s, script, store 40.9s)
+  - go test -race: all packages pass on first attempt, no reruns needed
+  - go build: clean
+  - PostgreSQL: real DB via .localdev/test.env
+
+  PHASE BOUNDARY
+  - migrations/: ZERO
+  - store apply/reorg: ZERO
+  - decode/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - indexer/: ZERO
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop. Do not merge. Do not delete phase2d-read-api.
+
+✻ Sautéed for 7m 23s
+                                                                                                                                                                                                                                                                                                                                                                                           
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Show me the CI status on PR #6
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
