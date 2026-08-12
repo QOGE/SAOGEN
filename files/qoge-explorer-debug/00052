@@ -1,0 +1,194 @@
+● Confirmed and cleaned up — working tree clean. Let's do the final phase boundary re-check on merged main and check migration-down doesn't drop chain_deployments explicitly.
+
+  Ran 1 shell command 
+
+● Now let's verify serve/Core separation (step 22) explicitly.
+
+  Ran 1 shell command 
+
+● No RPC/deployment references in runServe — confirmed. Now checking public surface (step 23) — no new HTTP routes or web pages.
+
+  Ran 1 shell command 
+
+● All checks green. Proceeding to branch cleanup as instructed — deleting the merged phase2g-deployment-observer branch locally and remotely.
+
+  Ran 1 shell command 
+
+● Branch cleanup complete. Final working-tree check before the report.
+
+  Ran 1 shell command 
+
+● PHASE 2G.1 MERGE
+
+  PR: 11
+  Reviewed head: 2da8ec0a0c155d9cb7244fb32a854d7fd9e19d65
+  Merge method: normal merge commit (gh pr merge 11 --merge)
+  Actual merge commit: 857785dded1f60d5da59ca66e14eaf08168ab4bd
+
+  PRE-MERGE
+
+  - State: OPEN, not draft, not merged
+  - Mergeable: MERGEABLE / mergeStateStatus CLEAN
+  - Base: main @ af378d1ee0a2048ce0c8a5300b1efeaa907a7057 (matches frozen base)
+  - Head: phase2g-deployment-observer @ 2da8ec0a0c155d9cb7244fb32a854d7fd9e19d65 (matches reviewed head exactly)
+  - Working tree: clean
+  - Phase boundary: zero changes to query/api/web/store/indexer/decode/script/chain; only migrations/0003_* + internal/deployments/ + internal/rpc/deployment.go + cmd/main.go + docs/ARCHITECTURE.md + test-only internal/mempool/migration_test.go
+
+  MAIN
+
+  - Local HEAD: 857785dded1f60d5da59ca66e14eaf08168ab4bd
+  - origin/main: 857785dded1f60d5da59ca66e14eaf08168ab4bd
+  - Match: YES
+  - First parent: af378d1ee0a2048ce0c8a5300b1efeaa907a7057 ✓
+  - Second parent: 2da8ec0a0c155d9cb7244fb32a854d7fd9e19d65 ✓
+
+  MIGRATION
+
+  - v2->v3: PASS | v3->v2: PASS | re-up: PASS (TestMigrationRoundTrip_PreservesExistingData)
+  - Confirmed preserved: YES (byte-fingerprinted)
+  - Mempool preserved: YES (byte-fingerprinted)
+  - chain_deployments preserved on down: YES — 0003's down.sql drops only deployment_state; confirmed both by inspection and by requireTableExists(..., "chain_deployments") assertions after rollback in two independent tests
+
+  STATE
+
+  - Uninitialized: verified (initialized=false, generation=0, NULL anchor, count=0)
+  - Initialized non-empty: verified
+  - Initialized empty: verified, distinct from uninitialized
+  - Generation: increments only on successful publication, unchanged on failure/skip
+  - Anchor: core_tip_height/hash set together with initialization
+
+  REQUIRED FIELDS
+
+  - Top-level: height/deployments missing-or-null rejected; explicit {} accepted
+  - Deployment active: missing-or-null rejected (buried and bip9 both)
+  - BIP9: start_time/timeout/min_activation_height/since missing-or-null rejected; status/status_next enum rejects missing (empty-string zero value)
+  - Statistics: period/elapsed/count missing-or-null rejected when statistics object present
+  - Buried: height required (confirmed against QOGE/qogecoin stable SoftForkDescPushBack), active required
+  - Null handling: explicit JSON null rejected identically to absence for every required field
+  - Explicit deployments {}: succeeds — 0 BIP9 deployments, no error
+
+  RAW JSON
+
+  - Semantic preservation: full — round-trip tested, never reconstructed from status/since/normalized values
+
+  BIP9
+
+  - Buried persisted: NO
+  - P2QPK special casing: NONE
+  - Independent VersionBits logic: NONE
+
+  ATOMICITY
+
+  - State lock: FOR UPDATE first
+  - Full replacement: DELETE then INSERT complete set
+  - State last: deployment_state updated after all rows inserted
+  - Rollback: proven via mid-transaction JSONB-validation failure — old rows/state/generation preserved
+  - Generation: correct in all cases (success, failure, empty↔non-empty)
+
+  ACQUISITION
+
+  - Initial DB/Core: checked, must match
+  - Explicit hash: always getdeploymentinfo <confirmed-indexed-hash>, never implicit
+  - Response anchor: checked against queried hash/height
+  - Final Core: re-checked
+  - Final DB: re-checked
+  - Race rejection: all 9 deterministic fixture scenarios pass, no sleeps
+
+  NON-MUTATION
+
+  - Confirmed: zero change (12-table fingerprint)
+  - Mempool: zero change (8-table fingerprint)
+
+  RUNTIME
+
+  - Index integration: goroutine alongside mempool observer, same cancel/wait shutdown discipline
+  - Deployment failure isolation: logged, retried, never halts confirmed indexing
+  - Confirmed failure behavior: unchanged (fatal), cancels/waits both observers on exit
+  - Historical sync: publication skipped while DB≠Core tip; confirmed indexing unaffected
+  - Serve Core dependency: NONE — confirmed via inspection of runServe
+
+  PUBLIC SURFACE
+
+  - Deployment API: NONE
+  - Deployment UI: NONE
+  - P2QPK homepage: NONE
+  - Browser polling: NONE
+
+  REAL CORE
+
+  - Smoke: YES — fresh live response from running mainnet node, both implicit and explicit-hash calls identical, fed through the merged decoder successfully
+  - P2QPK present: YES
+
+  ┌────────────────┬────────────┐
+  │     Field      │   Value    │
+  ├────────────────┼────────────┤
+  │ Type           │ bip9       │
+  ├────────────────┼────────────┤
+  │ Active         │ false      │
+  ├────────────────┼────────────┤
+  │ Status         │ started    │
+  ├────────────────┼────────────┤
+  │ Status next    │ started    │
+  ├────────────────┼────────────┤
+  │ Since          │ 2443392    │
+  ├────────────────┼────────────┤
+  │ Bit            │ 3          │
+  ├────────────────┼────────────┤
+  │ Start          │ 1786284720 │
+  ├────────────────┼────────────┤
+  │ Timeout        │ 1794060720 │
+  ├────────────────┼────────────┤
+  │ Min activation │ 0          │
+  ├────────────────┼────────────┤
+  │ Period         │ 8064       │
+  ├────────────────┼────────────┤
+  │ Threshold      │ 6048       │
+  ├────────────────┼────────────┤
+  │ Elapsed        │ 784        │
+  ├────────────────┼────────────┤
+  │ Count          │ 782        │
+  ├────────────────┼────────────┤
+  │ Possible       │ true       │
+  └────────────────┴────────────┘
+
+  (Observation only — height 2444175 at capture time; not committed to source.)
+
+  REGRESSIONS
+
+  - Confirmed snapshots: 4/4 PASS
+  - Mempool snapshots: 2/2 PASS
+  - Phase 2F.1: 7/7 PASS
+
+  QUALITY
+
+  - gofmt: clean
+  - go vet: clean
+  - go test: 11/11 packages PASS (-count=1)
+  - go test -race: 11/11 packages PASS
+  - go build: clean
+  - PostgreSQL executed: YES (real, no skips)
+
+  PHASE BOUNDARY
+
+  query/: ZERO | api/: ZERO | web/: ZERO | store/: ZERO | indexer/: ZERO | decode/: ZERO | script/: ZERO | chain/: ZERO | mempool production/: ZERO
+
+  BRANCH
+
+  - phase2g-deployment-observer: deleted (local and remote), all post-merge checks green prior to deletion
+
+  WORKING TREE
+
+  - Status: clean, on main @ 857785dded1f60d5da59ca66e14eaf08168ab4bd
+
+  FILES OUTSIDE PROJECT
+
+  NONE
+
+  Stop.
+
+✻ Cogitated for 6m 29s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
