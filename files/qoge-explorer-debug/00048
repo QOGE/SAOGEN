@@ -1,0 +1,180 @@
+I need to reset the smoke DB since the prior run already advanced it to a non-empty state. Let me stop serve, recreate the DB, and restart cleanly.
+
+  Ran 2 shell commands 
+
+● Serve is running fresh against a clean, uninitialized DB. Uninitialized state confirmed via API (initialized=false, status=uninitialized, stale=false). Now running step A and checking the live server.
+
+  Ran 2 shell commands 
+
+● Step A (fresh) confirmed live via both JSON API and SSR. Now step B — advance confirmed tip without touching the mempool snapshot.
+
+  Ran 2 shell commands 
+
+● Step B (stale) confirmed live with correct neutral wording, no "advanced past"/"ahead of"/"newer than". Now step C — replace mempool snapshot anchored to the new confirmed tip.
+
+  Ran 2 shell commands 
+
+● Fresh → stale → fresh smoke fully verified live through both JSON API and SSR. Cleaning up: stopping serve, dropping the smoke DB, and removing the temporary test file.
+
+  Ran 1 shell command 
+
+● Working tree clean after cleanup. Now confirming the final phase boundary and doing a last full-suite sanity pass to make sure removing the scratch test file left everything intact.
+
+  Ran 1 shell command 
+
+● Confirmed zero diff in all frozen directories and clean working tree. Now let's verify P2QPK/P2TR and other domain checks with a final targeted rerun, then confirm branch state before cleanup.
+
+  Searched for 1 pattern, ran 4 shell commands 
+
+● No pending-balance/activity features found on address pages — confirmed CONFIRMED-ONLY. All checks are complete. Now confirming branch state and doing cleanup per step 30.
+
+  Ran 1 shell command 
+
+● All post-merge checks are green. Proceeding with branch cleanup as explicitly instructed.
+
+  Ran 1 shell command 
+
+● Branch cleanup complete — both local and remote phase2f-mempool-read-ui deleted, confirmed empty on listing.
+
+  PHASE 2F.2 MERGE
+
+  PR: 10
+  Reviewed head: d4deae447f10fab07e7da4cfff7e24421d1f6248
+  Merge method: normal merge commit (gh pr merge 10 --merge)
+  Actual merge commit: af378d1ee0a2048ce0c8a5300b1efeaa907a7057
+
+  PRE-MERGE
+  - State: OPEN, not merged, not draft
+  - Mergeable: MERGEABLE
+  - Base: main @ 2de0b2f83550b0da8f294de04ed2ae4d70d49668 — matched exactly
+  - Head: phase2f-mempool-read-ui @ d4deae447f10fab07e7da4cfff7e24421d1f6248 — matched exactly
+  - Working tree: clean, before and after
+  - Phase boundary: zero diff in all 9 frozen directories, confirmed before merge
+
+  MAIN
+  - Local HEAD: af378d1ee0a2048ce0c8a5300b1efeaa907a7057
+  - origin/main: af378d1ee0a2048ce0c8a5300b1efeaa907a7057
+  - Match: yes
+  - First parent: 2de0b2f83550b0da8f294de04ed2ae4d70d49668 (frozen base) — matched
+  - Second parent: d4deae447f10fab07e7da4cfff7e24421d1f6248 (reviewed head) — matched
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all 10 packages PASS (-count=1)
+  - go test -race: all 10 packages PASS
+  - go build: clean
+  - PostgreSQL executed: YES (local PostgreSQL 16, real timings, no skips)
+
+  MEMPOOL STATE
+  - Uninitialized: initialized=false, status=uninitialized, stale=false — verified live via /api/v1/mempool against a freshly migrated, empty smoke DB
+  - Initialized empty / Fresh: anchor == confirmed tip → status=fresh, stale=false — verified live
+  - Stale: anchor != confirmed tip → status=stale, stale=true — verified live; no ordering inferred
+  - Same-height reorg: TestMempoolState_StaleOnSameHeightMismatch + TestMempoolPage_SameHeightReorgWording PASS
+
+  SNAPSHOTS
+  - Mempool overview: PASS
+  - Mempool detail: PASS
+  - Confirmed overview: PASS
+  - Confirmed address: PASS
+  - Confirmed transaction: PASS
+  - Confirmed block: PASS
+
+  PAGINATION
+  - Generation cursor: PASS (TestMempoolEndpoint_GenerationCursor, TestMempoolPage_GenerationCursorRedirects, TestMempoolPage_GenerationCursorPartial)
+  - 409: mempool_generation_changed confirmed via API test
+  - SSR reset: redirect-to-/mempool confirmed via web test
+
+  PREVOUT LINKS
+  - Confirmed parent: → /tx/{P}, not /mempool/tx/{P} — PASS
+  - Mempool parent: → /mempool/tx/{P}, not /tx/{P} — PASS
+  - No Core/database lookup added merely for link selection (Depends-based template helper only)
+
+  SEARCH
+  - Mempool fallback: PASS
+  - Same-txid fixture: confirmed to actually place the same txid in both confirmed transactions and mempool_transactions simultaneously (DB-level assertion in test)
+  - Confirmed precedence: redirects to /tx/{id}, not /mempool/tx/{id} — PASS
+  - Concurrency semantics: documented as sequential query.Store calls, not one atomic cross-domain snapshot (handler doc comment + ARCHITECTURE.md)
+
+  P2QPK
+  - v2/32: confirmed
+  - Default 17088 hidden: confirmed
+  - Default 32 hidden: confirmed
+  - Raw 17088: exact, byte-for-byte
+  - Raw 32: exact, byte-for-byte
+  - Byte exact: yes, no truncation
+  - Program wording: 32-byte witness program never called "public key"
+  - Verification: NONE (no SLH-DSA verification present)
+
+  P2TR
+  - Distinct: confirmed distinct from P2QPK across query/API/SSR (TestDecoded_P2TRDistinctFromP2QPK, TestTransaction_P2QPKAndP2TRPresentation)
+
+  MULTISIG
+  - Destination: monetary destination kept separate from participant identities
+  - Participants: TestMultisig_ParticipantsVisuallySeparate, TestAddressHistory_MultisigParticipantsExcluded PASS — no balance multiplication
+
+  MONEY
+  - Exact satoshis: int64 throughout, string/integer QOGE formatting — no float32/float64 path found
+  - Policy-feerate fabrication: none found; fee remains persisted Core-authored exact fee
+
+  ADDRESS
+  - Pending balance: NONE (grep across address handler/query/template returned zero matches)
+  - Pending activity: NONE
+
+  API
+  - /api/v1/mempool: uninitialized/fresh/stale all verified live and via tests
+  - /api/v1/mempool/tx/{id}: 404 on missing, verified live
+  - Confirmed tx endpoint separation: /tx/{id} and /api/v1/tx/{id} remain confirmed-only
+  - Core fallback: NONE — serve ran the full route smoke with no reachable Core and no RPC credentials set
+
+  SERVE
+  - Core dependency: none — binary started and served all routes against PostgreSQL only, RPC env vars unset
+  - Route smoke: all required routes returned expected codes (200 for pages/status/health, 404 for nonexistent block/tx/mempool-tx, 405+Allow: GET for wrong method, 404 for unknown route)
+  - Fresh/stale/fresh smoke: driven directly against an isolated, migrated smoke DB and verified live through both JSON API and SSR at each of the three states
+
+  SECURITY
+  - Escaping: TestEscaping_AddressContainingHTMLSpecialCharacters, TestMempoolPage_Escaping PASS; live XSS-payload search request produced no unescaped <script> in output
+  - CSP: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' — no unsafe-inline/unsafe-eval, unchanged
+  - GET-only: confirmed live (405 + Allow: GET on all four mempool routes)
+  - 404/405: confirmed live
+
+  LIVE
+  - Mempool live.js polling: NONE — internal/web/static/live.js byte-identical to frozen base (zero diff)
+
+  PHASE 2F.1 REGRESSION
+  - Dependency ordering: PASS
+  - RPC identity: PASS
+  - Vsize distinction: PASS
+  - Weight: PASS
+  - P2QPK: PASS
+  - Confirmed non-mutation: PASS (TestConfirmedState_UnaffectedByMempoolReplacement)
+
+  PHASE BOUNDARY
+  - migrations/: ZERO
+  - mempool writer/: ZERO
+  - rpc/: ZERO
+  - store/: ZERO
+  - indexer/: ZERO
+  - decode/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - cmd/: ZERO
+
+  BRANCH
+  - phase2f-mempool-read-ui: deleted (local + remote), confirmed after all post-merge checks passed green
+
+  WORKING TREE
+  - Status: clean on main @ af378d1e
+
+  FILES OUTSIDE PROJECT
+  NONE (a temporary verification test file used to drive the live fresh→stale→fresh smoke was created inside internal/query/ and deleted before any commit; a scratch smoke database was created and dropped; no artifact remains)
+
+  Stop.
+
+✻ Worked for 6m 27s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
+
