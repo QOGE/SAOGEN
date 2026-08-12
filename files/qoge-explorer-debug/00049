@@ -1,0 +1,147 @@
+● Background command "Run full test suite for Phase 2G.1" completed (exit code 0)
+
+● The background task's exit code was misleading due to the tee pipe — let me check the full log for other failures.
+
+  Read 1 file 
+
+● Only that one failure, now fixed. Let's format, build, and rerun the full suite.
+
+  Ran 1 shell command 
+
+● Build/vet clean, gofmt applied correctly. Let's rerun this specific test then the full suite.
+
+  Ran 1 shell command 
+
+● Fixed. Now let's rerun the complete suite, checking exit code properly this time.
+
+  Ran 1 shell command 
+
+● Full suite rerunning in the background with proper exit code tracking. I'll wait for it.
+
+✻ Baked for 20m 48s
+
+● Background command "Rerun full test suite with pipefail to get accurate exit code" completed (exit code 0)
+
+  Read 1 file 
+
+● All 11 packages pass. Now let's run go test -race.
+
+  Ran 1 shell command 
+
+● Race suite running in the background. I'll wait for it before continuing with regression reruns.
+
+✻ Crunched for 9s
+
+● Background command "Run full race-detector test suite" completed (exit code 0)
+
+  Read 1 file 
+
+● All 11 packages pass under -race. Now let's run the explicitly-named regression tests.
+
+  Ran 1 shell command 
+
+● All named regressions pass. Now let's verify the phase boundary before committing.
+
+  Ran 2 shell commands 
+
+● My phase-boundary check had a bug (empty commit range). Let me redo it correctly against the working tree.
+
+  Ran 2 shell commands 
+
+● Phase boundary confirmed: internal/query/, internal/api/, internal/web/ are byte-for-byte unchanged (required); internal/store/, internal/indexer/, internal/decode/, internal/script/, internal/chain/ are untouched; internal/mempool/ has exactly one test-only file change (an unavoidable consequence of adding migration 0003); internal/rpc/ only gained a new file. Quality gates complete.
+
+● Now let's commit, push, and open the PR.
+
+  Committed 32785e8, ran 1 shell command 
+
+● Now push and open the PR.
+
+  Pushed to phase2g-deployment-observer, created PR #11 
+
+● PR #11 opened. Let's confirm its state.
+
+  Ran 1 shell command 
+
+● PHASE 2G.1 — CONSENSUS DEPLOYMENT OBSERVER
+
+  Branch: phase2g-deployment-observer
+  Commit: 32785e88be74c7ccf43b4345483c53bb0d4199b1
+  PR: https://github.com/QOGE/qoge-explorer/pull/11 (OPEN, base main)
+
+  BASELINE
+  - main: confirmed at af378d1ee0a2048ce0c8a5300b1efeaa907a7057 before branching
+  - working tree: clean throughout
+
+  CORE RPC
+  - getdeploymentinfo helper: internal/rpc.GetDeploymentInfo(ctx, blockHash), minimal typed DTOs, no transport change
+  - Explicit block hash: always — never called with no argument
+  - Response anchor validation: response hash/height required to match the queried hash
+  - BIP9 decoding: strict, respects Core's actual field optionality per status
+  - Buried handling: decoded enough not to crash, never persisted
+
+  SCHEMA
+  - 0001 unchanged, 0002 unchanged
+  - 0003: deployment_state singleton, CHECK-constrained initialized/uninitialized consistency, mirrors mempool_state
+  - chain_deployments reuse: unmodified from 0001, written by the new Store
+  - Migration round trip: v2→v3→v2→v3 with real seeded confirmed/address/mempool data, all survives — PASS
+
+  STATE
+  - Uninitialized/initialized-empty/generation/anchor/observed_at: all match the mempool_state pattern exactly, all covered by store tests — PASS
+
+  ACQUISITION
+  - Initial DB tip → initial Core tip → explicit RPC anchor → final Core tip → final DB tip: all 5-point stability check implemented and tested
+  - Race rejection: 9 deterministic fixture scenarios (uninitialized, behind, hash mismatch, response anchor mismatch ×2, Core tip moved, DB tip moved, temporary RPC failure, malformed object) — all PASS, no sleeps
+
+  ATOMICITY
+  - Single PostgreSQL transaction, state lock FOR UPDATE first, full DELETE+INSERT replacement, state updated last, rollback on any error, generation increments only on success — all verified including a mid-transaction failure test proving rollback integrity
+
+  RUNTIME
+  - Index integration: goroutine alongside mempool synchronizer, same cancel/wait shutdown discipline
+  - Serve Core dependency: none, zero code change
+  - Deployment failure policy: logged, retried, never fatal
+  - Confirmed failure policy: unchanged
+  - Mempool interaction: zero (verified via table fingerprinting)
+  - Historical sync: never blocked by deployment observation
+  - Shutdown: verified via context-cancellation test
+
+  P2QPK (live observation, not committed to source)
+  - Core reports p2qpk: YES
+  - Type: bip9 | Active: false | Status: started | Status next: started
+  - Since: 2443392 | Bit: 3 | Start: 1786284720 | Timeout: 1794060720 | Min activation height: 0
+  - Period: 8064 | Threshold: 6048 | Elapsed: 390 | Count: 390 | Possible: true
+  - Hardcoded state: NONE
+
+  BURIED
+  - Persisted: NO — reason: no BIP9 status model exists for buried deployments; real Core response (bip34/bip66/bip65/csv/segwit) confirmed correctly excluded, only p2qpk and taproot (both bip9) survived decoding
+
+  NON-MUTATION
+  - Confirmed tables: fingerprinted before/after, byte-for-byte unchanged
+  - Mempool tables: fingerprinted before/after, byte-for-byte unchanged
+
+  REGRESSIONS
+  - Confirmed snapshots ×4: PASS | Mempool snapshots ×2: PASS | Phase 2F.1 (7 named tests): PASS
+
+  QUALITY
+  - gofmt: clean | go vet: clean | go test: 11/11 packages pass | go test -race: 11/11 pass | go build: clean
+  - PostgreSQL executed: YES (real local PostgreSQL, no skips)
+  - Real Core smoke: YES — live mainnet node, synced, real getdeploymentinfo response fed through the actual decoder
+
+  PHASE BOUNDARY
+  - query/: ZERO | api/: ZERO | web/: ZERO | store semantics: ZERO | indexer confirmed semantics: ZERO | decode/: ZERO | script/: ZERO | chain/: ZERO
+  - mempool semantics: ZERO (one test-only file touched — migration_test.go, updated because migration 0003 now sits on top of 0002; no production code changed)
+
+  FILES OUTSIDE PROJECT
+  NONE (a throwaway real-Core-response test file and a captured JSON fixture in the scratchpad were used for verification and removed/left outside the repo respectively)
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2G.2.
+  Do not begin final UI polishing.
+
+✻ Worked for 2m 1s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #11 · ← 1 agent
+
