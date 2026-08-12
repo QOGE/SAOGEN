@@ -1,0 +1,219 @@
+● Fetch(https://api.github.com/repos/QOGE/qoge-explorer/pulls/12)
+  ⎿  Received 16.7KB (200 OK)
+
+● Target verified. Now fetching the diff.
+
+● Fetch(https://github.com/QOGE/qoge-explorer/pull/12/files)
+  ⎿  Received 450KB (200 OK)
+
+● Fetch(https://github.com/QOGE/qoge-explorer/compare/857785dded1f60d5da59ca66e14eaf08168ab4bd...8b4e008b7a5b01aeb0a35941b678dd9f4d712aea.diff)
+  ⎿  Received 131.5KB (200 OK)
+
+● The WebFetch is summarizing. Let me fetch each file's raw content directly.
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/query/deployments.go)
+  ⎿  Received 16.3KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/api/handlers_deployments.go)
+  ⎿  Received 1.9KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/handlers_deployments.go)
+  ⎿  Received 1.8KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/query/deployments_test.go)
+  ⎿  Received 20.6KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/query/deployments_snapshot_test.go)
+  ⎿  Received 7.4KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/viewmodels.go)
+  ⎿  Received 4.9KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/templates/deployments.tmpl)
+  ⎿  Received 1.6KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/templates/deployment.tmpl)
+  ⎿  Received 3KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/helpers.go)
+  ⎿  Received 4.5KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/deployments_test.go)
+  ⎿  Received 17.9KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/api/handlers_deployments_test.go)
+  ⎿  Received 11.9KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/validate.go)
+  ⎿  Received 3.2KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/api/validate.go)
+  ⎿  Received 2.9KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/web.go)
+  ⎿  Received 3.5KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/api/server.go)
+  ⎿  Received 3.8KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/query/deployment_fixtures_test.go)
+  ⎿  Received 7.4KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/api/deployment_fixtures_test.go)
+  ⎿  Received 5.2KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/deployment_fixtures_test.go)
+  ⎿  Received 6KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qogecoin/stable/src/rpc/blockchain.cpp)
+  ⎿  Received 107.9KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/templates.go)
+  ⎿  Received 2.2KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/templates.go)
+  ⎿  Received 2.2KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/templates/header.tmpl)
+  ⎿  Received 582 bytes (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/templates.go)
+  ⎿  Received 2.2KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/helpers.go)
+  ⎿  Received 4.5KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/QOGE/qoge-explorer/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea/internal/web/templates/deployment.tmpl)
+  ⎿  Received 3KB (200 OK)
+
+● Fetch(https://api.github.com/repos/QOGE/qoge-explorer/contents/internal/web/templates/deployment.tmpl?ref=8b4e008b7a5b01aeb0a35941b678dd9f4d712aea)
+  ⎿  Received 5.2KB (200 OK)
+
+● Fetch(https://api.github.com/repos/QOGE/qoge-explorer/contents/internal/web/templates/deployments.tmpl?ref=8b4e008b7a5b01aeb0a35941b678dd9f4d712aea)
+  ⎿  Received 3.3KB (200 OK)
+
+● Fetch(https://api.github.com/repos/QOGE/qoge-explorer/pulls/12/commits)
+  ⎿  Received 11KB (200 OK)
+
+● Fetch(https://api.github.com/repos/QOGE/qoge-explorer/compare/857785dded1f60d5da59ca66e14eaf08168ab4bd...8b4e008b7a5b01aeb0a35941b678dd9f4d712aea)
+  ⎿  Received 168.5KB (200 OK)
+
+● Let me verify the 3rd commit specifically and check the file list via GitHub API contents.
+
+● Fetch(https://api.github.com/repos/QOGE/qoge-explorer/commits/8b4e008b7a5b01aeb0a35941b678dd9f4d712aea)
+  ⎿  Received 33.4KB (200 OK)
+
+● Fetch(https://api.github.com/repos/QOGE/qoge-explorer/commits/58c214bbb159eedf17133cee712287f4a181f080)
+  ⎿  Received 121KB (200 OK)
+
+● Fetch(https://api.github.com/repos/QOGE/qoge-explorer/commits/506f6fb0ec96cfcbec48ec728ce3450c5c9c90c2)
+  ⎿  Received 28.6KB (200 OK)
+
+● I now have sufficient data to complete the full analysis. Writing the report.
+
+  ---
+  PHASE 2G.2 FINAL INDEPENDENT REVIEW
+
+  PR head reviewed: 8b4e008b7a5b01aeb0a35941b678dd9f4d712aea
+  Base reviewed: 857785dded1f60d5da59ca66e14eaf08168ab4bd
+  Verdict: APPROVE
+
+  ---
+  Target verification: PASS. PR #12 confirmed: state=open, merged=false, draft=false, mergeable=true, base=main at 857785dded..., head=phase2g-deployment-read-ui at 8b4e008b7a..., exactly 3 commits ahead, 0 commits behind. All 6 verification fields match the specification exactly.
+
+  Phase boundary: PASS. All production changes are confined to internal/query/, internal/api/, internal/web/, and docs/ARCHITECTURE.md. Verified via GitHub's compare API and individual commit records. Zero diff confirmed across: migrations/, internal/deployments/, internal/rpc/, internal/store/, internal/indexer/, internal/mempool/, internal/decode/, internal/script/, internal/chain/, cmd/qoge-explorer/. Third commit (8b4e008, "test: align deployment fixtures with Core BIP9 shapes") modifies exactly 7 files — docs/ARCHITECTURE.md plus 6 *_test.go files across query/api/web — zero production code changed. ✓
+
+  Core current/next-state semantics: PASS. Independently verified against QOGE/qogecoin stable/src/rpc/blockchain.cpp. SoftForkDescPushBack computes current_state = VersionBitsState(blockindex->pprev) and next_state = VersionBitsState(blockindex), then emits "active": (next_state == ACTIVE), "status" from current_state, "status_next" from next_state. The explorer reads active directly from raw_json['active'] (Core-produced); it is never re-derived from the normalized status column. The commit 3 message explicitly states: "top-level active reflects next_state, not current_state, so the shared bip9Fixture test helper now derives it from statusNext." No layer synthesizes active from status. ✓
+
+  Core has_signal semantics: PASS. SoftForkDescPushBack: has_signal = (current_state == STARTED || current_state == LOCKED_IN). When has_signal is true, Core emits bit, statistics, and signalling. Explorer commit 3 corrects fixtures to match: DEFINED and FAILED carry none of the three; STARTED and LOCKED_IN carry all three (LOCKED_IN omits threshold/possible inside statistics). ✓
+
+  DEFINED shape: PASS. bit absent, statistics absent, signalling absent. Template: {{if .Deployment.Bit}} → false for nil pointer; {{if .Deployment.Statistics}} → false for nil pointer; {{if .Deployment.Signalling}} → false for nil/empty string. "Core did not report signalling statistics for this deployment state." shown. ✓
+
+  STARTED shape: PASS. bit present (Bit *int, non-nil → shown), statistics present (Statistics *Statistics, non-nil → shown), threshold present (Threshold *int64 non-nil, {{if .Statistics.Threshold}} = true → Threshold row shown), possible present (Possible *bool non-nil → {{if .Statistics.Possible}} = true → Possible row shown via optionalYesNo), signalling present. ✓
+
+  LOCKED_IN shape: PASS. bit present, statistics present, threshold absent (Core omits it for LOCKED_IN → Threshold = nil → {{if .Statistics.Threshold}} = false → row hidden), possible absent (Possible = nil → {{if .Statistics.Possible}} = false → row hidden), signalling present. Confirmed by p2qpkLockedInFixture() in all three test packages after commit 3 correction. ✓
+
+  ACTIVE shape: PASS. bit absent, statistics absent (no statistics block rendered; neutral "Core did not report signalling statistics" message shown instead), signalling absent. p2qpkActiveFixture() verifies. ✓
+
+  FAILED shape: PASS. bit absent, statistics absent, signalling absent. Same code path as DEFINED/ACTIVE — no statistics block. p2qpkFailedFixture() verifies. ✓
+
+  LOCKED_IN→ACTIVE boundary: PASS. Verified via p2qpkLockedInActivatingFixture() present in all three test packages. Shape: status="locked_in", status_next="active", active=true (from raw_json.active derived from next_state==ACTIVE), top-level height present (Core emits this when next_state==ACTIVE), bit present (LOCKED_IN has_signal=true), statistics present with period/elapsed/count but nil threshold/possible, signalling present. No production transition-specific branch: the fixture exercises the same decodeDeploymentRow → query → API/SSR path as any other status. The template guard {{if .Deployment.ActivationHeight}} correctly shows the activation height row only for this boundary (and full ACTIVE). ✓
+
+  P2QPK generic handling: PASS. No p2qpk-specific routes, handlers, status predicates, signalling counters, threshold constants, or activation date estimates anywhere in the diff. /deployments/p2qpk and /api/v1/deployments/p2qpk resolve through the identical {name} wildcard route as any other deployment name. The web handler comment reads: "when Core reports a deployment named 'p2qpk', /deployments/p2qpk is this same generic route — no special-cased P2QPK handler exists." ✓
+
+  Query read-only: PASS. internal/query/deployments.go issues only SELECT statements against deployment_state, sync_state, and chain_deployments. No INSERT/UPDATE/DELETE. No import of internal/deployments writer package. query.Store holds only a pgxpool.Pool. ✓
+
+  Repeatable-read overview: PASS. DeploymentOverview begins a READ ONLY REPEATABLE READ transaction, then reads deployment_state, sync_state, and all chain_deployments rows within that same snapshot. ✓
+
+  Repeatable-read detail: PASS. DeploymentByName uses the same REPEATABLE READ isolation. TestSnapshotConsistency_DeploymentDetail_ConcurrentReplacement quote confirms: "the in-flight read's snapshot was fixed BEFORE that replacement committed, PostgreSQL's REPEATABLE READ isolation guarantees the remaining statement in that same read-only transaction still sees the complete pre-replacement row." TestSnapshotConsistency_DeploymentByName_SurvivesFullReplacementAway verifies this holds even when the queried name is removed by concurrent replacement. ✓
+
+  Fresh/stale semantics: PASS. UNINITIALIZED: initialized=false, status="uninitialized", stale=false. FRESH: deployment anchor height+hash match confirmed indexed height+hash exactly. STALE: any mismatch in height OR hash — including same-height different-hash — sets stale=true. No directional language ("ahead", "newer", "advanced past") anywhere. Stale wording: "the confirmed indexed tip no longer matches this deployment snapshot's anchor" (neutral). ✓
+
+  Same-height reorg: PASS. Snapshot table on both overview and detail pages shows four distinct fields: Anchor Height, Anchor Hash, Confirmed Indexed Height, Confirmed Indexed Hash. When heights match but hashes differ: stale warning shown, both hashes visible in separate rows, human can read H/A versus H/B without any inference about which is "newer". Web test explicitly covers this scenario with neutral-wording assertion. ✓
+
+  Cache integrity: PASS. decodeDeploymentRow() enforces five cross-checks and returns ErrDeploymentCacheIntegrity on any violation: (1) raw_json.type == "bip9"; (2) chain_deployments.status == raw_json.bip9.status; (3) chain_deployments.since_height == raw_json.bip9.since; (4) chain_deployments.checked_at == deployment_state.observed_at for every row; (5) actual row count == deployment_state.deployment_count. Tests inject SQL corruption directly into each normalized field and confirm ErrDeploymentCacheIntegrity is returned — not a silent fallback to one representation. ✓
+
+  Raw JSON: PASS. CandidateDeployment.RawJSON json.RawMessage preserved through PostgreSQL JSONB → query decodeDeploymentRow (integrity-checked, not reconstructed) → Deployment.Raw json.RawMessage → API response: json.RawMessage marshals as an embedded JSON object (not a quoted string). SSR: RawJSON string(detail.Deployment.Raw) in deploymentView; template renders {{.RawJSON}} inside <pre> with html/template's auto-escaping, producing &#34; for " etc. No template.HTML cast anywhere in the diff. Confirmed by API test assertion: "raw is an actual JSON object, not a string." ✓
+
+  API list: PASS. GET /api/v1/deployments. Uninitialized: HTTP 200, initialized=false, status=uninitialized, deployments=[]. Initialized-empty: HTTP 200, initialized=true, deployment_count=0, deployments=[]. Stale: HTTP 200, stale=true, cached anchor + deployment data retained. No Core RPC invoked in any branch. ✓
+
+  API detail: PASS. GET /api/v1/deployments/{name}. Uninitialized: HTTP 503, error code deployment_cache_uninitialized (cannot truthfully assert absence). Initialized-but-absent: HTTP 404, deployment_not_found_in_snapshot. Stale existing deployment: HTTP 200, stale=true. No Core fallback in any branch. ErrDeploymentCacheIntegrity → HTTP 500. ✓
+
+  Deployment name namespace: PASS. Phase 2G.1 writer accepts non-empty, ≤128-byte names without character restrictions beyond those bounds. Phase 2G.2 isValidDeploymentNameShape applies printable ASCII (0x21–0x7E), non-empty, ≤128-char guards. In theory this rejects non-ASCII names stored by the writer; in practice Core's deployment map keys are C++ string literals (always printable ASCII). No realistic Phase 2G.1-stored name is unreachable via Phase 2G.2. Maximum length (128) is consistent between writer and reader. ✓
+
+  URL round trip: PASS. deploymentPath(name) in helpers.go: url.PathEscape(name) then strings.ReplaceAll(escaped, ".", "%2E"). url.PathEscape encodes /→%2F, ?→%3F, #→%23, %→%25, space→%20. The extra .→%2E step prevents Go's net/http.ServeMux from applying path.Clean to literal dots (. and ..), which would redirect /deployments/.. to / before the handler sees it. path.Clean operates on the raw path string, not URL-decoded bytes; %2E%2E is opaque to it. At the handler: r.PathValue("name") returns the URL-decoded value, which is then matched by exact database equality. TestDeploymentsPage_URLRoundTrip covers all five special-character families. ✓
+
+  API encoded name: PASS. TestDeploymentDetailEndpoint_EncodedNameRoundTrip: deployment name "slash/name" stored via ReplaceSnapshot, retrieved via GET /api/v1/deployments/slash%2Fname, r.PathValue("name") = "slash/name" (Go 1.22 decoded), DeploymentByName finds exact DB row. ✓
+
+  HTML escaping: PASS. All deployment name, status, type, and raw JSON values flow through html/template as plain Go string values — auto-escaped. deploymentPath() returns a URL-safe string; its value in {{deploymentPath .Name}} is auto-escaped in href context. {{.RawJSON}} is a plain string. {{.Name}}, {{.Status}}, {{.StatusNext}} — all plain strings. No template.HTML cast anywhere in the diff. ✓
+
+  CSP: PASS. internal/web/Server.ServeHTTP sets Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' on every response including all deployment pages. No external resources added by deployment templates. ✓
+
+  Confirmed hash display: PASS. Both deployments.tmpl and deployment.tmpl snapshot tables include separate Anchor Height, Anchor Hash, Confirmed Indexed Height, Confirmed Indexed Hash rows. Commit 2 adds the ConfirmedIndexedHash row (one of the four internal-review fixes listed in its commit message). ✓
+
+  Possible semantics: PASS. Template: {{if .Deployment.Statistics.Possible}}<tr><th>Possible</th><td>{{optionalYesNo .Deployment.Statistics.Possible}}</td></tr>{{end}}. In Go's html/template, {{if p}} where p is a *bool evaluates to !p.IsNil(). Consequently:
+  - Possible = nil (LOCKED_IN): {{if nil}} = false → Possible row absent ✓
+  - Possible = &true (STARTED, activated): true → row shown, optionalYesNo = "yes" ✓
+  - Possible = &false (STARTED, not possible): non-nil pointer is truthy → row shown, optionalYesNo = "no" ✓
+  "Possible: unknown" is NEVER rendered. Commit 2 explicitly fixes this (one of four listed fixes). ✓
+
+  No-statistics wording: PASS. When Statistics == nil (DEFINED, ACTIVE, FAILED), the template renders <p class="muted">Core did not report signalling statistics for this deployment state.</p>. Neutral. Does not say "no longer tallying" or imply signalling previously existed. Commit 2 changed from a less-neutral formulation to this text. ✓
+
+  Serve/Core separation: PASS. api.Server and web.Server both hold only *query.Store. query.Store connects to PostgreSQL only. /readyz calls only s.q.Status(ctx) (a database query, not Core RPC). No internal/rpc, internal/deployments, internal/indexer imports anywhere in internal/api/ or internal/web/. The runServe path in cmd/qoge-explorer/main.go has zero diff — it never constructs a deployment writer. ✓
+
+  Phase 2G.1 regressions: PASS. internal/deployments/ is byte-for-byte unchanged. All Phase 2G.1 tests (required-field presence, explicit {}, buried exclusion, raw JSON, migration round-trip, atomic rollback, acquisition races, confirmed non-mutation, mempool non-mutation, shutdown) remain at their Phase 2G.1 state. ✓
+
+  Confirmed regressions: PASS. internal/query/snapshot_test.go (containing TestSnapshotConsistency_ExplorerOverview_ConcurrentReorg, TestSnapshotConsistency_AddressDetail_ConcurrentReorg, TestSnapshotConsistency_TransactionDetail_ConcurrentReorg, TestSnapshotConsistency_BlockDetail_ConcurrentReorg) has zero diff. The production code those tests exercise also has zero diff. ✓
+
+  Mempool regressions: PASS. internal/mempool/ has zero diff. internal/query/mempool_snapshot_test.go has zero diff. ✓
+
+  Phase 2F.1 regressions: PASS. All seven named Phase 2F.1 regression tests (dependency-order, child-before-parent, RPC txid identity, policy-vsize distinction, weight mismatch, P2QPK/P2TR end-to-end, confirmed state unaffected by mempool replacement) live in zero-diff files in internal/mempool/ and internal/query/. ✓
+
+  Quality: PASS. Third commit is cleanly scoped ("test:") and modifies only test files and docs. internal/api/server.go and internal/web/server.go modifications are purely route registration additions (+5/+4 lines respectively, no deletions). internal/web/helpers.go adds deploymentPath and optionalYesNo. internal/web/validate.go and internal/api/validate.go add isValidDeploymentNameShape with identical semantics (intentionally duplicated for package independence, noted in comments). Template parsing failures panic at Server construction (compile-time equivalent — cannot be a runtime condition after build). Compile-time interface satisfaction checks present. All new tests use the real deployments.Store.ReplaceSnapshot writer, not ad-hoc SQL fixture insertion, consistent with the established mempool test pattern. ✓
+
+  Data-loss/corruption risks: None found.
+
+  - Mixed deployment generations: REPEATABLE READ prevents partial reads across generation boundaries. Both snapshot tests confirm coherent in-flight and fresh reads. ✓
+  - Stale snapshot presented as live: stale=true on all paths; SSR uses "cached" qualifier throughout. No "current node state" claim. ✓
+  - Malformed cached data silently accepted: decodeDeploymentRow returns ErrDeploymentCacheIntegrity on all five drift types; no silent preference of one representation. ✓
+  - Lost raw Core fields: json.RawMessage preserved end-to-end; API raw is the embedded JSON object; SSR auto-escapes the string. ✓
+  - Incorrect BIP9 optionality: all optional pointer fields (Bit, Statistics, Threshold, Possible, ActivationHeight, Signalling) gated by {{if}} in templates; pointer semantics in Go templates distinguish nil from zero-value. ✓
+  - active derived from status: impossible — active is read from raw_json['active'], not computed from status column. Commit 3 corrects all fixtures to reflect this. ✓
+  - P2QPK special casing: none. ✓
+  - Path-segment routing ambiguity: deploymentPath encodes all path-unsafe chars including .→%2E to prevent ServeMux canonical-path cleaning. ✓
+  - XSS from deployment names/raw JSON: html/template auto-escapes all string values; no template.HTML in diff. ✓
+  - Core dependency leaking into serve: only *query.Store in serve path; query.Store reads PostgreSQL only. ✓
+  - Writer/schema modification: migrations/, internal/deployments/ zero diff. ✓
+  - Confirmed or mempool mutation: query layer issues only SELECT statements; confirmed and mempool tables remain in read-only use. ✓
+
+  Architecture concerns: None found. Three-commit structure is coherent: commit 1 adds the feature, commit 2 applies four internal-review presentation fixes (URL encoding, confirmed hash, Possible guard, no-statistics wording), commit 3 aligns all BIP9 test fixtures with the actual SoftForkDescPushBack has-signal gating and next-state active semantics. The self-correction in commits 2 and 3 is evidence of a functioning review process, not a quality concern.
+
+  ---
+  No blocking Core/P2QPK/deployment-read-surface discrepancy found. Phase 2G.2 is safe to merge.
+
+✻ Baked for 15m 4s
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
