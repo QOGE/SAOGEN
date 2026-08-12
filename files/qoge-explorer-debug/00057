@@ -1,0 +1,221 @@
+● Good, I have what I need to write a small throwaway seeding program outside the project.
+
+  Made 1 scratchpad edit +41, ran 1 shell command 
+
+● Background command "Run race test suite on merged main in background" completed (exit code 0)
+
+● Race test suite completed (exit 0). Continuing the serve smoke test — removing the temp seeder from the tree once it's built, then seeding and running the binary.
+
+  Read 1 file, ran 1 shell command 
+
+● go test -race -count=1 ./... on merged main: all 11 packages PASS, exit 0. Git tree is clean (temp seeder removed cleanly). Now seeding the smoke-test DB and running the actual binary.
+
+  Ran 1 shell command 
+
+● Just a hash-length typo in the throwaway seeder. Fixing and rebuilding.
+
+  Made 3 scratchpad edits +3 -3, read 1 file, ran 3 shell commands 
+
+● Good, 64 chars now. Rebuilding and seeding.
+
+  Ran 1 shell command 
+
+● Clean tree. Now seeding and starting the actual serve binary with no RPC credentials configured.
+
+  Ran 4 shell commands 
+
+● Background command "Start serve binary in isolated env with no Core RPC vars" completed (exit code 0)
+
+● Server is up and responding despite the launcher script itself exiting — the detached process survived. Running the full smoke test now.
+
+  Ran 1 shell command 
+
+● All 11 routes return 200 with correct content types, PostgreSQL-only, no Core RPC reachable. Let me verify the deployment content is actually rendering the seeded data (not silently degrading), then shut everything down and clean up.
+
+  Ran 1 shell command 
+
+● Full round trip confirmed working, PostgreSQL-only. Shutting down the server and cleaning up the smoke-test schema.
+
+  Ran 2 shell commands 
+
+● That's just the shell wrapper matching its own command string, not the server. Server is already down.
+
+  Ran 1 shell command 
+
+● Server confirmed down (connection refused). Now dropping the smoke schema and confirming the tree is clean.
+
+  Ran 1 shell command 
+
+● All post-merge checks are green. Proceeding to branch cleanup (section 26) — deleting the now-merged branch locally and on origin.
+
+  Ran 1 shell command 
+
+● Branch cleanup complete. Final report:
+
+  FINAL REPORT
+  ============
+
+  PHASE 2G.2 MERGE
+  ================
+
+  PR: 12
+  Reviewed head: 8b4e008b7a5b01aeb0a35941b678dd9f4d712aea
+  Merge method: normal merge commit (--merge)
+  Actual merge commit: 1fe4ac4c1cd5125d582173af7a405b8c699a5967
+    (prospective SHA b1996d2... was pre-merge speculation, not relied upon)
+
+  PRE-MERGE
+  ---------
+  State: OPEN
+  Mergeable: true (MERGEABLE)
+  Base: main @ 857785dded1f60d5da59ca66e14eaf08168ab4bd
+  Head: phase2g-deployment-read-ui @ 8b4e008b7a5b01aeb0a35941b678dd9f4d712aea
+  Commits: 3
+  Working tree: clean
+  Phase boundary: full base..head diff confined to internal/query/, internal/api/,
+    internal/web/, docs/ARCHITECTURE.md; final commit (506f6fb..8b4e008) touched
+    only 7 test/docs files, zero production files
+
+  MAIN
+  ----
+  Local HEAD: 1fe4ac4c1cd5125d582173af7a405b8c699a5967
+  origin/main: 1fe4ac4c1cd5125d582173af7a405b8c699a5967
+  Match: YES
+  First parent: 857785dded1f60d5da59ca66e14eaf08168ab4bd
+  Second parent: 8b4e008b7a5b01aeb0a35941b678dd9f4d712aea
+
+  DEPLOYMENT SNAPSHOTS
+  --------------------
+  Overview concurrent replacement: PASS
+  Detail concurrent replacement: PASS
+  ByName replacement-away: PASS
+
+  STATE
+  -----
+  Uninitialized: PASS (TestDeploymentOverview_Uninitialized, TestDeploymentState_Fresh family)
+  Fresh: PASS (TestDeploymentState_Fresh)
+  Stale: PASS (TestDeploymentState_DifferentHeightIsStale)
+  Same-height reorg: PASS (TestDeploymentState_SameHeightReorgIsStale)
+
+  CACHE INTEGRITY
+  ---------------
+  Type: PASS (TestDeploymentIntegrity_TypeDrift)
+  Status: PASS (TestDeploymentIntegrity_StatusDrift)
+  Since: PASS (TestDeploymentIntegrity_SinceDrift, SinceNullDrift)
+  Checked-at: PASS (TestDeploymentIntegrity_CheckedAtDrift)
+  Count: PASS (TestDeploymentIntegrity_CountDrift)
+  All assert errors.Is(err, ErrDeploymentCacheIntegrity)
+
+  CORE SHAPES
+  -----------
+  DEFINED: bit/statistics/signalling absent — PASS
+  STARTED: bit/statistics/threshold/possible/signalling present — PASS
+  LOCKED_IN: bit/statistics present, threshold/possible absent, signalling present — PASS
+  ACTIVE: bit/statistics/signalling absent, height present — PASS
+  FAILED: bit/statistics/signalling absent — PASS
+  LOCKED_IN->ACTIVE: boundary fixture verified query/API/web — PASS
+
+  P2QPK
+  -----
+  Generic handling: routes resolve purely by cached deployment name (verified
+    live via seeded smoke DB, /deployments/p2qpk and /api/v1/deployments/p2qpk)
+  Special-case logic: NONE (grep of production code shows no p2qpk branching,
+    only doc comments naming it as an example)
+  Activation prediction: NONE
+
+  URLS
+  ----
+  Slash: PASS
+  Question: PASS
+  Fragment: PASS
+  Percent: PASS
+  Dot: PASS
+  Dot-dot: PASS
+  Malicious name: PASS (TestDeploymentsPage_Escaping)
+  API encoded name: PASS (TestDeploymentDetailEndpoint_EncodedNameRoundTrip)
+
+  API
+  ---
+  List: PASS
+  Detail: PASS
+  Uninitialized: 503 deployment_cache_uninitialized — confirmed in code + tests
+  Initialized empty: PASS
+  Stale: PASS
+  Missing: 404 deployment_not_found_in_snapshot — confirmed in code + tests
+  GET-only: PASS
+
+  WEB
+  ---
+  Deployments: PASS
+  Detail: PASS
+  Confirmed hash: PASS
+  Same-height mismatch: PASS
+  Possible: yes/no rendered, row absent when structurally omitted — confirmed
+  No-statistics wording: "Core did not report signalling statistics for this
+    deployment state." — confirmed in template
+  Escaping: PASS
+  GET-only: PASS
+  404/503: PASS
+
+  SERVE
+  -----
+  PostgreSQL only: YES — real binary built, run against isolated schema
+  Core credentials: NONE set (env -i with only PATH/QOGE_DATABASE_URL/QOGE_HTTP_ADDR)
+  Smoke: / 200, /blocks 200, /mempool 200, /deployments 200, /deployments/p2qpk 200,
+    /api/v1/status 200, /api/v1/mempool 200, /api/v1/deployments 200,
+    /api/v1/deployments/p2qpk 200, /healthz 200, /readyz 200 — all correct
+    content types; seeded p2qpk deployment verified rendering end-to-end through
+    both API JSON and HTML detail page
+
+  REGRESSIONS
+  -----------
+  Phase 2G.1: internal/deployments full package — PASS
+  Confirmed snapshots: 4/4 PASS
+  Mempool snapshots: 2/2 PASS
+  Phase 2F.1: all 7 named regressions — PASS
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: 11/11 packages PASS (-count=1)
+  go test -race: 11/11 packages PASS (-count=1)
+  go build: clean
+  PostgreSQL executed: YES, real, no skips
+
+  PHASE BOUNDARY
+  --------------
+  migrations/: ZERO
+  deployments writer/: ZERO
+  rpc/: ZERO
+  store/: ZERO
+  indexer/: ZERO
+  mempool/: ZERO
+  decode/: ZERO
+  script/: ZERO
+  chain/: ZERO
+  cmd/: ZERO
+
+  BRANCH
+  ------
+  phase2g-deployment-read-ui: deleted (local + remote), post-verification
+
+  WORKING TREE
+  ------------
+  Status: clean
+
+  FILES OUTSIDE PROJECT
+  ---------------------
+  NONE — throwaway serve-smoke seeder built/run entirely from a temporary
+  in-tree cmd/seedsmoke directory, deleted immediately after each build
+  before running (git status verified clean before and after); scratchpad
+  binaries and logs are ephemeral, not persisted deliverables
+
+  Stop.
+
+✻ Baked for 5m 44s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
