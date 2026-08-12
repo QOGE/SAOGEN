@@ -1,0 +1,107 @@
+● Now let's verify the phase boundary is still respected and do a final full-suite regression check including the specific named regression tests.
+
+  Ran 1 shell command 
+
+● Good — only the expected new migration files. Let's check internal/mempool (should be test-only) and confirm named regression tests.
+
+  Ran 2 shell commands 
+
+● All confirmed. Now the Phase 2F.1 regression tests and mempool package (still test-only diff, unchanged from before).
+
+  Ran 1 shell command 
+
+● All named regressions pass. Now let's commit, push, and update PR #11.
+
+  Committed 2da8ec0, pushed to phase2g-deployment-observer, ran 2 shell commands 
+
+● PR #11 updated, still open, still targeting main. Here's the required final report.
+
+  PHASE 2G.1 INTERNAL REVIEW FIX
+
+  Commit: 2da8ec0a0c155d9cb7244fb32a854d7fd9e19d65
+  PR head: https://github.com/QOGE/qoge-explorer/pull/11 (OPEN, base main, head 2da8ec0)
+
+  REQUIRED FIELD PRESENCE
+
+  - Top-level height: RawDeploymentInfo.Height *int64 — missing/null rejected
+  - Top-level deployments: plain (non-pointer) map exploits Go's own nil-for-{missing,null} vs non-nil-for-{} behavior; nil rejected, {} accepted
+  - Deployment active: RawDeployment.Active *bool — missing/null rejected for both buried and bip9
+  - BIP9 start_time: *int64 — missing/null rejected
+  - BIP9 timeout: *int64 — missing/null rejected
+  - BIP9 min_activation_height: *int64 — missing/null rejected
+  - BIP9 since: *int64 — missing/null rejected
+  - BIP9 status: plain string; empty (missing/null) zero-value already outside validBIP9Statuses, rejected by existing enum check — no pointer needed
+  - BIP9 status_next: same as status
+  - Statistics period: *int64 — missing/null rejected
+  - Statistics elapsed: *int64 — missing/null rejected
+  - Statistics count: *int64 — missing/null rejected
+  - JSON null handling: every required pointer field rejects explicit null identically to absence (verified via dedicated null-valued test cases, not just missing-key cases)
+
+  EMPTY SNAPSHOT
+
+  - Explicit deployments {}: decodes successfully, 0 BIP9 deployments — TestDecodeDeploymentInfo_EmptyDeploymentsObjectSucceeds PASS
+  - Initialized empty: unaffected by this fix — TestReplaceSnapshot_NonEmptyToEmpty/_EmptyToNonEmpty still PASS
+  - Generation: unaffected, increments only on successful publication
+
+  OPTIONAL FIELDS (unchanged, still correctly optional)
+
+  - bit, statistics, threshold, possible, signalling, bip9-deployment top-level activation height — all remain optional, verified via retained status-transition fixtures (defined/started/locked_in/active/failed)
+
+  BURIED
+
+  - Active required: yes, now enforced
+  - Height handling: required — confirmed against QOGE/qogecoin stable's rpc/blockchain.cpp SoftForkDescPushBack (buried overload), which unconditionally emits height for every buried deployment
+  - Persisted: NO (unchanged)
+
+  RAW JSON
+
+  - Preserved: unchanged — raw_json still the exact bytes Core returned, never reconstructed from the presence-aware DTO
+
+  ACQUISITION
+
+  - Explicit anchor: unchanged
+  - Malformed response rejection: a missing/null required field now correctly causes DecodeDeploymentInfo to error, which refreshOnce treats identically to any other malformed-response failure
+  - Previous snapshot retained: yes — TestRefreshOnce_MalformedDeploymentObjectRetainsPreviousSnapshot still PASS
+  - Generation unchanged: on rejection, confirmed
+
+  P2QPK
+
+  - Live decode: re-verified against a freshly captured live response from the running mainnet node (height 2444114, hash e3c6da8a...) fed through the corrected decoder — p2qpk (started, elapsed=723, count=721) and taproot (active) both decoded correctly; the 5 buried entries correctly excluded
+  - Hardcoded state: NONE
+
+  NON-MUTATION
+
+  - Confirmed: unaffected by this fix (no store.go changes) — full suite rerun PASS
+  - Mempool: unaffected — full suite rerun PASS
+
+  QUALITY
+
+  - gofmt: clean
+  - go vet: clean
+  - go test: 11/11 packages PASS (-count=1, real PostgreSQL)
+  - go test -race: 11/11 packages PASS
+  - go build: clean
+  - PostgreSQL executed: YES, real local PostgreSQL 16
+  - Real Core smoke: YES — fresh live response from running mainnet qogecoind, decoded successfully through the corrected decoder
+
+  PHASE BOUNDARY
+
+  - query/: ZERO | api/: ZERO | web/: ZERO | store/: ZERO | indexer/: ZERO | decode/: ZERO | script/: ZERO | chain/: ZERO
+  - mempool production/: ZERO (only migration_test.go, unchanged from the original PR, still test-only)
+  - migrations/: ZERO (this fix touched no migration files)
+  - Changed: internal/rpc/deployment.go, internal/deployments/model.go, internal/deployments/model_test.go, internal/deployments/deployment_fixtures_test.go, internal/deployments/sync_test.go, docs/ARCHITECTURE.md
+
+  FILES OUTSIDE PROJECT
+
+  NONE (throwaway real-Core-response verification test created and deleted within this session; captured JSON fixtures live only in the scratchpad)
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2G.2.
+
+✻ Worked for 10m 14s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #11 · ← 1 agent
