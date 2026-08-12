@@ -1,0 +1,143 @@
+● Docs updated. Now let's run the full regression suite and quality gates.
+
+  Ran 1 shell command 
+
+● gofmt clean. Now vet and build.
+
+  Ran 1 shell command 
+
+● Now the full test suite (no race) and race suite.
+
+  Ran 1 shell command 
+
+● All 11 packages pass. Now the race suite.
+
+  Ran 3 shell commands 
+
+● All 7 named Phase 2F.1 tests pass. Now the Phase 2G.1 full regression (already confirmed via the full-suite run, but let's verify by name for the record) and phase boundary diff check.
+
+  Ran 1 shell command 
+
+● All Phase 2G.1 tests (29 in the package) pass with no regressions. Now let's verify the phase boundary — zero production changes outside the allowed directories.
+
+  Searched for 1 pattern, read 1 file, ran 7 shell commands 
+
+● Now let's write a small throwaway seeding program, seed real data through the actual Store/deployments.Store, then run serve and smoke-test the routes.
+
+  Made 1 scratchpad edit +82, ran 2 shell commands 
+
+● Now let's start serve with no Core credentials and smoke-test the routes.
+
+  Ran 1 shell command 
+
+● No RPC credentials in env, and serve started clean. Now curl the routes.
+
+  Ran 1 shell command 
+
+● All routes return 200 from PostgreSQL alone with no Core reachable. Let's verify the deployment content matches what was seeded.
+
+  Ran 1 shell command 
+
+● Serve smoke confirmed: correct data end-to-end, status="fresh" since the seeded confirmed tip matches the deployment anchor exactly. Now shut down the server and clean up all throwaway artifacts.
+
+  Ran 3 shell commands 
+
+● The serve process already exited (it wasn't in the process list). Let's remove the throwaway seed program and verify a clean tree.
+
+  Ran 1 shell command 
+
+● Clean — no throwaway files remain, only the real Phase 2G.2 changes. Now let's reset the disposable test database back to a clean state (it's not needed anymore, and it's isolated/disposable) and do a final full-suite rerun to be safe.
+
+  Ran 2 shell commands 
+
+● All green. Now let's commit, push, and open the PR (without merging).
+
+  Ran 1 shell command 
+
+● Staged set matches exactly the expected phase boundary. Committing.
+
+  Committed 58c214b, pushed to phase2g-deployment-read-ui, created PR #12, ran 1 shell command 
+
+● PHASE 2G.2 — READ-ONLY CONSENSUS DEPLOYMENT EXPLORER
+
+  Branch: phase2g-deployment-read-ui
+  Commit: 58c214bbb159eedf17133cee712287f4a181f080
+  PR: https://github.com/QOGE/qoge-explorer/pull/12 (OPEN, mergeable, base main — not merged)
+
+  BASELINE
+
+  main: 857785dded1f60d5da59ca66e14eaf08168ab4bd (verified exact before branching) | working tree: clean
+
+  ARCHITECTURE
+
+  Serve Core dependency: NONE (verified: serve started with no QOGE_RPC_* env vars set, real binary, real routes) | Writer changes: ZERO | Schema changes: ZERO (no migration 0004) | Query read-only: confirmed — no INSERT/UPDATE/DELETE/FOR UPDATE anywhere in internal/query/deployments.go
+
+  STATE
+
+  Uninitialized: status=uninitialized, stale=false, empty deployments — tested | Fresh: anchor==confirmed tip (height+hash) — tested | Stale: anchor≠confirmed tip — tested | Same-height reorg: distinct hash at same height → stale, neutral wording — tested | Generation: read from deployment_state, unmodified by this phase | Anchor: core_tip_height/core_tip_hash | Confirmed tip: sync_state, same snapshot | Observed at: deployment_state.observed_at, cross-checked against every row's checked_at
+
+  QUERY
+
+  Overview snapshot: single readTx (REPEATABLE READ) | Detail snapshot: single readTx | Deterministic ordering: ORDER BY name ASC | Count integrity: enforced (Overview only) | Status integrity: enforced (chain_deployments.status vs raw_json.bip9.status) | Since integrity: enforced (NULL and mismatch both rejected) | Type integrity: enforced (raw_json.type must be "bip9") | Checked-at integrity: enforced (vs deployment_state.observed_at) | Raw JSON: query-local decode shape, never imports internal/rpc
+
+  API
+
+  /api/v1/deployments: 200 always, deployments=[] when uninitialized | /api/v1/deployments/{name}: 503 deployment_cache_uninitialized / 404 deployment_not_found_in_snapshot | Uninitialized list: 200 | Uninitialized detail: 503 | Stale: 200, stale=true, both anchor/tip visible | Missing detail: 404, specific code, no Core fallback | GET-only: enforced with Allow header
+
+  WEB
+
+  /deployments: SSR, matches API semantics | /deployments/{name}: SSR, 503-style page when uninitialized, 404 when absent | /deployments/p2qpk: generic {name} route, no special case | Navigation: single "Deployments" link added | Uninitialized: "Deployment cache has not synchronized yet." — never "0 deployments" | Stale wording: "no longer matches" (list) / "cached Core deployment observation…stale" (detail) — no "advanced past"/"ahead of"/"newer than" | Raw JSON: <details><pre> with ordinary html/template escaping, never template.HTML | Signalling: plain monospace, no chart | Browser polling: none added | Final
+  polish: deferred
+
+  BIP9
+
+  defined/started/locked_in/active/failed: all render safely through query+API+HTML with no per-status branch (proven by table-driven fixture tests) | Independent state logic: NONE | Activation prediction: NONE
+
+  P2QPK
+
+  Special-case consensus logic: NONE | Generic route: confirmed structurally and by test | STARTED fixture: tested | LOCKED_IN fixture: tested (threshold/possible legitimately absent) | ACTIVE fixture: tested (bit/statistics/signalling absent, activation height present) | Real cached smoke: seeded via real writer, served via real binary, values verified byte-for-byte against seed
+
+  SNAPSHOTS
+
+  Deployment overview concurrent replacement: PASS (real ReplaceSnapshot, snapshotTestHook sync, no sleeps) | Deployment detail concurrent replacement: PASS | Confirmed overview/address/transaction/block: rerun by name, PASS | Mempool overview/detail: rerun by name, PASS
+
+  SECURITY
+
+  Escaping: evil deployment name (<script>...) written through the real writer, rendered escaped — tested | CSP: unchanged, applies to new pages | template.HTML: never used for deployment data | GET-only: enforced on both new API and web routes | 404/503: correct codes, no internal leakage
+
+  SERVE
+
+  PostgreSQL only: confirmed | Core credentials: absent from environment during smoke | Route smoke: /, /blocks, /mempool, /deployments, /deployments/p2qpk, /api/v1/status, /api/v1/mempool, /api/v1/deployments, /api/v1/deployments/p2qpk, /healthz, /readyz — all 200, verified against real seeded data via the real binary; throwaway seed program and modified test-DB state fully cleaned up afterward
+
+  PHASE 2G.1 REGRESSION
+
+  Required fields: PASS (part of full 29-test package rerun) | Explicit deployments: {}: PASS | Buried: PASS (excluded, required-field checks intact) | Raw JSON: PASS | Migration: PASS | Atomic rollback: PASS | Confirmed non-mutation: PASS | Mempool non-mutation: PASS | Race handling: PASS | Shutdown: PASS
+
+  PHASE 2F REGRESSION
+
+  Confirmed snapshots: 4/4 PASS (rerun by name) | Mempool snapshots: 2/2 PASS (rerun by name) | Phase 2F.1: 7/7 PASS (rerun by name)
+
+  QUALITY
+
+  gofmt: clean | go vet: clean | go test: 11/11 packages PASS (-count=1) | go test -race: 11/11 packages PASS | go build: clean | PostgreSQL executed: YES, real, no skips
+
+  PHASE BOUNDARY
+
+  migrations/: ZERO | deployments writer/: ZERO | rpc/: ZERO | store/: ZERO | indexer/: ZERO | mempool/: ZERO | decode/: ZERO | script/: ZERO | chain/: ZERO | cmd/: ZERO (verified via staged-diff inspection matching exactly internal/query, internal/api, internal/web, docs/ARCHITECTURE.md)
+
+  FILES OUTSIDE PROJECT
+
+  NONE (throwaway seed program lived at cmd/zzz-smoke-seed/ inside the repo during the serve smoke, deleted immediately after use; git status --short confirmed clean before commit)
+
+  Stop.
+  Do not merge.
+  Do not begin final UI polishing.
+  Do not add pending-address accounting.
+
+✻ Crunched for 28m 33s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #12 · ← 1 agent
+
