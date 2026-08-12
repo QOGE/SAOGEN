@@ -1,0 +1,134 @@
+● I'll fetch the PR metadata and full diff now.
+
+  Ran 1 shell command 
+
+● All 6 metadata fields match exactly. Fetching the full diff.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● Good - 23 files changed, all in internal/query/, internal/api/, internal/web/, docs/ARCHITECTURE.md. Now let me verify zero changes in the frozen packages and read the diff in passes.
+
+  Searched for 1 pattern, read 1 file 
+
+● I have now read the complete 3213-line diff across all 8 passes. Let me compose the report.
+
+  ---
+  PHASE 2F.2 FINAL INDEPENDENT REVIEW
+
+  PR head reviewed: d4deae447f10fab07e7da4cfff7e24421d1f6248
+  Verdict: APPROVE
+
+  ---
+  Target verification: PASS. All 6 metadata fields match exactly: PR #10, state open, merged false, draft false, base main at 2de0b2f83550b0da8f294de04ed2ae4d70d49668, head branch phase2f-mempool-read-ui, head SHA d4deae447f10fab07e7da4cfff7e24421d1f6248.
+
+  Phase boundary: PASS. 23 files changed, all in internal/query/ (5 files), internal/api/ (5 files), internal/web/ (11 files), and docs/ARCHITECTURE.md. Confirmed zero diff in migrations/, internal/mempool/, internal/rpc/, internal/store/, internal/indexer/, internal/decode/, internal/script/, internal/chain/, and cmd/qoge-explorer/. ✓
+
+  Serve/Core separation: PASS. internal/query/mempool.go imports only context, encoding/hex, errors, fmt, time, internal/chain, pgx/v5 — no internal/rpc. internal/api/handlers_mempool.go imports only errors, net/http, internal/query. internal/web/handlers_mempool.go and handlers_search.go same. cmd/qoge-explorer/main.go is byte-for-byte unchanged. No getrawmempool, getrawtransaction, or any RPC call exists on any public read path. ✓
+
+  Mempool state: PASS. mempoolStateFrom (query/mempool.go) implements three distinct states via a Go switch:
+  - !st.Initialized → Status="uninitialized", Stale=false unconditionally (never true, explicitly preventing confusion with "synchronized but stale")
+  - Height AND hash both match → Status="fresh", Stale=false
+  - Default (any mismatch) → Status="stale", Stale=true
+
+  Both MempoolState and MempoolOverview read mempool_state plus sync_state from the SAME repeatable-read transaction via mempoolStateFrom(ctx, q). TestMempoolState_Uninitialized, TestMempoolState_EmptyInitialized, TestMempoolState_Staleness, and TestMempoolState_StaleOnSameHeightMismatch collectively cover all three states and all transitions. ✓
+
+  Stale semantics: PASS. Stale wording in mempool.tmpl (line 3015): "Stale — the confirmed indexed tip no longer matches this mempool snapshot's anchor". In mempooltx.tmpl (lines 3058–3059): "Present in cached mempool snapshot — the confirmed indexed tip no longer matches this snapshot's anchor. Membership in Core's current mempool is not confirmed by this page." MempoolState doc comment explicitly states "a mismatch does NOT imply forward advancement." ARCHITECTURE.md §23 repeats: "it does NOT imply forward advancement." No instance of "advanced past", "ahead of", or "newer than" anywhere in the diff. ✓
+
+  Same-height reorg: PASS. TestMempoolState_StaleOnSameHeightMismatch: anchorHash = fakeHash("same-height-reorg-A"), confirmedHash = fakeHash("same-height-reorg-B"), both at height 0; confirms anchorHash != confirmedHash (fixture guard); verifies Stale=true, Status="stale". TestMempoolPage_SameHeightReorgWording: same setup at height 0, hash A vs hash B; iterates both /mempool and /mempool/tx/{id}; strings.Contains(body, "advanced past") || strings.Contains(body, "ahead of") || strings.Contains(body, "newer than") fails the test; bodyContains(t, rec, "no longer matches") required on both pages. Both tests are
+  deterministic (no sleep). ✓
+
+  Overview snapshot: PASS. MempoolOverview opens a single readTx (BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY) and passes tx to both mempoolStateFrom (reads mempool_state+sync_state) and mempoolTxPageFrom (reads mempool_transactions). Cursor generation check is performed inside this same snapshot. A concurrent ReplaceSnapshot committing between state and list reads is impossible to observe. TestSnapshotConsistency_MempoolOverview_ConcurrentReplacement: uses newSnapshotSync/ss.waitForSnapshot/ss.release (the non-sleep snapshotTestHook rendezvous pattern existing confirmed tests already use); in-flight read sees
+  coherent generation 1 (txA only); fresh read afterward sees generation 2 (txB only). Deterministic synchronization, not sleep-based. ✓
+
+  Detail snapshot: PASS. mempoolTransactionDetail assembles: transaction body, MempoolState (via mempoolStateFrom), dependencies, witness, inputs, outputs — all using the same q querier from the caller's readTx. TestSnapshotConsistency_MempoolDetail_ConcurrentReplacement: txA in gen 1; snapshot fixed after first statement (fireSnapshotTestHook); concurrent gen 2 replaces A with B; in-flight call returns complete gen-1 txA (never ErrNotFound, never any gen-2 row mixed in); fresh calls confirm A is ErrNotFound, B is generation 2. ✓
+
+  Generation pagination: PASS. MempoolCursor carries Generation int64, EntryTime int64, TxID string. Ordered entry_time DESC, txid DESC (deterministic). In MempoolOverview: cursor.Generation != state.Generation → ErrMempoolGenerationChanged (checked inside same snapshot BEFORE list read). API: HTTP 409 with code "mempool_generation_changed". SSR: http.Redirect(w, r, "/mempool", http.StatusFound). TestMempoolOverview_GenerationSafePagination, TestMempoolEndpoint_GenerationCursor, TestMempoolPage_GenerationCursorRedirects all pass. ✓
+
+  Uninitialized: PASS. mempoolStateFrom: !st.Initialized → explicit "uninitialized" state. TestMempoolEndpoint_Uninitialized: HTTP 200, state.initialized=false, state.status="uninitialized", transactions=[] (not tx_count=0 as if observed). TestMempoolPage_Uninitialized: bodyContains(t, rec, "not synchronized yet") AND bodyNotContains(t, rec, "0 transactions"). mempool.tmpl: {{if not .Overview.State.Initialized}}<p class="status-line">Mempool cache not synchronized yet.</p> — no tx count rendered in this branch. ✓
+
+  Initialized empty: PASS. TestMempoolState_EmptyInitialized: after ReplaceSnapshot(ctx, mempoolCandidate(5, anchorHash)) (no transactions), verifies Initialized=true, TxCount=0, Generation=1, Status="stale" (not "uninitialized"). The two states are structurally distinct and independently exercised. ✓
+
+  List semantics: PASS. MempoolTxSummary struct has no witness field (enforced by type; list pages structurally cannot carry witness data). mempoolTxPageFrom SQL: SELECT txid, wtxid, version, size, vsize, weight, fee_satoshis, entry_time, entry_height, replaceable FROM mempool_transactions — no JOIN to inputs, outputs, or witness. No input accounting, no pending balances. ✓
+
+  Transaction lookup: PASS. API handleMempoolTransaction: MempoolTransactionByTxID → on ErrNotFound → MempoolTransactionByWTxID → on ErrNotFound → 404. SSR handleMempoolTx: identical. MempoolTransactionByWTxID resolves SELECT txid FROM mempool_transactions WHERE wtxid=$1 inside the same repeatable-read transaction. No Core RPC fallback. No historical mempool fallback. TestMempoolEndpoint_ListAndDetail: txid lookup 200, wtxid lookup 200 (same transaction, both identities correct), malformed id 400, absent id 404. ✓
+
+  Confirmed endpoint separation: PASS. internal/api/handlers.go and internal/web/handlers.go (confirmed endpoints) have zero diff. Mempool lookup is only wired to handleMempoolTransaction/handleMempoolTx, which are only registered to /api/v1/mempool/tx/{id} and /mempool/tx/{id}. The confirmed /api/v1/tx/{id} and /tx/{id} handlers call only TransactionByTxID/TransactionByWTxID — no mempool fallback was added. ✓
+
+  Prevout navigation: PASS. prevOutLink in internal/web/helpers.go: iterates depends []string; if prevTxid is in the depends list → /mempool/tx/{prevTxid}; otherwise → /tx/{prevTxid}. No database query. No Core query. Used in mempooltx.tmpl as href="{{prevOutLink .PrevTxID $.Depends}}" — $.Depends correctly refers to the root mempoolTxView's embedded MempoolTransactionDetail.Depends. ✓
+
+  Confirmed prevout test: PASS. TestMempoolTxPage_PrevOutLink_ConfirmedParent: confirmed genesis coinbase P; mempool child C spending confirmedTxid:0 with Depends=nil; fixture guard len(child.Depends) != 0 fails the test if Core would have populated a depends entry; renders C; bodyContains(t, rec, href="/tx/+confirmedTxid+") ✓; bodyNotContains(t, rec, href="/mempool/tx/+confirmedTxid+") ✓. ✓
+
+  Mempool parent test: PASS. TestMempoolTxPage_PrevOutLink_MempoolParent: parent and child both in snapshot; child = mempoolCandidateTx(... depends: []string{parent.TxID}); renders child; bodyContains(t, rec, href="/mempool/tx/+parent.TxID+") ✓; bodyNotContains(t, rec, href="/tx/+parent.TxID+") ✓. ✓
+
+  Dependencies: PASS. mempoolDependencies SQL: SELECT depends_on_txid FROM mempool_dependencies WHERE txid=$1 ORDER BY depends_on_txid — deterministic lexicographic order. No confirmed-chain ownership semantics asserted; mempooltx.tmpl labels dependencies as in-mempool parent links, no claim about value or ownership. ✓
+
+  Witness default: PASS. mempoolWitnessByVin: includeRaw=true → SELECT ... data FROM mempool_input_witness; includeRaw=false → SELECT ... octet_length(data) FROM mempool_input_witness. Raw blob never loaded by default. MempoolTransactionByTxID(ctx, id, false) → witness items have SizeBytes only, DataHex=nil. ✓
+
+  P2QPK: PASS. TestMempoolTransaction_P2QPKAndP2TR (query): P2QPK output witness version 2, 32-byte program, ScriptType=TypeP2QPK; default: w[0].SizeBytes=P2QPKSignatureLength, w[0].DataHex=nil; opt-in: *wr[0].DataHex == hex.EncodeToString(sigItem), len/2 == P2QPKSignatureLength (exact, never truncated); p2qpkProgram != pubkeyItem verified. TestMempoolTransactionWitness_DefaultOmitsRaw_OptInIncludesIt (API): 17,088-byte sig item 0 and 32-byte pubkey item 1 verified byte-exact on opt-in. TestMempoolTxWitness_DefaultHidden_OptInIncludes (SSR): bodyNotContains(t, rec, sigHex) default; bodyContains(t, rec, sigHex)
+  opt-in. mempooltx.tmpl calls the field "Witness program" (never "public key"). No SLH-DSA verification. ✓
+
+  P2TR: PASS. Same fixture: witnessProgramScript(1, p2trProgram) → ScriptType=TypeP2TR, WitnessVersion=1. got.Outputs[1].ScriptType == got.Outputs[0].ScriptType fails the test (they must differ). API test verifies Outputs[1].ScriptType == string(script.TypeP2TR). ✓
+
+  Multisig: PASS. mempoolOutputs uses LEFT JOIN mempool_output_addresses (giving Address=nil for multisig). attachMempoolParticipants fills Participants for multisig outputs only. TestMempoolTransaction_Multisig: out.Address == nil, len(out.Participants) == 2. mempooltx.tmpl labels them "Participants (not independent balance owners)" — no ownership, no value multiplication. ✓
+
+  Exact money: PASS. All monetary fields are int64 satoshis or string QOGE. FeeSatoshis reads from the persisted fee_satoshis column (frozen by Phase 2F.1 via decode.DecodeAmount) — never reconstructed from inputs/outputs. chain.Amount(x).String() for all QOGE formatting. Zero float32/float64 anywhere. TotalFeeSatoshis int64, TotalFeeQOGE string, ValueSatoshis int64, ValueQOGE string, FeeSatoshis int64, FeeQOGE string — all confirmed. ✓
+
+  Address pending state: PASS. internal/web/handlers.go, internal/query/address.go, internal/query/transactions.go all have zero diff. No unconfirmed_balance, pending_received, pending_sent, pending_spendable, or mempool activity list added to /address/{address}. ARCHITECTURE.md §23: "No mempool balance/activity on /address/{address} (confirmed-only, unchanged)." ✓
+
+  Search ordering: PASS. handleSearch fixed lookup order: BlockByHash → TransactionByTxID → TransactionByWTxID → MempoolTransactionByTxID → MempoolTransactionByWTxID. Confirmed lookups attempted first; mempool only after all confirmed misses. ✓
+
+  Same-txid search test: PASS. TestSearch_ConfirmedTakesPriorityOverMempool: seeds confirmed genesis coinbase (confirmedTxid); creates mempool candidate with mtx.TxID = confirmedTxid; mtx.WTxID = confirmedTxid (explicitly overridden to be the same txid); calls ReplaceSnapshot; explicitly verifies SELECT count(*) FROM mempool_transactions WHERE txid=$1 = 1 (with t.Fatalf("fixture bug: mempool_transactions has %d rows...") if not 1 — the same-txid collision actually exists in the DB); /search?q=confirmedTxid must redirect to /tx/{confirmedTxid}; negative assertion loc == "/mempool/tx/"+confirmedTxid also fails the
+  test. ✓
+
+  Search concurrency semantics: PASS. handleSearch doc comment (lines 2403–2416): "These are separate, sequential query.Store calls, not one atomic cross-domain snapshot, so this is a deterministic ordering guarantee WITHIN one stable database state, not an absolute point-in-time guarantee across a concurrent transition between the calls." ARCHITECTURE.md §23: same wording. No false atomic guarantee anywhere. Assessed: correct, acceptable Phase 2F.2 behavior. ✓
+
+  Stale search: PASS. TestSearch_MempoolFallback: mempool snapshot seeded, no confirmed blocks; search by txid redirects to /mempool/tx/{id}; destination page shows "Present in cached mempool snapshot — the confirmed indexed tip no longer matches..." (stale) with "Membership in Core's current mempool is not confirmed by this page." No hidden Core revalidation in search. ✓
+
+  Security: PASS. All templates use {{.Field}} which activates html/template's context-aware auto-escaping. TestMempoolPage_Escaping: evilAddress = "<script>alert(1)</script>&\"'" stored as an output address; rendered page bodyNotContains(t, rec, "<script>alert(1)</script>") and bodyContains(t, rec, "&lt;script&gt;"). No template.HTML cast on any blockchain data. No innerHTML. No external JS. DataHex in mempooltx.tmpl renders as {{.DataHex}} inside <pre><code> — auto-escaped. Existing CSP/security headers unchanged (only route registrations added to web.go). ✓
+
+  GET-only: PASS. internal/api/server.go: /api/v1/mempool and /api/v1/mempool/tx/{id} added to knownGETRoutes; handlers registered as "GET /api/v1/mempool" and "GET /api/v1/mempool/tx/{id}". internal/web/web.go: same pattern for /mempool and /mempool/tx/{id}. TestMempoolEndpoint_MethodNotAllowed: POST to /api/v1/mempool → 405; DELETE to /api/v1/mempool/tx/{id} → 405. ✓
+
+  Existing API: PASS. internal/api/handlers.go: zero diff. All existing routes (/api/v1/status, /api/v1/blocks, /api/v1/block/{id}, /api/v1/tx/{id}, /api/v1/address/{address}, /api/v1/address/{address}/transactions, /healthz, /readyz) are unchanged. Only two new routes added to server.go. ✓
+
+  live.js: PASS. Zero diff in internal/web/static/ or any live.js code. mempool.tmpl and mempooltx.tmpl have no live.js inclusion, no EventSource, no WebSocket, no auto-refresh. ARCHITECTURE.md §23: "no live.js mempool polling (mempool pages require a manual reload to see a newer generation)." ✓
+
+  Writer/schema freeze: PASS. All of migrations/0002_*, internal/mempool/Store.ReplaceSnapshot, internal/mempool/Synchronizer, generation logic, dependency insertion, Core tip anchors, RPC txid validation, Core vsize/weight semantics — zero diff. ✓
+
+  Phase 2F.1 regressions: PASS. All Phase 2F.1 test files in internal/mempool/ have zero diff; the code they test is unchanged. internal/query/readonly_test.go is extended (not broken) — it now also seeds a mempool fixture and exercises all new MempoolState/MempoolOverview/MempoolTransactionByTxID/MempoolTransactionByWTxID call paths, including with include_witness=true and a missing-txid ErrNotFound path, then asserts all 20 table counts are unchanged. ✓
+
+  Confirmed snapshot regressions: PASS. Confirmed snapshot tests (TestSnapshotConsistency_ExplorerOverview_ConcurrentReorg, etc.) are in internal/query/snapshot_test.go — zero diff. The confirmed query code they test is also zero diff. ✓
+
+  Mempool snapshot regressions: PASS. TestSnapshotConsistency_MempoolOverview_ConcurrentReplacement and TestSnapshotConsistency_MempoolDetail_ConcurrentReplacement (new, in internal/query/mempool_snapshot_test.go) use the existing snapshotTestHook rendezvous pattern from confirmed snapshot tests — deterministic synchronization, race-clean by construction. ✓
+
+  Read-only enforcement: PASS. All statements in internal/query/mempool.go are SELECT only. Zero INSERT, UPDATE, DELETE, or SELECT FOR UPDATE. TestReadOnlyEnforcement is extended with 8 new mempool table counters in dbSnapshot and 6 new mempool query calls; the beforeCounts == afterCounts assertion now covers all 20 tables (12 confirmed + 8 mempool). Any accidental mutation would be caught at the struct comparison level. ✓
+
+  Serve smoke: PASS (per ARCHITECTURE.md §23 attestation). cmd/qoge-explorer/main.go is zero diff; the serve command never constructs an RPC client and is structurally Core-independent. ARCHITECTURE.md §23 explicitly attests that the real binary was run against isolated PostgreSQL with no Core process reachable, and all listed routes returned 200. Independently confirmed by zero rpc imports on the read path. ✓
+
+  Fresh/stale smoke: PASS (per ARCHITECTURE.md §23 attestation and TestMempoolState_Staleness). The query test covers all three transitions (stale → confirm aligned tip → fresh) with real ApplyBlock + ReplaceSnapshot. ARCHITECTURE.md §23 attests the manual A/B/C cycle was verified through both JSON API and SSR with a real running server. ✓
+
+  Quality: PASS. Code is properly formatted (standard Go indentation, no trailing whitespace or misaligned struct fields visible in diff). All new test files follow the existing package-internal test conventions (same QOGE_TEST_DATABASE_URL skip pattern, same newTestSchema/migration fixture machinery, same rawSpendTx/rawSpendVin/rawVout fixture helpers). Race-detector safety: concurrent snapshot tests use channel-based rendezvous, not shared mutable state. Template functions are pure (no side effects). Fixture helpers use real decode.DecodeTransaction and mempool.Store.ReplaceSnapshot, never ad-hoc SQL, mirroring
+  the established Phase 2F.1 test quality standard. ✓
+
+  Data-loss/corruption risks: None found.
+  - Mixed-generation reads: Repeatable-read isolation in readTx prevents this; proven by TestSnapshotConsistency_* tests. ✓
+  - Stale cursor continuation: cursor.Generation != state.Generation → ErrMempoolGenerationChanged before any list read; tested. ✓
+  - Accidental confirmed-table writes: Pure SELECT throughout; TestReadOnlyEnforcement verifies all 20 tables unchanged. ✓
+  - Witness truncation: len(data) for SizeBytes, hex.EncodeToString(data) for DataHex — no truncation; byte-exact tests. ✓
+  - txid/wtxid confusion: MempoolTransactionByWTxID resolves to txid first, then reads detail by txid; d.TxID/d.WTxID populated from the db row itself. ✓
+  - Stale snapshot presented as current: Every response surfaces status; stale detail page says "Membership in Core's current mempool is not confirmed by this page." ✓
+  - Wrong prevout routing: prevOutLink uses Depends correctly; both routing paths tested end-to-end with HTML body assertions. ✓
+  - Mempool result shadowing confirmed: Search tries confirmed before mempool; TestSearch_ConfirmedTakesPriorityOverMempool proves this with an actual same-txid collision in both tables. ✓
+  - Multisig ownership inflation: Address=nil for multisig; Participants labeled as "not independent balance owners"; no value multiplication. ✓
+  - Pending-balance fabrication: Zero changes to address query or balance calculation paths; no pending fields added anywhere. ✓
+
+  Architecture concerns: None. The phase follows all established patterns exactly: read model reads mempool_* tables directly (never imports the writer package in production code); test fixtures use the real writer via test-only imports; repeatable-read snapshots reuse existing s.readTx() machinery; templates use standard html/template escaping; the three-state model (uninitialized/fresh/stale) is cleanly implemented with explicit switch logic; generation-safe pagination carries all three cursor fields together.
+
+  ---
+  No blocking Core/P2QPK/mempool-read-surface discrepancy found. Phase 2F.2 is safe to merge.
+
+✻ Cogitated for 6m 47s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      10% until auto-compact
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
