@@ -1,0 +1,112 @@
+● Starting with target verification and the full diff fetch.
+
+  Ran 2 shell commands 
+
+● All 6 fields match. Now fetching the full diff.
+
+  Read 1 file, ran 2 shell commands 
+
+● I have now read the complete 3182-line diff across all 8 passes. Writing the report.
+
+  ---
+  PHASE 2G.1 FINAL INDEPENDENT REVIEW
+
+  PR head reviewed: 2da8ec0a0c155d9cb7244fb32a854d7fd9e19d65
+  Verdict: APPROVE
+
+  ---
+  Target verification: PASS. All 6 metadata fields match exactly: PR #11, state open, merged false, draft false, base main at af378d1ee0a2048ce0c8a5300b1efeaa907a7057, head branch phase2g-deployment-observer, head SHA 2da8ec0a0c155d9cb7244fb32a854d7fd9e19d65.
+
+  Phase boundary: PASS. 19 files changed. Expected production changes present: migrations/0003_deployment_state.*, all of internal/deployments/, internal/rpc/deployment.go, cmd/qoge-explorer/main.go, docs/ARCHITECTURE.md. Expected test-only compatibility change present: internal/mempool/migration_test.go. Zero diff in internal/query/, internal/api/, internal/web/. Zero diff in internal/store/, internal/indexer/, internal/decode/, internal/script/, internal/chain/. Zero mempool production semantic change. ✓
+
+  Core getdeploymentinfo semantics: PASS. internal/rpc/deployment.go defines GetDeploymentInfo(ctx, blockHash) which calls c.CallInto(ctx, &info, "getdeploymentinfo", blockHash). The top-level response decodes into RawDeploymentInfo{Hash string, Height *int64, Deployments map[string]json.RawMessage}. The BIP9 sub-object decodes into RawBIP9Deployment with all Core-reported fields present in the correct types. var _ RPCClient = (*rpc.Client)(nil) is a compile-time satisfaction check in sync.go. ✓
+
+  P2QPK inclusion: PASS. P2QPK arrives via the same case "bip9" path in DecodeDeploymentInfo as any other BIP9 deployment. The deployment map key ("p2qpk") is whatever name Core reports, never hardcoded. No special persistence path. TestRefreshOnce_HappyPathPublishes feeds both "p2qpk" (bip9) and "segwit" (buried) together, verifying DeploymentCount=1. ✓
+
+  BIP9-only persistence: PASS. In DecodeDeploymentInfo, only case "bip9" appends to out []CandidateDeployment. case "buried" validates and returns without appending. default returns error. Only out reaches Candidate.Deployments and subsequently ReplaceSnapshot. TestDecodeDeploymentInfo_BuriedNotPersisted: response has segwit (buried) + p2qpk (bip9) → exactly 1 decoded deployment ("p2qpk"). ✓
+
+  Buried handling: PASS. Core's SoftForkDescPushBack unconditionally emits type, active, height for buried deployments — confirmed against QOGE/qogecoin stable (cited in deployment.go and model.go). In case "buried": d.Height == nil → error; *d.Height < 0 → error (checked before the value is dropped). d.Active == nil is checked before the type switch, so it applies to buried as well. Tests: "buried missing height", "buried height null", "buried missing active", "buried negative height" all error. Buried entries never synthesize a BIP9 status. ✓
+
+  Required-field presence: PASS. RawDeploymentInfo.Height *int64 — pointer; missing/null → nil → DecodeDeploymentInfo returns error "response height is missing or null". RawDeploymentInfo.Deployments map[string]json.RawMessage — non-pointer map: encoding/json leaves it nil for both missing key and explicit null, allocates non-nil (possibly empty) map for present {}. DecodeDeploymentInfo checks info.Deployments == nil → error. All four top-level tests ("missing height", "height null", "missing deployments", "deployments null") use mustUnmarshalInfo (real json.Unmarshal path, not hand-set nil pointers). ✓
+
+  Top-level deployments {}: PASS. TestDecodeDeploymentInfo_EmptyDeploymentsObjectSucceeds: mustUnmarshalInfo(t, {"hash":"...","height":100,"deployments":{}}) → len(decoded.Deployments)==0, no error. TestReplaceSnapshot_NonEmptyToEmpty and TestReplaceSnapshot_EmptyToNonEmpty exercise both transitions at the store layer. Empty snapshot is structurally distinct from "never synchronized" via initialized=true. ✓
+
+  Null handling: PASS. Every required numeric field whose legitimate zero value is 0 (Height, StartTime, Timeout, MinActivationHeight, Since, Period, Elapsed, Count) is decoded as *T. encoding/json decodes an explicit null to nil for pointer types, indistinguishable from absent — both rejected by == nil checks. Tests: "height null", "start_time null", "timeout null", "min_activation_height null", "since null", "elapsed null", "count null" all verified to error. ✓
+
+  Optional-field handling: PASS. Bit *int, Statistics *RawBIP9Statistics, Threshold *int64 omitempty, Possible *bool omitempty, Signalling *string omitempty, BIP9 top-level Height *int64 omitempty — all optional pointers. p2qpkActiveFixture() carries nil bit/statistics/signalling. p2qpkLockedInFixture() carries statistics with no threshold/possible. p2qpkDefinedFixture() carries no statistics. TestDecodeDeploymentInfo_StatusTransitions exercises all 5 statuses with deliberately different optional-field shapes. ✓
+
+  Range validation: PASS. Hash: validateHexHash — exactly 64 chars, all in [0-9a-f]. Height: < 0. Deployment name: non-empty, ≤128 bytes. Status/status_next: exact validBIP9Statuses enum (defined, started, locked_in, active, failed). Since: < 0. Bit: *b.Bit < 0 || *b.Bit > 28 (range [0,28]). MinActivationHeight: < 0. Statistics period: <= 0 (must be > 0). Elapsed: < 0 || > period. Count: < 0 || > elapsed. Threshold: <= 0 || > period (range (0,period]). Signalling: only # and -. No restriction on start_time/timeout. All covered by TestDecodeDeploymentInfo_RejectsMalformedResponse. ✓
+
+  Raw JSON: PASS. CandidateDeployment.RawJSON json.RawMessage is set to raw — the original bytes from info.Deployments[name] — never reconstructed from Status/SinceHeight. RawDeploymentInfo.Deployments map[string]json.RawMessage retains each deployment's bytes as Core sent them. TestDecodeDeploymentInfo_RawJSONRoundTrip verifies semantic equality after decode. TestReplaceSnapshot_RawJSONDBRoundTrip verifies semantic equality after a full PostgreSQL JSONB write/read cycle (key reordering is JSONB-canonical and accepted). Spot-check of all documented field names (type, active, bip9, bit, start_time, timeout,
+  min_activation_height, status, since, status_next, statistics, signalling, period, threshold, elapsed, count, possible) in the round-trip test. ✓
+
+  Migration 0003: PASS. deployment_state singleton table: name TEXT PRIMARY KEY, initialized BOOLEAN NOT NULL DEFAULT FALSE, generation BIGINT NOT NULL DEFAULT 0, core_tip_height BIGINT (nullable), core_tip_hash TEXT (nullable), deployment_count INT NOT NULL DEFAULT 0, observed_at TIMESTAMPTZ (nullable). CHECK constraints enforce UNINITIALIZED (!initialized AND generation=0 AND observed_at IS NULL AND core_tip_height IS NULL AND core_tip_hash IS NULL AND deployment_count=0) and INITIALIZED (initialized AND generation>=1 AND observed_at IS NOT NULL AND core_tip_height IS NOT NULL AND core_tip_hash IS NOT NULL).
+  Bootstrap row: INSERT INTO deployment_state (name) VALUES ('main') (UNINITIALIZED). Down migration: DROP TABLE IF EXISTS deployment_state — does NOT drop chain_deployments (owned by 0001). ✓
+
+  Migration round trip: PASS. TestMigrationRoundTrip_PreservesExistingData: starts at v2 only (guards migrations[len(migrations)-1].Version != 3); seeds real ApplyBlock + ReplaceSnapshot data; fingerprints all confirmed+mempool tables; exercises v2→v3, v3→v2, v2→v3; verifies deployment_state present/absent at each step; chain_deployments survives Down(1) after 0003 rolls back; all table fingerprints unchanged throughout; addressCountBefore == addressCountAfter; fresh reapplication leaves deployment_state.Initialized=false. ✓
+
+  Uninitialized state: PASS. State.Initialized=false before any ReplaceSnapshot. TestReplaceSnapshot_InitialPublication asserts before.Initialized=false. TestMigrationRoundTrip_PreservesExistingData asserts Initialized=false after fresh 0003 reapplication. ✓
+
+  Initialized empty: PASS. TestReplaceSnapshot_NonEmptyToEmpty: Initialized=true, DeploymentCount=0, chain_deployments count=0, generation increments. This is structurally distinct from "never synchronized". ✓
+
+  Generation: PASS. UPDATE deployment_state SET generation = generation + 1 on every successful commit. Failed observation → rollback → generation unchanged (proven by TestReplaceSnapshot_FailedReplacementPreservesPrevious and RPC/malformed tests). Skipped observation → no DB write → generation unchanged. Non-empty→empty and empty→non-empty: both increment (TestReplaceSnapshot_NonEmptyToEmpty, TestReplaceSnapshot_EmptyToNonEmpty). ✓
+
+  Store validation: PASS. candidate.validate() called before Begin. Rejects: malformed anchor hash (validateHexHash), negative anchor height, zero ObservedAt, duplicate deployment names (map check), invalid BIP9 status (!validBIP9Statuses[d.Status]), negative since_height, empty raw_json (len(d.RawJSON)==0). TestCandidate_ValidateRejectsDuplicateNames, TestCandidate_ValidateRejectsBadAnchor cover all. ✓
+
+  Atomic replacement: PASS. ReplaceSnapshot transaction: Begin → SELECT 1 FROM deployment_state WHERE name='main' FOR UPDATE (row lock, serializing concurrent writers) → DELETE FROM chain_deployments (full replacement) → per-deployment INSERT INTO chain_deployments → UPDATE deployment_state SET initialized=TRUE, generation=generation+1, ... RETURNING generation (LAST) → Commit. defer func() { if err != nil { tx.Rollback(ctx) } }(). Reader always sees complete generation N or complete generation N+1, never a partial mix. ✓
+
+  Rollback: PASS. TestReplaceSnapshot_FailedReplacementPreservesPrevious: candidate passes Go-level validate() (non-empty RawJSON for both rows), but zzz_second carries json.RawMessage("not-json") which PostgreSQL's JSONB column rejects at INSERT time — failure occurs AFTER DELETE and the first valid INSERT have already run inside the uncommitted transaction. Verifies: after.Generation == genGood, *after.CoreTipHash == goodAnchor, after.DeploymentCount==1, chain_deployments count==1, status=="started", leaked==0 (no rows from either bad candidate key). ✓
+
+  Initial DB/Core anchor: PASS. refreshOnce step A: initialDBTip = s.confirmed.Tip(ctx). Step B: initialCoreHeight, initialCoreHash = s.coreTip(ctx) (GetBlockCount + GetBlockHash(height)). Step A/B check: initialDBTip.Height != initialCoreHeight || initialDBTip.Hash != initialCoreHash → ErrConfirmedIndexNotReady. Uninitialized checkpoint (Height < 0) can never equal Core's non-negative height → also caught by this single comparison. ✓
+
+  Explicit hash query: PASS. s.rpc.GetDeploymentInfo(ctx, initialDBTip.Hash) — always passes the confirmed checkpoint's own hash. GetDeploymentInfo in rpc/deployment.go always passes blockHash as a positional argument to CallInto. Never called without arguments. ✓
+
+  Response anchor: PASS. After decoding: decoded.Height != initialDBTip.Height || decoded.Hash != initialDBTip.Hash → ErrDeploymentRace (wire-integrity failure). TestRefreshOnce_ResponseHashDiffersFromQueriedHash and TestRefreshOnce_ResponseHeightDiffersFromQueriedHeight both confirm. ✓
+
+  Final Core/DB anchor: PASS. Steps E/F: re-read finalCoreHeight/finalCoreHash via s.coreTip(ctx) and finalDBTip via s.confirmed.Tip(ctx). Step G: initialCoreHeight != finalCoreHeight || initialCoreHash != finalCoreHash → ErrDeploymentRace; initialDBTip.Height != finalDBTip.Height || initialDBTip.Hash != finalDBTip.Hash → ErrDeploymentRace. TestRefreshOnce_CoreTipMovedDuringAcquisition, TestRefreshOnce_DBTipMovedDuringAcquisition both confirm. ARCHITECTURE.md §24 explicitly states this does NOT claim mathematical cross-system atomicity. ✓
+
+  Race handling: PASS. All 9 deterministic non-sleep tests confirmed (see checklist item 28 analysis). fakeRPCClient and fakeConfirmedTip use "last value repeats" queue consumption, mirroring Phase 2F.1's fake RPC pattern. Sequence values traced: all tests produce correct skip/discard behavior, previous snapshot retained, generation unchanged where applicable. ✓
+
+  Confirmed non-mutation: PASS. TestReplaceSnapshot_ConfirmedTablesUnaffected: 12 confirmed tables fingerprinted before and after dstore.ReplaceSnapshot; all unchanged. internal/deployments imports only pgxpool, never internal/store's write path. ✓
+
+  Mempool non-mutation: PASS. TestReplaceSnapshot_MempoolTablesUnaffected: 8 mempool tables fingerprinted before and after dstore.ReplaceSnapshot; all unchanged. internal/deployments never references any mempool_* table. ✓
+
+  Runtime integration: PASS. runIndex only: deploymentStore := deployments.NewStore(pool) (separate store); deploymentSync := deployments.New(client, st, ...) (same Core RPC client, read-only confirmed tip); deploymentCtx, cancelDeployment := context.WithCancel(ctx), defer cancelDeployment(); go func() { defer deploymentWG.Done(); deploymentSync.Run(deploymentCtx) }(). After idx.Run returns: cancelDeployment(); deploymentWG.Wait() — no goroutine leak regardless of why confirmed indexing stopped. runServe untouched. var _ RPCClient = (*rpc.Client)(nil) compile-time check. ✓
+
+  Deployment failure isolation: PASS. Synchronizer.Run never returns an error: refreshOnce failures are passed to logRefreshOutcome which logs Debug (ordinary skip), Warn (race/unexpected), or nothing (context cancelled). Loop continues unconditionally to the next pollInterval. Never halts confirmed indexing or mempool observation. TestRefreshOnce_TemporaryRPCErrorRetainsPreviousSnapshot, TestRefreshOnce_MalformedDeploymentObjectRetainsPreviousSnapshot prove previous snapshot survives any failure. ✓
+
+  Confirmed failure semantics: PASS. idx.Run returns → cancelMempool() + mempoolWG.Wait() + cancelDeployment() + deploymentWG.Wait() → then exit code determined by runErr. Both observers cancelled and waited. No goroutine leak. ✓
+
+  Historical sync: PASS. initialDBTip.Height != initialCoreHeight || initialDBTip.Hash != initialCoreHash → ErrConfirmedIndexNotReady logged at Debug, retried next cycle. Confirmed indexing continues normally. TestRefreshOnce_ConfirmedIndexBehindCore proves this path. ✓
+
+  Serve/Core separation: PASS. runServe has zero diff. It never constructs deployments.Synchronizer, never calls GetDeploymentInfo, never reads QOGE_RPC_* credentials for deployment purposes. internal/deployments package is not imported by any serve code path. ✓
+
+  Public surface exclusion: PASS. internal/query/, internal/api/, internal/web/ are byte-for-byte unchanged. Zero new routes, zero new handlers, zero new templates. ARCHITECTURE.md §24 notes this was independently verified with git diff --stat against the Phase 2F.2 baseline. ✓
+
+  Real Core smoke: Attested in ARCHITECTURE.md §24: "re-confirmed by feeding a real captured getdeploymentinfo response from a synced mainnet node through the corrected decoder." Not independently verifiable from diff review alone, consistent with prior phase reviews. The architectural guarantee is solid: the only caller path that reaches GetDeploymentInfo is runIndex, and the decoder is exercised by extensive unit tests that are structurally equivalent to what a live response would produce.
+
+  Live P2QPK observation: The decoder handles all documented BIP9 fields; whatever Core reports flows into CandidateDeployment. No values are treated as source constants. The deployment_fixtures_test.go doc comment explicitly states: "synthetic constants — none are asserted as real Qogecoin mainnet consensus values." Per ARCHITECTURE.md §24, "P2QPK...is naturally included by this same, non-special-cased path — the deployment map key...is whatever name Core reports." ✓
+
+  Confirmed regressions: PASS. internal/query/snapshot_test.go (all four TestSnapshotConsistency_*_ConcurrentReorg tests) — zero diff; code they test unchanged. ✓
+
+  Mempool regressions: PASS. internal/query/mempool_snapshot_test.go (TestSnapshotConsistency_MempoolOverview_ConcurrentReplacement, TestSnapshotConsistency_MempoolDetail_ConcurrentReplacement) — zero diff; code unchanged. ✓
+
+  Phase 2F.1 regressions: PASS. internal/mempool/ production code — zero diff. All seven listed tests unchanged. migration_test.go compatibility update is correct: rolls back 2 migrations ([3 2]) and re-applies 2 ([2 3]), asserts deployment_state absent after rollback, chain_deployments still present (owned by 0001), deployment_state re-present after reapplication. ✓
+
+  Quality: PASS. Standard Go formatting throughout. var _ RPCClient = (*rpc.Client)(nil) (sync.go) and var _ RPCClient = (*fakeRPCClient)(nil) / var _ ConfirmedTipReader = (*fakeConfirmedTip)(nil) (test files) provide compile-time interface satisfaction checks. TestSynchronizer_RunStopsOnContextCancellation uses channel-based goroutine + context cancellation (not sleep-based synchronization), with a 5-second test timeout to prevent goroutine leak in case of failure. All test files are package deployments (white-box, consistent with existing test pattern). newTestStores wraps migrations + all three stores in one
+  call, preventing fixture setup errors. No unreachable code visible. No fmt.Sprintf-format mismatches visible.
+
+  Core discrepancies: None found. Required/optional field split verified against SoftForkDescPushBack behavior as cited in deployment.go and model.go: buried always emits type/active/height; bip9 always emits start_time/timeout/min_activation_height/status/status_next/since; bit/statistics/signalling are status-conditional optionals; statistics.period/elapsed/count always emitted when statistics itself is present; threshold/possible conditionally omitted (LOCKED_IN). All correctly modeled as pointer vs. non-pointer fields.
+
+  Data-loss/corruption risks: None found. Malformed Core response cannot become a legitimate empty snapshot: deployments=null → nil map → error; only a genuine {} passes. Missing required RPC fields cannot become zero: pointer types catch both absent and null. Stale snapshot cannot be partially replaced: FOR UPDATE lock + atomic transaction + rollback on any failure + deployment_state updated last. Generation never increments on failed/skipped observation: rollback reverts the UPDATE; early returns never reach ReplaceSnapshot. Deployment cache cannot mutate confirmed chain or mempool: proven by fingerprint tests
+  covering all 20 tables. Buried deployments are never persisted. P2QPK state is never hardcoded. getdeploymentinfo is always queried with an explicit hash. Core reorg race closes via before/after tip checks with ErrDeploymentRace discard. Deployment errors never halt confirmed indexing. Serve never touches Core.
+
+  ---
+  No blocking Core/P2QPK/deployment-observer discrepancy found. Phase 2G.1 is safe to merge.
+
+✻ Churned for 7m 29s
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
