@@ -1,0 +1,100 @@
+Now let's build and run all the new/changed tests.
+
+  Ran 3 shell commands 
+
+● All new/fixed tests pass on the first run. Now let's run the full package suites to check for regressions.
+
+  Ran 1 shell command 
+
+● All pass. Now let's run the full quality gates and the explicitly-named regressions.
+
+  Ran 3 shell commands 
+
+● All 10 packages pass, both normal and race. Now the explicitly-named regression list.
+
+  Ran 1 shell command 
+
+● All 6 pass (one took 7.19s but still passed — no flake). Now the Phase 2F.1 writer regressions.
+
+  Ran 3 shell commands 
+
+● Zero diff — the frozen dirs remain untouched. Committing, pushing, and updating the PR.
+
+  Committed d4deae4, pushed to phase2f-mempool-read-ui, ran 2 shell commands 
+
+● PR #10 confirmed updated to the new head.
+
+  PHASE 2F.2 INTERNAL REVIEW FIX
+
+  Commit: d4deae447f10fab07e7da4cfff7e24421d1f6248
+  PR head: d4deae447f10fab07e7da4cfff7e24421d1f6248 (PR #10, OPEN)
+
+  PREVOUT LINKS
+  - Confirmed prevout: TestMempoolTxPage_PrevOutLink_ConfirmedParent — PASS, links to /tx/{P}, not /mempool/tx/{P}
+  - Mempool parent: TestMempoolTxPage_PrevOutLink_MempoolParent — PASS, links to /mempool/tx/{P}
+  - Depends-based routing: prevOutLink(prevTxid, depends) template helper, no new database query
+  - Confirmed-prevout test: PASS
+  - Mempool-parent test: PASS
+
+  STALE SEMANTICS
+  - Definition: mempoolStateFrom unchanged (still anchor != confirmed tip, no ordering check)
+  - Neutral wording: "the confirmed indexed tip no longer matches this mempool snapshot's anchor" — both templates, query.MempoolState's doc comment
+  - Same-height reorg test: TestMempoolState_StaleOnSameHeightMismatch (query) + TestMempoolPage_SameHeightReorgWording (web, asserts absence of "advanced past"/"ahead of"/"newer than") — both PASS
+  - "advanced past" removed: yes, from both templates, query/mempool.go, and docs/ARCHITECTURE.md
+  - Architecture docs: updated to describe stale as inequality only, with same-height reorg/rollback explicitly called out as equally valid causes
+
+  SEARCH
+  - Confirmed precedence: preserved, unchanged ordering
+  - Actual same-txid fixture: TestSearch_ConfirmedTakesPriorityOverMempool now overrides mtx.TxID/mtx.WTxID to the confirmed txid, with an explicit DB-level assertion the collision actually exists before checking the redirect
+  - Redirect result: /tx/{id}, explicitly asserted NOT /mempool/tx/{id}
+  - Concurrency claim wording: corrected in both the handler's doc comment and docs/ARCHITECTURE.md — now states confirmed lookups are attempted before mempool lookups via separate sequential calls, not an atomic cross-domain snapshot
+
+  P2QPK
+  - Default witness hidden: unchanged, still PASS
+  - 17088 exact: unchanged, still PASS
+  - 32 exact: unchanged, still PASS
+  - P2TR distinct: unchanged, still PASS
+
+  SNAPSHOTS
+  - Mempool overview: PASS
+  - Mempool detail: PASS
+  - Confirmed overview/address/transaction/block: all 4 rerun — PASS
+
+  PHASE 2F.1 REGRESSION
+  - Dependency ordering, RPC identity, vsize distinction, weight, P2QPK, confirmed state: all rerun — PASS
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: all 10 packages pass (-count=1, real PostgreSQL)
+  - go test -race: all 10 packages pass
+  - go build: clean
+  - PostgreSQL executed: YES
+
+  PHASE BOUNDARY
+  - migrations/: ZERO
+  - mempool writer/: ZERO
+  - rpc/: ZERO
+  - store/: ZERO
+  - indexer/: ZERO
+  - decode/: ZERO
+  - script/: ZERO
+  - chain/: ZERO
+  - cmd/: ZERO
+  - (correction confined to internal/web/, internal/query/mempool.go doc-comment-only, and docs/ARCHITECTURE.md)
+
+  FILES OUTSIDE PROJECT
+  NONE
+
+  Stop.
+  Do not merge.
+  Do not begin pending-balance work.
+  Do not begin final UI polishing.
+
+✻ Sautéed for 9m 59s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #10 · ← 1 agent
+
