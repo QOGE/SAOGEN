@@ -1,0 +1,131 @@
+● Now let's check the race suite's progress.
+
+  Ran 1 shell command 
+
+● Still running. While waiting, let's check the README wording for the lock, since it references backfill behavior.
+
+  Searched for 1 pattern, read 1 file, ran 1 shell command 
+
+● I'll wait for this background task to finish rather than poll further.
+
+  Ran 1 shell command 
+
+● I'll just wait for the background task's completion notification instead of polling.
+
+  Ran 1 shell command 
+
+● Waiting for the race-suite run to finish in the background before proceeding to commit and PR update.
+
+● Task Output b0e0b113q
+  ⎿  ?          github.com/QOGE/qoge-explorer/internal/config   [no test files]
+     ok         github.com/QOGE/qoge-explorer/cmd/qoge-explorer 12.589s
+     ok         github.com/QOGE/qoge-explorer/internal/accounting       1.106s
+     … +15 lines
+
+● Background command "export QOGE_TEST_DATABASE_URL="postgres://qoge_explorer:qoge_explorer_test_pw@127.0.0.1:5432/qoge_explorer_test?sslmode=disable"
+cd /home/ion/qoge-explorer
+go test -race -count=1 ./... 2>&1 | tee /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/race_run.log
+echo "EXIT=$?"" completed (exit code 0)
+
+● The race suite passed too, EXIT=0, default parallel, no -p 1. All quality gates now confirmed. Let me run the full quality-gate sequence fresh once more and then commit.
+
+  Ran 1 shell command 
+
+● Now let's review the full diff before committing.
+
+  Ran 1 shell command 
+
+● Matches the expected phase boundary exactly — only internal/store/backfill.go, its test file, and docs/ARCHITECTURE.md. Committing and pushing now.
+
+  Committed 7020fe2, pushed to phase2h-block-accounting, ran 1 shell command 
+
+● Now let's post a PR comment summarizing this correction (following the established pattern for this branch), and confirm PR state.
+
+  Ran 1 shell command 
+
+● PR now has 5 commits, still OPEN. Let's post the correction summary comment.
+
+  Made 1 scratchpad edit +30, commented on PR #13 
+
+● Now the final PR-state check before delivering the report.
+
+  Ran 1 shell command 
+
+● Everything confirmed clean, pushed, and PR updated (MERGEABLE, 5 commits, still OPEN). Delivering the final report.
+
+  FINAL REPORT
+  ============
+
+  PHASE 2H.1 ADVISORY-LOCK ISOLATION
+  ===================================
+
+  Previous head: 79d58d2
+  New commit:    7020fe2
+  New PR head:   https://github.com/QOGE/qoge-explorer/pull/13 (OPEN, MERGEABLE, base main, 5 commits)
+
+  GROK FINDING
+  ------------
+  Original default parallel failure: go test -count=1 ./... failed intermittently under normal parallel package execution; passed reliably only with -p 1
+  Root cause: BackfillAccounting used one fixed, database-wide advisory-lock key (pg_try_advisory_lock(728341001)) — unrelated tests backfilling different, disjoint schemas in the same QOGE_TEST_DATABASE_URL database spuriously contended for it, causing the loser to get a legitimate-looking ErrBackfillAlreadyRunning despite operating on unrelated explorer state
+
+  LOCK
+  ----
+  Namespace: fixed constant backfillAccountingAdvisoryLockNamespace = 728341001 (unchanged value, reused as int32)
+  Schema identity: derived via schemaScopedLockKey — SELECT current_schema(), then SELECT hashtext($1) on that name; fails closed with ErrSchemaIdentityUnavailable if current_schema() is NULL/empty
+  Same-schema exclusion: pg_try_advisory_lock(namespace, hashtext(schema)) — identical key pair for the same schema, still mutually exclusive
+  Different-schema independence: different schema name -> different hashtext key -> no contention
+  Unlock identity: pg_advisory_unlock($1, $2) called with the exact same (namespace, schemaKey) pair captured at lock time
+
+  TESTS
+  -----
+  Same schema concurrent: TestBackfillAccounting_ConcurrentRunRejected — rewritten for the two-key form, deterministic (lock held before BackfillAccounting is called, no sleeps) — PASS
+  Different schemas concurrent: TestBackfillAccounting_DifferentSchemaNotBlocked — new, reproduces Grok's finding with two independent schemas in one database — PASS
+  Default go test run 1: PASS (EXIT=0)
+  Default go test run 2: PASS (EXIT=0)
+  Default go test run 3: PASS (EXIT=0)
+  Default race suite: PASS (EXIT=0), default parallel, no -p 1
+
+  ACCOUNTING
+  ----------
+  Semantic change: NONE
+  Network schedule: unchanged
+  Genesis preflight: unchanged (chain.ExpectedGenesisHash / store.VerifyNetworkIdentity untouched)
+  Underclaim: unchanged (still valid, never rejected)
+  Backfill source integrity: unchanged (ErrIncompleteAccountingSource, NULL-fee and missing-coinbase-output rejection untouched)
+  Reorg: unchanged
+  Immutable facts: unchanged (insertOrVerifyIdempotent / ErrImmutableConflict untouched)
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: 12/12 tested packages PASS across 3 fresh consecutive default-parallel runs (EXIT=0 each)
+  go test -race: 12/12 tested packages PASS, default parallel (EXIT=0)
+  go build: clean
+  PostgreSQL executed: YES genuinely (internal/store ~85-115s, internal/web ~52-77s, cmd/qoge-explorer ~9-20s per run — real DB-backed timings across every pass)
+
+  PHASE BOUNDARY
+  --------------
+  query/: ZERO
+  api/: ZERO
+  web/: ZERO
+  mempool/: ZERO
+  deployments/: ZERO
+  rpc/: ZERO
+  decode/: ZERO
+  script/: ZERO
+  chain/: ZERO
+  cmd/: ZERO
+  (actual changes: internal/store/backfill.go, internal/store/accounting_test.go, docs/ARCHITECTURE.md — no migration changes, 0001-0004 unchanged, no 0005)
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2H.2.
+
+✻ Churned for 11m 36s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ merge PR #13
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #13 · ← 1 agent
+
