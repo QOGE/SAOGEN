@@ -1,0 +1,122 @@
+● Now let's check git log/PR state before committing.
+
+  Ran 1 shell command 
+
+● Good — clean state, correct branch, PR #13 open. Now staging and committing.
+
+  Committed 79d58d2, ran 1 shell command 
+
+● Now pushing to the branch and updating PR #13.
+
+  Made 1 scratchpad edit +29, pushed to phase2h-block-accounting, edited PR #13, read 1 file, ran 1 shell command 
+
+● Now posting a PR comment summarizing this correction pass.
+
+  Commented on PR #13 
+
+● Now confirming final PR/git state before delivering the report.
+
+  Ran 1 shell command 
+
+● All committed, pushed, PR updated. Delivering the required final report.
+
+  FINAL REPORT
+  ============
+
+  PHASE 2H.1 BACKFILL NETWORK SAFETY
+  ==================================
+
+  Previous head: 88ae448
+  New commit:    79d58d2
+  New PR head:   https://github.com/QOGE/qoge-explorer/pull/13 (OPEN, MERGEABLE, base main, 4 commits)
+
+  GENESIS IDENTITIES
+  -------------------
+  main:    78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc
+  test:    8e7f8c6096865a08773b52fd776a0e283d9037ff2b50b20a04f6a0feb01c68d9
+  regtest: 7a69b7bb0c8f5ced03c9e64b770c30b52582d072cbe506339b8d5331b014d727
+  signet:  none — QOGE Core stable asserts no genesis hash for CSigNetParams ("signet is not functional in this release"); rejected as unsupported (chain.ErrGenesisUnsupportedForNetwork), not invented
+
+  PREFLIGHT
+  ---------
+  QOGE_NETWORK: required, unchanged
+  Expected genesis: chain.ExpectedGenesisHash(network) — pure lookup, verified against a fresh clone of src/chainparams.cpp
+  Observed canonical genesis: read from `blocks` at height 0 AND canonical (blocks_height_canonical_uidx guarantees at most one row)
+  Missing genesis: FAILS CLOSED — ErrGenesisMissing, never falls back to trusting QOGE_NETWORK alone
+  Mismatch: ErrGenesisMismatch, message includes configured network, expected genesis hash, observed genesis hash
+  Writes before verification: NONE — runBackfillAccounting calls store.VerifyNetworkIdentity before store.NewForNetwork and before BackfillAccounting is ever invoked
+
+  WRONG NETWORK
+  -------------
+  regtest DB + main config:
+    Exit: nonzero
+    Accounting rows written: 0
+    (TestRunBackfillAccounting_WrongNetworkRejectedBeforeWrites)
+
+  main DB + test config:
+    Exit: nonzero
+    Accounting rows written: 0
+    (TestRunBackfillAccounting_MainnetGenesisRejectsOtherNetworks/test, also regtest)
+
+  CORRECT NETWORK
+  ----------------
+  main:    QOGE_NETWORK=main against main-genesis DB — succeeds, 1/1 rows
+  test:    QOGE_NETWORK=test against test-genesis DB — succeeds, 1/1 rows
+  regtest: QOGE_NETWORK=regtest against regtest-genesis DB — succeeds, 1/1 rows
+
+  BACKFILL
+  --------
+  Core dependency: NONE — PostgreSQL-only, unchanged
+  Schedule selection: store.NewForNetwork(pool, cfg.Network), unchanged, now only reached after preflight passes
+  Genesis verification: store.VerifyNetworkIdentity (internal/store/network_identity.go), new, explicit, opt-in — not built into Store/ApplyBlock
+  Immutable conflict preserved: YES — insertOrVerifyIdempotent/ErrImmutableConflict untouched; preflight prevents the common misconfiguration from ever reaching that path
+
+  ACCOUNTING
+  ----------
+  Network schedule: unchanged (main/test/signet=500000, regtest=150)
+  Era-34 exhaustion: unchanged
+  Era-64 guard: unchanged
+  Underclaim: unchanged (still valid, never rejected)
+  Scheduled terminology: unchanged (ScheduledSubsidyThroughHeight, no "issued supply")
+  NULL fee: unchanged (still rejected, ErrIncompleteAccountingSource)
+  Missing coinbase outputs: unchanged (still rejected, ErrIncompleteAccountingSource)
+
+  REGRESSIONS
+  -----------
+  Phase 2H.1: all accounting/store/backfill/network-schedule/exhaustion/source-integrity tests — PASS
+  Store: full suite — PASS (non-race and race)
+  Phase 2G: internal/deployments — PASS, zero production changes
+  Phase 2F: internal/mempool — PASS, zero production changes
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: 12/12 tested packages PASS (-count=1, fresh run, EXIT=0)
+  go test -race: 12/12 tested packages PASS (-count=1, fresh run, EXIT=0)
+  go build: clean
+  PostgreSQL executed: YES (internal/store ~83–96s, internal/web ~52–60s per pass; cmd/qoge-explorer's new tests are themselves real-Postgres-only, auto-skip without QOGE_TEST_DATABASE_URL but ran genuinely here)
+
+  PHASE BOUNDARY
+  --------------
+  query/: ZERO
+  api/: ZERO
+  web/: ZERO
+  mempool production/: ZERO
+  deployments production/: ZERO
+  rpc/: ZERO
+  decode/: ZERO
+  script/: ZERO
+  (internal/chain/ gains one new small pure file, genesis.go — not in the forbidden list; explicitly anticipated by this correction's own spec as "a small chain/network identity helper"; no existing chain/ file touched)
+  (no migration changes — 0001–0004 all unchanged)
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2H.2.
+
+✻ Churned for 16m 42s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ check the PR comments for feedback
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #13 · ← 1 agent
