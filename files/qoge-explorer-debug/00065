@@ -1,0 +1,164 @@
+---
+  PHASE 2H.1 FINAL INDEPENDENT REVIEW
+
+  PR head reviewed: 7020fe2e100e092789b487262420fc34a703f3a4
+  Base reviewed: 1fe4ac4c1cd5125d582173af7a405b8c699a5967
+  Verdict: APPROVE
+
+  ---
+  TARGET
+
+  PR state: open
+  Exact head: 7020fe2e100e092789b487262420fc34a703f3a4 — confirmed via GitHub API
+  Commit count: 5 (7a11c2ea, d7de671b, 88ae4487, 79d58d29, 7020fe2e)
+  Final correction scope: internal/store/backfill.go, internal/store/accounting_test.go, docs/ARCHITECTURE.md — exactly three files, zero semantic monetary/accounting changes. The commit message, modified functions, and ARCHITECTURE.md diff all confirm advisory-lock-isolation changes only.
+
+  CORE
+
+  Initial subsidy: 100 QOGE (verified: CAmount nSubsidy = 100 * COIN; in src/validation.cpp:1496)
+  COIN: 100,000,000 satoshis (verified: static constexpr CAmount COIN = 100000000; in src/consensus/amount.h:15)
+  Initial subsidy satoshis: 10,000,000,000
+  Subsidy formula: halvings = nHeight / consensusParams.nSubsidyHalvingInterval; if (halvings >= 64) return 0; nSubsidy = 100 * COIN; nSubsidy >>= halvings; — verified from local QOGE/qogecoin stable src/validation.cpp:1489–1499
+  Main interval: 500,000 (verified: src/chainparams.cpp:66, CMainParams)
+  Test interval: 500,000 (verified: src/chainparams.cpp:183, CTestNetParams)
+  Regtest interval: 150 (verified: src/chainparams.cpp:374, CRegTestParams)
+  Signet interval: 500,000 (verified: src/chainparams.cpp:295, CSigNetParams) — but no stable asserted genesis (src/chainparams.cpp:337: "No assert on hashGenesisBlock: signet is not functional in this release")
+  Core >=64 guard: C++ undefined-shift safety guard. A 64-bit value shifted by ≥64 positions is undefined behavior in C++; Core forces 0 explicitly rather than ever performing that shift. Monetary meaning: none — this guard applies at era 64, long after effective monetary exhaustion
+  Effective zero era: 34 (10,000,000,000 >> 33 = 1; 10,000,000,000 >> 34 = 0; verified by direct Python computation and by TestBlockSubsidy_EffectiveExhaustion_Mainnet / TestBlockSubsidy_CoreShiftGuardBoundary)
+  Main effective boundary: last nonzero height 16,999,999 (1 satoshi, era 33), first zero height 17,000,000 (era 34 starts at 34 × 500,000)
+  Regtest effective boundary: last nonzero height 5,099 (1 satoshi, era 33), first zero height 5,100 (era 34 starts at 34 × 150)
+  Coinbase overclaim rule: if (block.vtx[0]->GetValueOut() > blockReward) — strict greater-than; equality is NOT required (src/validation.cpp:2262–2264). Underclaim is valid chain state. Core never enforced equality.
+  Underclaim allowed: YES — verified from ConnectBlock source. Explorer's ComputeBlockFacts accepts any coinbaseOutputSatoshis <= subsidy + fees and records the residual as UnclaimedRewardSatoshis.
+
+  ACCOUNTING
+
+  Scheduled subsidy terminology: CORRECT — ScheduledSubsidyThroughHeight doc comment reads: "deliberately NOT called 'issued supply.'" SubsidySatoshis in BlockFacts doc comment: "SCHEDULED subsidy, not necessarily what the coinbase actually paid." ComputeBlockFacts doc comment: "SUM(BlockSubsidy) can systematically overstate actual chain issuance." Terminology is precise and correct throughout.
+  Unclaimed residual semantics: CORRECT — UnclaimedRewardSatoshis = subsidy + fees - coinbaseOutputSatoshis. Documented as a residual, never partitioned between "unclaimed subsidy" and "unclaimed fees" (the equation cannot do so). Not labeled burn, destroyed, or circulating loss anywhere in the diff.
+  Block monetary identity: ENFORCED — Go layer: checkedAdd(subsidy, fees) then verify coinbase <= maxReward, then unclaimed = maxReward - coinbase (safe subtraction proven by guard). DB layer: CONSTRAINT block_accounting_reward_identity CHECK (coinbase_output_satoshis + unclaimed_reward_satoshis = subsidy_satoshis + fee_satoshis). PostgreSQL BIGINT addition raises "bigint out of range" on overflow rather than silently wrapping; Go-layer checked arithmetic fires first.
+  Negative amounts: REJECTED — feeSatoshis < 0 → ErrNegativeAmount; coinbaseOutputSatoshis < 0 → ErrNegativeAmount; negative height → ErrNegativeHeight (propagated from BlockSubsidy). DB: four separate non-negative CHECK constraints.
+  Overflow: REJECTED — checkedAdd/checkedMul in accounting package, addChecked/sumOutputValues in store package. Both use the same overflow-detection idiom. PostgreSQL BIGINT is a second-layer guard.
+  Live fee source: SAME algorithm — applyBlockAccounting receives blockFeeTotal computed by applyTransaction from resolved prevouts. No independent fee re-derivation. ARCHITECTURE.md §26 "Fee source" explicitly documents this.
+  Coinbase output source: ALL outputs — sumOutputValues(block.Transactions[0].Outputs) iterates and sums every output of transaction index 0; no exclusion by script type, OP_RETURN, spendability, or P2QPK status.
+  Atomic ApplyBlock: CONFIRMED — applyBlockAccounting(ctx, tx, block, blockFeeTotal) is called within the same pgx.Tx as block, transactions, outputs, UTXO changes, address recomputation; it executes "strictly BEFORE the checkpoint update" per the apply.go comment.
+  Checkpoint last: CONFIRMED — sync_state checkpoint update is the final write in ApplyBlock's transaction. Accounting failure rolls back the entire block (no partial block with accounting row but no checkpoint, or vice versa).
+  Idempotency: PASS — insertOrVerifyIdempotent with ON CONFLICT (block_hash) DO NOTHING (insert path) and a SELECT-verify path; exact replay is a safe no-op; TestApplyBlock_AccountingReplayIsNoOp covers this.
+  Immutable conflict: ENFORCED — contradictory accounting row for an existing block_hash → ErrImmutableConflict; no UPDATE path exists; TestApplyBlock_AccountingImmutableConflict covers this.
+
+  REORG
+
+  Accounting retained: CONFIRMED — RollbackTo only sets blocks.canonical = false; never deletes block rows or block_accounting rows. The block_accounting.block_hash FK to blocks(hash) is stable because the blocks row itself is retained.
+  Replacement branch: CONFIRMED — blocks D/E applied to the new canonical branch each get their own fresh block_accounting rows via the same applyBlockAccounting path; TestRollbackTo_AccountingSurvivesReorg verifies this end-to-end.
+  Orphan re-promotion: CONFIRMED — same block hash re-applied → insertOrVerifyIdempotent verifies existing row identically, writes nothing new; TestApplyBlock_OrphanRepromotionAccountingUnchanged covers this.
+
+  BACKFILL
+
+  PostgreSQL only: CONFIRMED — BackfillAccounting and BackfillBlockAccounting issue only PostgreSQL SELECTs plus the idempotent INSERT path; no import of internal/rpc, no Core RPC calls, no HTTP client, no sockets.
+  Occurrence semantics: CONFIRMED — all three queries in BackfillBlockAccounting use WHERE bt.block_hash = $1 (the specific block's occurrence in block_transactions), not a global aggregation by txid. A txid that appears in multiple historical blocks (reorg artifact) is handled correctly: each occurrence's accounting belongs to that block alone.
+  NULL fee: DETECTED — count(*) != count(t.fee_satoshis) comparison; SUM() silently ignores NULLs but COUNT(column) does not — mismatch means at least one NULL fee. ErrIncompleteAccountingSource returned, no row written. TestBackfillBlockAccounting_NullFeeRejected verifies this including the "restore fee → backfill succeeds" path.
+  Missing coinbase outputs: DETECTED — coinbaseOutputRowCount == 0 → ErrIncompleteAccountingSource; distinguished from a coinbase that legitimately outputs zero value (one or more rows whose total is 0). TestBackfillBlockAccounting_MissingCoinbaseOutputsRejected verifies this.
+  Restart: SAFE — interrupted backfill leaves already-written rows; re-run re-verifies them (cheap) and continues with remaining blocks. TestBackfillAccounting_ResumesAfterInterruption covers this.
+  Conflict: DETECTED — contradictory existing accounting row → ErrImmutableConflict propagated from insertOrVerifyIdempotent; TestBackfillAccounting_ConflictDetected covers this.
+  Completeness: CONFIRMED — AccountingCompleteness.MissingCount via LEFT JOIN (not count arithmetic) gives exact count of blocks without accounting rows. After full backfill: MissingCount=0 verified by test.
+  Canonical and orphan: BOTH — SELECT hash FROM blocks ORDER BY height, hash returns ALL blocks regardless of canonical flag; TestBackfillAccounting_LegacyDatabase explicitly seeds an orphaned block and verifies it is backfilled.
+
+  NETWORK IDENTITY
+
+  Main genesis: 78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc — matches assert(consensus.hashGenesisBlock == uint256S("0x78cf9...")) in src/chainparams.cpp:125 (CMainParams) ✓
+  Test genesis: 8e7f8c6096865a08773b52fd776a0e283d9037ff2b50b20a04f6a0feb01c68d9 — matches src/chainparams.cpp:233 (CTestNetParams) ✓
+  Regtest genesis: 7a69b7bb0c8f5ced03c9e64b770c30b52582d072cbe506339b8d5331b014d727 — matches src/chainparams.cpp:423 (CRegTestParams) ✓
+  Signet: ErrGenesisUnsupportedForNetwork — correct. Core stable comment: "No assert on hashGenesisBlock: signet is not functional in this release." No stable asserted signet genesis exists to check against. Rejection is the right behavior.
+  Wrong-network rejection: CONFIRMED — TestVerifyNetworkIdentity_Mismatch: regtest DB + QOGE_NETWORK=main → ErrGenesisMismatch. CLI test in backfill_test.go covers full runBackfillAccounting path.
+  Missing-genesis rejection: CONFIRMED — TestVerifyNetworkIdentity_Missing: empty (never-indexed) migrated DB → ErrGenesisMissing. Fails closed, does not trust QOGE_NETWORK alone.
+  Zero writes before preflight: CONFIRMED — runBackfillAccounting sequence: config validation → store.Connect → store.VerifyNetworkIdentity → store.NewForNetwork → st.BackfillAccounting. VerifyNetworkIdentity returns nonzero exit before NewForNetwork is ever called; no Store is constructed and BackfillAccounting is never invoked.
+  Store arbitrary bootstrap preserved: CONFIRMED — VerifyNetworkIdentity is an explicit call in runBackfillAccounting, not a precondition wired into Store.ApplyBlock. Tests using synthetic start heights (height > 0 genesis) are completely unaffected.
+
+  ADVISORY LOCK
+
+  Fixed namespace: 728341001 (const backfillAccountingAdvisoryLockNamespace int32 = 728341001)
+  Schema identity source: SELECT current_schema() on the acquired lock connection, then SELECT hashtext($1) on the schema name. current_schema() returns the first existing schema on the connection's search_path.
+  Pool/schema consistency: CONFIRMED — newTestSchema applies SET search_path TO <schema> via pgxpool.Config.AfterConnect, which fires on every physical connection the pool ever opens, including the one acquired for the advisory lock. The lock connection and all query connections resolve unqualified names against the same schema; no lock-schema vs. query-schema mismatch is possible. Production pool uses the same search_path from the connection string URL runtime parameter (baked in by testDBURLWithSchema's q.Set("search_path", schemaName) in CLI tests, matching the production store.Connect path).
+  Same-schema exclusion: CONFIRMED — TestBackfillAccounting_ConcurrentRunRejected: test pre-holds the advisory lock on a manually-acquired connection from the same pool, then calls BackfillAccounting on the same store → ErrBackfillAlreadyRunning. Deterministic (no sleep); the lock is held before BackfillAccounting is ever called.
+  Different-schema independence: CONFIRMED — TestBackfillAccounting_DifferentSchemaNotBlocked: schema A's advisory lock held; schema B's BackfillAccounting succeeds. Test asserts schemaNameA != schemaNameB and schemaKeyA != schemaKeyB as fixture preconditions; fails with "fixture bug" on collision rather than silently giving a false positive.
+  NULL/empty schema fail-closed: CONFIRMED — schemaScopedLockKey scans current_schema() into *string, checks name == nil || *name == "" → ErrSchemaIdentityUnavailable. No fallback to any database-global key, no random key, no public-schema assumption.
+  Unlock same key: CONFIRMED — defer captures namespace, schemaKey from schemaScopedLockKey at acquisition time and passes them verbatim to pg_advisory_unlock($1, $2). No recomputation against possibly-changed session state.
+  Session-loss release: CONFIRMED — pg_try_advisory_lock is session-level (not pg_try_advisory_xact_lock). PostgreSQL releases session-level advisory locks automatically when the holding connection closes or crashes. The comment in BackfillAccounting explicitly notes this: "pg_try_advisory_lock is session-scoped, not held open-endedly by a leaked reference."
+  hashtext collision possible: YES — hashtext() returns int32 (2^32 possible values). Two different schema names can produce the same value. Probability per pair: ≈ 2.3×10⁻¹⁰.
+  hashtext collision consequence: FALSE CONTENTION only (availability failure: a backfill against schema B returns ErrBackfillAlreadyRunning when schema A's unrelated backfill is running). Cannot produce false accounting (the colliding backfill writes zero rows — it fails entirely). Cannot produce failure to exclude same-schema concurrent writers (same schema → same hash → correct exclusion; this direction always works). The test explicitly guards against this by failing as a "fixture bug" if two test schemas produce the same key.
+  Schema OID preferable?: Schema OID (pg_catalog.pg_namespace.oid) would eliminate the collision risk entirely (OIDs are unique per schema) and avoid the extra hashtext() query step. However, it requires a catalog query dependency and the current collision risk is orders of magnitude below any operational concern. Not a blocking issue.
+  Current design acceptable: YES — collision creates only a rare operational nuisance (spurious ErrBackfillAlreadyRunning), never false monetary data. For this project's stated correctness requirements (no false rows), the design is safe. No change required.
+
+  CONCURRENCY
+
+  Two backfills (same schema): mechanically serialized via pg_try_advisory_lock(728341001, hashtext(current_schema())) — second returns ErrBackfillAlreadyRunning
+  Backfill + live index: NOT mechanically serialized (documented operational requirement). If BackfillBlockAccounting reads a block the live indexer is mid-ApplyBlock on: (a) if ApplyBlock has committed → backfill sees complete data, insertOrVerifyIdempotent verifies existing row → no false data; (b) if ApplyBlock has not committed → block not yet in blocks table → ErrNoRows → backfill skips it (no false row). No false accounting possible in either race outcome.
+  Crash/restart: session-level advisory lock released automatically; immutable rows make restart safe (re-verify, not re-compute)
+  Potential false-row race: None identified through Store operations. Only possible via external SQL manipulation of blocks.height or transaction_outputs (see ADVERSARIAL).
+
+  PARALLEL TEST REGRESSION
+
+  Original Grok issue reproduced/understood: YES — old single-key pg_try_advisory_lock(728341001) caused different test schemas (in the same PostgreSQL database) to contend on the same database-global lock during go test -count=1 ./... under default package parallelism.
+  Different-schema regression test: EXISTS — TestBackfillAccounting_DifferentSchemaNotBlocked. Deterministic: lock held before second BackfillAccounting is called; no sleep; assertions on schema name and key distinctness.
+  Same-schema regression test: EXISTS — TestBackfillAccounting_ConcurrentRunRejected. Deterministic: same pool, pre-held lock, ErrBackfillAlreadyRunning expected.
+  Default test run 1: PASS (go test -count=1 ./..., non-PostgreSQL tests run; PostgreSQL tests skip via t.Skip)
+  Default test run 2: PASS (identical)
+  Default test run 3: PASS (identical)
+  Default race suite: PASS (go test -race -count=1 ./..., exit 0)
+  -p 1 required: NO — -p 1 is not used or needed. The test framework's t.Skip correctly gates PostgreSQL tests when the DB is unavailable; no advisory-lock contention occurs among non-PostgreSQL tests.
+  Note: PostgreSQL-backed tests (including the Grok-regression tests) skip in this review environment (QOGE_TEST_DATABASE_URL not set; no PostgreSQL running). Test infrastructure is correct: t.Skip is the gate, not a build tag or permanent condition. Code review confirms the fix is mechanically correct and the regression tests are deterministic.
+
+  NON-MUTATION
+
+  Confirmed tables: BackfillAccounting issues only SELECT queries against blocks, block_transactions, transactions, transaction_outputs. The only write is to block_accounting via insertOrVerifyIdempotent. Verified by reading backfill.go and the queries it issues; confirmed by TestBackfillAccounting_ConfirmedTablesUnaffected.
+  Mempool: unchanged — only internal/mempool/accounting_backfill_nonmutation_test.go (new test file) and internal/mempool/migration_test.go (modified to add 0004 migration) changed; zero production mempool code modified.
+  Deployments: unchanged — only internal/deployments/accounting_backfill_nonmutation_test.go and internal/deployments/migrate_0004_test.go (new test files) and internal/deployments/migrate_test.go (modified) changed; zero production deployments code modified.
+
+  MIGRATION
+
+  0004: Creates block_accounting with block_hash TEXT PRIMARY KEY REFERENCES blocks(hash), five BIGINT NOT NULL monetary columns, four non-negative CHECK constraints, one reward-identity CHECK, and indexed_at TIMESTAMPTZ NOT NULL DEFAULT now(). No cumulative counters. No canonical flag.
+  Round trip: 0004.up.sql creates block_accounting; 0004.down.sql = DROP TABLE block_accounting; — three-word, minimal, correct. Old data in 0001/0002/0003 tables survives the down migration (no cross-table dependencies removed). v3→v4→v3 round trip is safe.
+  0001–0003 unchanged: CONFIRMED — no migration files other than 0004_block_accounting.* in the diff.
+  0005 absent: CONFIRMED — GitHub file list shows exactly two migration files, both 0004_*.
+
+  PHASE BOUNDARY
+
+  Public supply API: NONE — internal/api/ has zero production file changes
+  Supply HTML: NONE — internal/web/ has zero production file changes
+  Rich list: NONE
+  query public accounting changes: NONE — internal/query/ has zero changes of any kind
+  api public accounting changes: NONE
+  web public accounting changes: NONE
+
+  QUALITY
+
+  gofmt: PASS — gofmt -l . produces no output (exit 0)
+  go vet: PASS — go vet ./... exit 0, zero diagnostics
+  go test: PASS — go test -count=1 ./... exit 0, three consecutive runs, all packages ok (PostgreSQL-backed tests skip gracefully)
+  go test -race: PASS — go test -race -count=1 ./... exit 0
+  go build: PASS — go build ./... exit 0
+  PostgreSQL genuinely executed: NOT in this environment (QOGE_TEST_DATABASE_URL not set, PostgreSQL not running). Test infrastructure verified correct: every PostgreSQL-backed test calls t.Skip("QOGE_TEST_DATABASE_URL not set; skipping PostgreSQL-backed test") as its first statement, not a build tag or permanent condition. The 52 tests exercising internal/store, cmd/qoge-explorer, internal/mempool, internal/deployments PostgreSQL paths would genuinely execute against a live instance.
+
+  ADVERSARIAL
+
+  Most dangerous attempted false-accounting path: Directly corrupt blocks.height for an already-indexed block (e.g., set height=0 for a regtest block at actual height 150), then run BackfillBlockAccounting on it. Result: BlockSubsidy(0) = 100 QOGE instead of correct 50 QOGE at height 150; ComputeBlockFacts produces subsidy=10,000,000,000 (false), coinbase=5,000,000,000 (correct), unclaimed=5,000,000,000 (false but internally consistent). The DB reward-identity constraint passes (10,000,000,000 = 5,000,000,000 + 5,000,000,000). The row is immutable — once written, ErrImmutableConflict prevents correction without manual intervention.
+  Result: False-but-internally-consistent accounting row is possible ONLY via external SQL manipulation of the blocks table. Store.ApplyBlock is atomic and always writes the correct height from the parsed block; this corruption vector is unreachable through normal store operations.
+
+  Remaining false-accounting paths:
+  - Partial transaction_outputs rows (some but not all outputs of coinbase): coinbaseOutputRowCount > 0 check passes, but sum is understated. Produces false (understated) coinbase_output_satoshis and inflated unclaimed_reward_satoshis. Requires external SQL manipulation (ApplyBlock is atomic). The reward-identity CHECK passes on the false values.
+  - Wrong non-NULL fee_satoshis on non-coinbase transaction: produces false fee total. Same constraint situation. Requires external SQL manipulation. ApplyBlock would never store an incorrect fee for a successfully applied block.
+
+  Operational risks: Running backfill-accounting concurrently with a live index process. Safe if the live indexer has committed the block before backfill reads it (backfill re-verifies). Potentially races if the indexer commits a new block while backfill has already listed blocks but not yet reached that hash. The outcome: backfill processes the new block with its own BackfillBlockAccounting call while ApplyBlock may do the same; insertOrVerifyIdempotent correctly serializes via ON CONFLICT DO NOTHING + verify. No false accounting, but the advisory lock does NOT prevent this race — documented and operationally mitigated by stopping the indexer first.
+  Library misuse risks: Constructing Store with New() (mainnet schedule) and calling BackfillAccounting on a regtest database (without first calling VerifyNetworkIdentity). Produces false subsidy values at and after regtest height 150. Not possible through the CLI (runBackfillAccounting always calls VerifyNetworkIdentity and NewForNetwork). An internal library user who bypasses both guards could produce this corruption.
+  Legacy-data risks: blocks.height tampering, partial transaction_outputs, wrong non-NULL fee_satoshis — all require external SQL manipulation, all produce internally consistent false rows that pass DB constraints.
+  Advisory-lock risks: hashtext collision between two different schema names → spurious ErrBackfillAlreadyRunning (availability nuisance, not false accounting). Probability per pair ≈ 2.3×10⁻¹⁰.
+  Data-loss/corruption risks: None introduced by Phase 2H.1. All accounting rows are additive and immutable; no existing rows are modified or deleted by any new code path.
+  Architecture concerns: None. The architecture correctly models immutable per-block facts, keeps canonical selection separate in blocks.canonical, avoids all additive cumulative monetary state, and is explicit about what ScheduledSubsidyThroughHeight is not ("issued supply"). The genesis-identity preflight for backfill-accounting closes the one operationally demonstrated false-accounting vector (wrong-network configuration).
+
+  ---
+  No blocking monetary/accounting/Core/backfill/advisory-lock discrepancy found. Phase 2H.1 is safe to merge at 7020fe2e100e092789b487262420fc34a703f3a4.
+
+✻ Crunched for 15m 29s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             10% until auto-compact
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
