@@ -1,0 +1,203 @@
+● Now let's run the full quality gates fresh.
+
+  Ran 1 shell command 
+
+● All clean, and gofmt -l . produced no output (no unformatted files). Now let's run the full test suite once more (non-race, fresh) to confirm everything including the new docs/README changes didn't break anything.
+
+  Ran 1 shell command 
+
+● While the full suite runs in the background, let's verify the CLI still works correctly with the new QOGE_NETWORK requirement for backfill-accounting, using an isolated PostgreSQL schema.
+
+  Read 1 file, ran 2 shell commands 
+
+● Background command "go test -count=1 ./... 2>&1 | tail -30" completed (exit code 0)
+
+● All packages pass genuinely (fresh, -count=1). Now let's do the isolated-schema CLI smoke test to prove backfill-accounting correctly requires QOGE_NETWORK and uses the right schedule.
+
+  Ran 5 shell commands 
+
+● This confirms the exact failure mode the review described (using the wrong network silently invents unclaimed reward). Now let's verify the correct network reconstructs it faithfully.
+
+  Ran 1 shell command 
+
+● Confirmed: correct network reconstructs exactly matching the live values (100 QOGE for heights 148-149, 50 QOGE from height 150 onward, zero unclaimed). Now let's clean up the throwaway seeder and isolated schema.
+
+  Ran 1 shell command 
+
+● Clean — the throwaway seeder and isolated schema are fully removed, tree only shows intended changes. Now let's verify the phase-boundary constraint (zero touches to forbidden packages) and run gofmt/vet/build one more time.
+
+  Ran 1 shell command 
+
+● Zero touches to any forbidden package — even better than the original 2H.1 pass (that one had test-only additions to mempool/deployments; this correction touched none of those). Let's run the full quality gates one final time before committing.
+
+  Ran 2 shell commands 
+
+● Let's review the final diffs for internal review while the test suite finishes in the background.
+
+  Ran 2 shell commands 
+
+● Let me wait for the final background test run to complete before committing.
+
+  Read 1 file, ran 2 shell commands 
+  ⎿  Error: `prompt` is required when `stop` is not true.
+
+● That tool is for /loop sessions, not applicable here. I'll just wait for the background task notification. Meanwhile, let me double check the store.go diff reads cleanly.
+
+  Ran 1 shell command 
+
+● This reads well. Let's wait for the background test notification before finalizing.
+
+  Read 1 file 
+
+● I'll wait for the background task notification rather than poll further.
+
+  Ran 1 shell command 
+
+● Right — I already have the background task running; I'll just wait for its completion notification rather than poll.
+
+  Ran 1 shell command 
+
+● I'll wait for the background test to finish.
+
+  Ran 1 shell command 
+
+● Now I'll wait for that monitor task to notify me when the full test suite completes.
+
+● Waiting for the test suite to complete.
+
+  Ran 1 shell command 
+
+● I've completed the core implementation of the Phase 2H.1 internal review corrections and am now waiting on a final full test-suite run to confirm no regressions before committing. Here's where things stand:
+
+  Completed:
+  - Network-aware accounting.SubsidySchedule (main/test/signet = 500,000 halving interval; regtest = 150), verified against Core's src/chainparams.cpp
+  - ScheduleForNetwork rejects unknown networks outright (no silent mainnet fallback)
+  - Renamed IssuedSupplyThroughHeight → ScheduledSubsidyThroughHeight, fixed math.MaxInt64 overflow, corrected terminology throughout (it's a ceiling, not actual issuance)
+  - ComputeBlockFacts now rejects negative fee/coinbase-output inputs
+  - store.NewForNetwork(pool, network) added; cmd/qoge-explorer's index and backfill-accounting both now require QOGE_NETWORK and use it explicitly (verified live: using the wrong network on a real regtest-seeded chain reproduces exactly the silent-false-accounting bug the review described; the correct network reconstructs it faithfully)
+  - Backfill now detects NULL fee_satoshis and missing coinbase-output rows and fails loudly (ErrIncompleteAccountingSource) instead of silently under-counting
+  - docs/ARCHITECTURE.md §6/§26 and README.md updated
+  - Zero touches to any of the forbidden packages (query, api, web, mempool, deployments, rpc, decode, script, chain) — even cleaner than the original pass
+  - gofmt/go vet/go build all clean; -race suite already passed once with all new tests included
+
+  Still pending: the final fresh (non-race) full-suite confirmation run, then committing and updating PR #13. I'll report back once that finishes.
+
+✻ Cooked for 20m 39s
+
+● Background command "go test -count=1 ./... > /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/final_test.log 2>&1; echo "EXIT=$?" >> /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/final_test.log" completed (exit code 0)
+
+● The full test suite finished. Let me verify the actual log content rather than trust the summary.
+
+  Read 1 file 
+
+● Background command "until grep -q "EXIT=" /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/final_test.log 2>/dev/null; do sleep 5; done; tail -20 /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/final_test.log" completed (exit code 0)
+
+● All 14 packages pass genuinely (all ok, EXIT=0). Both the fresh non-race run and the earlier -race run confirm no regressions. Now let's commit and push per the spec's instructions.
+
+  Committed d7de671, ran 2 shell commands 
+
+● Now let's push and verify PR #13 picks up the new commit.
+
+  Pushed to phase2h-block-accounting, commented on PR #13, ran 2 shell commands 
+
+● PR #13 updated with the correction commit, mergeable, still open, working tree clean.
+
+  Ran 1 shell command 
+
+● FINAL REPORT
+  ============
+
+  PHASE 2H.1 INTERNAL REVIEW CORRECTION
+  =====================================
+
+  Previous head:  7a11c2e
+  New commit:     d7de671
+  New PR head:    https://github.com/QOGE/qoge-explorer/pull/13 (OPEN, MERGEABLE, base main, 2 commits)
+
+  NETWORK SCHEDULE
+  ----------------
+  main interval:    500,000  (CMainParams — verified against src/chainparams.cpp)
+  test interval:    500,000  (CTestNetParams)
+  regtest interval: 150      (CRegTestParams)
+  signet interval:  500,000  (CSigNetParams)
+  unknown network:  rejected (ErrUnknownNetwork, never defaulted to mainnet)
+  Store explicit schedule: yes — Store.accountingSchedule, bound at construction
+  Index schedule:    store.NewForNetwork(pool, cfg.Network); runIndex fails loudly if construction fails
+  Backfill schedule: store.NewForNetwork(pool, cfg.Network); runBackfillAccounting now also requires QOGE_NETWORK (previously did not)
+  Backfill Core dependency: NONE (unchanged — PostgreSQL only)
+
+  REGTEST
+  -------
+  149 subsidy: 100 QOGE (era 0, last block before regtest's halving)
+  150 subsidy: 50 QOGE  (regtest's first halving boundary — proven distinct from mainnet's 500,000-block interval)
+  300 subsidy: 25 QOGE  (regtest's second halving boundary)
+  ApplyBlock boundary:  proven live via TestApplyBlock_RegtestSubsidyBoundary (heights 149→150)
+  Backfill boundary:    proven via TestBackfillAccounting_RegtestSchedule, AND live against a real isolated PostgreSQL schema through the actual built binary — using the WRONG network (main) on a regtest-seeded chain reproduced exactly the false-accounting symptom described in review (subsidy=100 QOGE, unclaimed=50 QOGE at heights 150-152); the CORRECT network reconstructed byte-identical values to the original live accounting
+  False underclaim eliminated: YES, both live and backfill paths now agree exactly on regtest
+
+  TERMINOLOGY
+  -----------
+  IssuedSupplyThroughHeight removed/renamed: YES → SubsidySchedule.ScheduledSubsidyThroughHeight
+  Scheduled subsidy name: ScheduledSubsidyThroughHeight (accounting package), documented in docs/ARCHITECTURE.md §6/§26 as a ceiling, not actual issuance
+  Underclaim distinction: proven by TestComputeBlockFacts_ScheduledSubsidyIsNotActualIssuance — SubsidySatoshis still follows the schedule exactly while UnclaimedRewardSatoshis records the shortfall separately
+  Actual/circulating supply claimed: NO — unchanged, still explicitly deferred to Phase 2H.2
+
+  BACKFILL SOURCE INTEGRITY
+  -------------------------
+  NULL fee: detected via count(*) vs count(fee_satoshis) mismatch, rejected as ErrIncompleteAccountingSource, no row produced — proven by TestBackfillBlockAccounting_NullFeeRejected (fails on NULL, then succeeds once restored)
+  Missing coinbase outputs: detected via zero transaction_outputs row count (distinct from a legitimate zero-value claim), rejected as ErrIncompleteAccountingSource — proven by TestBackfillBlockAccounting_MissingCoinbaseOutputsRejected
+  No silent COALESCE corruption: confirmed — COALESCE(SUM(...), 0) is now always paired with a row/NULL-count check before being trusted
+
+  ARITHMETIC
+  ----------
+  math.MaxInt64: ScheduledSubsidyThroughHeight(math.MaxInt64) returns exactly the same value as the first fully post-exhaustion height, no error, no wrap — era arithmetic rewritten to never add 1 to height itself (proven by TestScheduledSubsidyThroughHeight_MaxInt64NoOverflow)
+  Negative fee input: rejected by ComputeBlockFacts (ErrNegativeAmount) — proven by TestComputeBlockFacts_NegativeFeeRejected
+  Negative coinbase input: rejected by ComputeBlockFacts (ErrNegativeAmount) — proven by TestComputeBlockFacts_NegativeCoinbaseOutputRejected
+  Overflow: all prior checked-arithmetic guarantees preserved and re-verified (sumOutputValues, addChecked, subsidy+fees)
+
+  ARCHITECTURE
+  ------------
+  Immutable per-block: UNCHANGED
+  Global cumulative counter: NONE (unchanged)
+  Reorg audit trail: UNCHANGED, re-verified by full regression pass
+  Checkpoint last: UNCHANGED
+  Underclaim valid: UNCHANGED — still the core design principle, now correctly reflected in terminology everywhere
+
+  REGRESSIONS
+  -----------
+  Phase 2H.1: all prior tests (basic/underclaim/overclaim/zero-fee/multi-fee/overflow/replay/immutable-conflict/reorg/orphan-repromotion/backfill/restart/conflict/completeness/non-mutation) — PASS, unchanged behavior
+  Store: full internal/store suite — PASS (fresh -count=1 and -race)
+  Phase 2G: internal/deployments — PASS, zero production changes (this correction touched no deployments files at all, unlike the original 2H.1 pass)
+  Phase 2F: internal/mempool — PASS, zero production changes (same — no mempool files touched this time)
+
+  QUALITY
+  -------
+  gofmt: clean (0 files)
+  go vet: clean
+  go test: 14/14 packages PASS (-count=1, fresh run, log verified line-by-line, not just exit code)
+  go test -race: 14/14 packages PASS (-count=1, includes all new tests)
+  go build: clean
+  PostgreSQL executed: YES — real, genuine (internal/store alone: 78-98s per full pass)
+
+  PHASE BOUNDARY
+  --------------
+  query/: ZERO
+  api/: ZERO
+  web/: ZERO
+  mempool production/: ZERO (this correction touched no mempool files at all)
+  deployments production/: ZERO (this correction touched no deployments files at all)
+  rpc/: ZERO
+  decode/: ZERO
+  script/: ZERO
+  chain/: ZERO
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2H.2.
+
+✻ Cogitated for 1m 6s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              Now using usage credits
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #13 · ← 1 agent
