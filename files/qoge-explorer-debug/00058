@@ -1,0 +1,222 @@
+● Now let's check whether a Core RPC node is reachable for the cross-check in section 68.
+
+  Searched for 3 patterns, read 1 file, listed 1 directory, ran 4 shell commands 
+
+● Good, exact decimal decoder exists. Let's write the throwaway cross-check program.
+    
+  Made 1 scratchpad edit +61, ran 1 shell command 
+    
+● Tree clean. Now let's check transaction counts at the candidate heights.
+    
+  Ran 1 shell command 
+
+● Very manageable transaction counts. Let's write the full cross-check.
+
+  Made 1 scratchpad edit +106, ran 1 shell command 
+    
+● Tree clean. Now let's run the real cross-check against the live Core node.
+
+  Ran 1 shell command 
+
+● The Core cross-check confirms the subsidy formula exactly matches the real chain across the first halving boundary, with correct fee computation and zero overclaims. Now let's finalize: review the diff and prepare the commit.
+
+  Ran 4 shell commands 
+    
+● All the correct files are staged, .claude/ excluded. Let's commit.
+
+  Committed 7a11c2e 
+
+● Committed. Now let's push the branch and open the PR (per explicit spec authorization — commit/push/PR, but no merge).
+
+  Pushed to phase2h-block-accounting, created PR #13, ran 1 shell command 
+
+● Everything verified: PR #13 is open, mergeable, and the working tree is clean. Let's mark the final task complete and deliver the report.
+
+● FINAL REPORT
+  ============
+
+  PHASE 2H.1 — IMMUTABLE BLOCK MONETARY ACCOUNTING
+  =================================================
+
+  Branch: phase2h-block-accounting
+  Commit: 7a11c2e
+  PR: https://github.com/QOGE/qoge-explorer/pull/13 (OPEN, MERGEABLE, base main)
+
+  BASELINE
+  --------
+  main: 1fe4ac4c1cd5125d582173af7a405b8c699a5967 (verified exact match, HEAD == origin/main)
+  working tree: clean before start, clean at every checkpoint, clean at end
+
+  CORE
+  ----
+  Subsidy source: src/validation.cpp GetBlockSubsidy — `CAmount nSubsidy = 100 * COIN; nSubsidy >>= halvings;`
+    with `if (halvings >= 64) return 0;`
+  Initial subsidy: 100 * COIN = 10,000,000,000 satoshis (src/consensus/amount.h: COIN = 100000000)
+  Halving interval: 500,000 (src/chainparams.cpp, CMainParams.nSubsidyHalvingInterval)
+  Reward-limit source: src/validation.cpp ConnectBlock —
+    `if (block.vtx[0]->GetValueOut() > blockReward) ... "bad-cb-amount"`
+  Overclaim rule: coinbase_output_total > subsidy + fees is rejected; confirmed exact match to architecture
+    doc's prior formula
+  Underclaim allowed: YES — confirmed directly from Core source; not merely assumed
+
+  SEMANTICS
+  ---------
+  Subsidy: height-derived issuance entitlement, pure function (accounting.BlockSubsidy)
+  Fees: exact sum of non-coinbase tx fees, reusing transactions.fee_satoshis (never a second algorithm)
+  Maximum reward: subsidy + fees (not stored, derived on the fly)
+  Coinbase output: exact sum of tx-index-0 outputs — OP_RETURN/unspendable/unknown/P2QPK/genesis all included
+  Unclaimed reward: subsidy + fees - coinbase output; positive value is VALID, never clamped/rejected
+  Issued supply: SUM(subsidy(h), h=0..tip), O(halving eras) not O(height); genesis (height 0) included
+  Genesis: included in issued supply despite Core never inserting its coinbase into the coins view —
+    issued supply and spendable-UTXO value are documented as distinct metrics
+  Circulating label: NOT USED
+
+  SUBSIDY
+  -------
+  Height 0: 10,000,000,000 satoshis (100 QOGE)
+  499999: 10,000,000,000
+  500000: 5,000,000,000
+  999999: 5,000,000,000
+  1000000: 2,500,000,000
+  1999999: 1,250,000,000
+  2000000: 625,000,000
+  Exhaustion: exactly zero at height MaxHalvings(64)*500000, stays zero for all heights beyond (tested to 640x that height)
+  Issued-supply algorithm: O(number of halving eras), ≤64 iterations, one multiply-add per era — never loops per-block
+
+  SCHEMA
+  ------
+  Migration: 0004_block_accounting (schema-only; no data rewrite inside the migration)
+  block_accounting: block_hash PK/FK -> blocks(hash); subsidy/fee/coinbase_output/unclaimed_reward_satoshis BIGINT NOT NULL >=0
+  Canonical duplication: NONE — no canonical column; blocks.canonical remains sole source of truth
+  Constraints: per-column nonnegative CHECKs + reward-identity CHECK
+    (coinbase_output + unclaimed = subsidy + fee); Postgres bigint arithmetic raises on overflow rather
+    than wrapping, documented as a second independent guard behind Go's own checked arithmetic
+  Down migration: DROP TABLE block_accounting only; verified round trip removes nothing else
+
+  STORE
+  -----
+  Fee source: SAME per-transaction fee already computed by applyTransaction from resolved canonical
+    prevouts (now also returned to ApplyBlock for block-level accumulation) — no second fee algorithm
+  Coinbase sum: exact sum of block.Transactions[0].Outputs, summed via checked arithmetic
+  Unclaimed: subsidy + fees - coinbase output, computed by accounting.ComputeBlockFacts
+  Checked arithmetic: every accumulation (per-tx, block-level fee total, coinbase-output total,
+    subsidy+fees) checked against int64 overflow; verified via dedicated overflow tests at every layer
+  Atomicity: written inside the SAME transaction as every other ApplyBlock write, after fees/coinbase are
+    known, strictly before the sync_state checkpoint update (still the final logical write)
+  Checkpoint last: confirmed unchanged (ordering test + code inspection)
+  Replay: exact tip replay produces one row, identical values, no duplicate — PASS
+  Immutable conflict: contradictory accounting for an already-persisted block_hash -> ErrImmutableConflict,
+    never overwritten — PASS (both live-path and backfill-path)
+
+  REORG
+  -----
+  Accounting deleted: NO — RollbackTo never touches block_accounting
+  Orphan audit trail: orphaned block's accounting row remains, byte-identical, after rollback — PASS
+  Replacement branch: new blocks get their own accounting rows — PASS
+  Re-promotion: re-applying a previously orphaned block (same hash, same content) leaves its
+    block_accounting row unchanged, no duplicate — PASS
+
+  BACKFILL
+  --------
+  Command: qoge-explorer backfill-accounting
+  Core dependency: NONE — PostgreSQL data only, verified by code path (no rpc.Client reference anywhere
+    in the backfill path) and by the live smoke test running with no RPC env vars
+  Canonical blocks: backfilled — PASS
+  Orphan blocks: backfilled — PASS (dedicated test + real smoke test both cover an orphan)
+  Idempotent: rerun produces identical state, verified not re-derived — PASS
+  Restartable: partial-progress rerun verifies existing rows and fills only the missing ones — PASS
+  Conflict detection: corrupted existing row detected and rejected, never overwritten — PASS
+  Concurrency policy: PostgreSQL session-level advisory lock rejects a second concurrent
+    backfill-accounting run (tested); does NOT serialize against a live `index` process (mechanically
+    impossible without blocking live indexing for the backfill's whole duration) — documented as an
+    operational requirement in the command's own usage text and in ARCHITECTURE.md §26
+  Completeness: CheckAccountingCompleteness reports BlockCount/AccountingCount/MissingCount; missing > 0
+    before backfill, 0 after — PASS
+
+  REAL SMOKE
+  ----------
+  Isolated DB: qoge_backfill_smoke_<timestamp> schema, dropped after the run (git status confirmed clean
+    before/after; throwaway seeder built into a temporary cmd/ dir and removed immediately after each build)
+  Blocks: 300 (synthetic chain, real ApplyBlock path, subsidy-exact coinbases)
+  Accounting rows: 300 (0 -> 300 after backfill)
+  Missing: 0 (300 -> 0)
+  Elapsed: ~2.0s first run (300 inserted), ~0.9s second run (300 verified, 0 inserted) — confirms idempotency
+  Core sample cross-check: LIVE read-only RPC against the real synced QOGE mainnet node on this VM
+    (height 2,444,821, txindex synced). Sampled heights 1, 499999, 500000, 500001, 1000000, 1500000,
+    2000000, tip — independently re-derived fees/coinbase-output-total from raw Core RPC data (resolving
+    every non-coinbase input's prevout via getrawtransaction) and compared against accounting.BlockSubsidy:
+    subsidy dropped EXACTLY 10,000,000,000 -> 5,000,000,000 satoshis at the real height-500000 halving
+    boundary; every sampled block showed coinbase_output == subsidy+fees exactly (miners claiming the full
+    reward on this chain), zero overclaims, matching the corrected Core rule precisely. No RPC writes,
+    no broadcasts, no config changes.
+
+  NON-MUTATION
+  ------------
+  Confirmed: sync_state/blocks/transactions/transaction_variants/block_transactions/transaction_inputs/
+    transaction_input_witness/transaction_outputs/output_addresses/output_participants/utxo_state/addresses
+    all byte-identical (content-level digest, not just row count) before/after BackfillAccounting — PASS
+  Mempool: all 8 mempool_* tables byte-identical before/after BackfillAccounting — PASS
+  Deployments: deployment_state and chain_deployments byte-identical before/after BackfillAccounting — PASS
+
+  REGRESSIONS
+  -----------
+  Store: full internal/store suite (idempotency, immutable conflicts, fee computation, amount overflow,
+    rollback, orphan re-promotion, address recomputation, Core UTXO semantics, genesis handling) — PASS,
+    including 2 pre-existing fixtures whose synthetic coinbase values exceeded the new (previously
+    unenforced) subsidy limit, corrected to subsidy-compliant values without weakening any check
+  Phase 2G: deployment observer / read snapshot / query / API / web tests — PASS, no semantic change;
+    migration round-trip tests updated for 0004's presence (mechanical necessity, not scope creep)
+  Phase 2F: mempool writer/read snapshot tests — PASS, no semantic change; same mechanical migration-count
+    update applied
+
+  QUALITY
+  -------
+  gofmt: clean (0 files)
+  go vet: clean
+  go test: 11/11 packages PASS (-count=1)
+  go test -race: 11/11 packages PASS (-count=1)
+  go build: clean
+  PostgreSQL executed: YES — real, no skips (QOGE_TEST_DATABASE_URL set throughout; store package alone
+    ran 70-90s per full pass, indicating genuine DB I/O)
+
+  PHASE BOUNDARY
+  --------------
+  query/: ZERO
+  api/: ZERO
+  web/: ZERO
+  mempool/: test-only additions/updates (2 modified, 1 new file) — no production code touched; required
+    because internal/store cannot import internal/mempool (mempool already imports store — a cycle), so
+    the mempool-non-mutation test for the new BackfillAccounting had to live in internal/mempool itself
+  deployments/: test-only additions/updates (1 modified, 2 new files) — same import-cycle reason, covering
+    deployment-table non-mutation and the dedicated 0004 migration round trip (needs mempool+deployments+
+    store together)
+  rpc/: ZERO
+  decode/: ZERO
+  script/: ZERO
+  chain/: ZERO
+
+  BRANCH
+  ------
+  phase2h-block-accounting: pushed to origin, PR #13 open against main, NOT merged
+
+  WORKING TREE
+  ------------
+  Status: clean
+
+  FILES OUTSIDE PROJECT
+  ---------------------
+  NONE — throwaway seeder/cross-check programs were built from temporary in-tree cmd/ directories, deleted
+  immediately after each build (git status verified clean before and after every use); scratchpad binaries,
+  logs, and the isolated smoke-test PostgreSQL schema were never committed and were fully cleaned up
+  (schema dropped, tree confirmed clean)
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2H.2.
+
+✻ Baked for 40m 10s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new task? /clear to save 403.7k tokens
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #13 · ← 1 agent
