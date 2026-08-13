@@ -1,0 +1,136 @@
+
+● All clean. Now the full test suite (non-race, then race in background):
+
+  Ran 1 shell command 
+  ⎿  You've hit your weekly limit · resets 7am (UTC)
+
+
+✻ Sautéed for 5m 47s
+
+❯ your work was interupted because of weekly limit, but now you can keep working from where you stopped, and please make sure nothing was lost or skipped                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+
+  Read 1 file 
+
+● Non-race suite: 14/14 packages pass, EXIT=0. Now running the race suite in the background since it takes longer.
+
+  Ran 1 shell command 
+
+● While that runs, let me verify nothing else was lost — checking git status and re-confirming the diff scope matches the phase-boundary requirement (zero touches to forbidden packages).
+
+  Read 1 file, ran 3 shell commands 
+
+● Now let's check the race test progress before committing.
+
+  Ran 1 shell command 
+
+● Still running. I'll stage and commit the accounting-correction changes now while the race suite finishes in the background — commit content doesn't depend on the race run, and I'll verify the log before delivering the final report.
+
+  Committed 88ae448, ran 1 shell command 
+
+● Committed as 88ae448. Now push to the same branch and update the PR description.
+
+  Pushed to phase2h-block-accounting, edited PR #13, commented on PR #13 
+
+● Now let's check on the race test.
+
+  Ran 1 shell command 
+
+● Still finishing up store/web (the slowest packages). I'll wait for it to complete before delivering the final report.
+
+● Scheduled a check-in once the race suite should be done; will deliver the final report then.
+
+✻ Cooked for 1m 40s
+
+● Background command "Run full race-detector test suite in background" completed (exit code 0)
+
+  Read 1 file 
+
+● Confirmed directly: 12/12 tested packages pass under -race -count=1, EXIT=0. Let's do the final state checks before delivering the report.
+
+  Ran 2 shell commands 
+
+● Everything checks out: clean tree, correct commit on top, PR #13 open/mergeable with 3 commits and an updated description/comment. Delivering the final report.
+
+● FINAL REPORT
+  ============
+
+  PHASE 2H.1 SUBSIDY-EXHAUSTION CORRECTION
+  ========================================
+
+  Previous head: d7de671
+  New commit:    88ae448
+  New PR head:   https://github.com/QOGE/qoge-explorer/pull/13 (OPEN, MERGEABLE, base main, 3 commits)
+
+  CORE
+  ----
+  Initial subsidy sats: 10,000,000,000 (100 QOGE; src/consensus/amount.h COIN=100000000)
+  Core >=64 guard: confirmed verbatim in src/validation.cpp:1489-1500 (fresh clone of QOGE/qogecoin stable) — `if (halvings >= 64) return 0;`, Core's own comment: "Force block reward to zero when right shift is undefined"
+  Meaning of guard: C++ shift-safety guard only — right-shifting a 64-bit value by >=64 bits is undefined behavior in C++; it is not a monetary-exhaustion statement
+
+  EFFECTIVE EXHAUSTION
+  ---------------------
+  First zero era: 34 (10,000,000,000 >> 34 = 0)
+  Last nonzero subsidy: era 33 = 1 satoshi (10,000,000,000 >> 33 = 1)
+
+  MAIN
+  ----
+  Last nonzero height: 16,999,999 → 1 satoshi
+  Last nonzero value: 1 satoshi
+  First zero height: 17,000,000 → 0
+  Post-zero: stays 0 (17,000,001 and beyond verified)
+
+  REGTEST
+  -------
+  Last nonzero height: 5,099 → 1 satoshi
+  Last nonzero value: 1 satoshi
+  First zero height: 5,100 → 0
+  Post-zero: stays 0 (5,101 and beyond verified)
+
+  SCHEDULED TOTAL
+  ----------------
+  Main terminal total: ScheduledSubsidyThroughHeight(16,999,999) == ScheduledSubsidyThroughHeight(17,000,000) — proven equal
+  Main MaxInt64: ScheduledSubsidyThroughHeight(math.MaxInt64) == value at height 17,000,000, no error, no overflow
+  Regtest terminal total: ScheduledSubsidyThroughHeight(5,099) == ScheduledSubsidyThroughHeight(5,100) — proven equal
+  Regtest MaxInt64: ScheduledSubsidyThroughHeight(math.MaxInt64) == value at height 5,100, no error, no overflow
+
+  TERMINOLOGY
+  -----------
+  64 described as shift guard: YES — SubsidySchedule doc comment, BlockSubsidy doc comment, §6/§26 all corrected; MaxHalvings field name kept (comments make the distinction unmistakable, per spec §5's optional-rename allowance)
+  Era 34 described as effective exhaustion: YES — throughout subsidy.go doc comments and §6/§26
+  IssuedSupply terminology absent: YES — unchanged from the prior correction pass; this pass touched no terminology, only the exhaustion-boundary grounding
+
+  PR DESCRIPTION
+  --------------
+  Updated: YES — replaced stale `IssuedSupplyThroughHeight`/11-package references with current `SubsidySchedule`/`ScheduledSubsidyThroughHeight`/network-aware behavior/NULL-fee & missing-coinbase-output backfill checks/12-tested-package count; added a summary PR comment for this specific correction
+
+  REGRESSIONS
+  -----------
+  Phase 2H.1: all prior tests (original + both correction passes) — PASS
+  Store: full internal/store suite — PASS (non-race and race)
+  Phase 2G: internal/deployments — PASS, zero production changes
+  Phase 2F: internal/mempool — PASS, zero production changes
+
+  QUALITY
+  -------
+  gofmt: clean (0 files)
+  go vet: clean
+  go test: 12/12 tested packages PASS (-count=1, fresh run, log verified directly, EXIT=0)
+  go test -race: 12/12 tested packages PASS (-count=1, fresh run, log verified directly, EXIT=0)
+  go build: clean
+  PostgreSQL executed: YES (internal/store: 82-93s, internal/web: 52-60s per pass — genuine DDL/DML timings)
+
+  PRODUCTION SEMANTICS
+  ---------------------
+  Changed: NO — verified via `git diff --stat`: only `internal/accounting/subsidy.go` (doc comments + one loop early-break optimization, same output for every input), `internal/accounting/subsidy_test.go`, `docs/ARCHITECTURE.md` touched. Zero touches to internal/store, cmd/qoge-explorer, or any of the nine forbidden packages (query/api/web/mempool/deployments/rpc/decode/script/chain).
+  Expected: NO substantive accounting change — CONFIRMED
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2H.2.
+
+✻ Crunched for 27s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ send it to independent review
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #13 · ← 1 agent
