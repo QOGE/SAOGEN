@@ -1,0 +1,158 @@
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+CODEX - local Explorer VN
+
+• # PHASE 2H.1 FINAL INDEPENDENT REVIEW 
+
+  PR head reviewed: 7020fe2e100e092789b487262420fc34a703f3a4
+  Base reviewed: 1fe4ac4c1cd5125d582173af7a405b8c699a5967
+  Verdict: APPROVE
+
+  ## TARGET
+
+  PR state: OPEN; merged=false; draft=false; mergeable=true; base=main
+  Exact head: Confirmed
+  Commit count: 5
+  Final correction scope: Only internal/store/backfill.go, internal/store/accounting_test.go, and docs/ARCHITECTURE.md; advisory-lock isolation only, with zero monetary semantic change
+
+  ## CORE
+
+  Initial subsidy: 100 QOGE = 10,000,000,000 satoshis
+  COIN: 100,000,000 satoshis
+  Subsidy formula: height/interval; return zero at halvings >=64; otherwise (100 * COIN) >> halvings
+  Main interval: 500,000
+  Test interval: 500,000
+  Regtest interval: 150
+  Signet: Non-functional stable stub; interval 500,000, but no stable asserted genesis identity
+  Core >=64 guard: C++ undefined-shift safety guard
+  Effective zero era: 34 (>>33 = 1, >>34 = 0)
+  Main effective boundary: height 16,999,999 = 1 satoshi; height 17,000,000 = 0
+  Regtest effective boundary: height 5,099 = 1 satoshi; height 5,100 = 0
+  Coinbase overclaim rule: Core rejects only coinbase output total greater than subsidy plus fees
+  Underclaim allowed: Yes; positive unclaimed reward is valid
+
+  ## ACCOUNTING
+
+  Scheduled subsidy terminology: Correctly distinguished from issued and circulating supply
+  Unclaimed residual semantics: Correctly defined as U=S+F-C; no intrinsic subsidy/fee partition
+  Block monetary identity: C+U=S+F, enforced in Go and PostgreSQL
+  Negative amounts: Rejected
+  Overflow: Checked in Go; PostgreSQL BIGINT overflow raises an error rather than wrapping. Extreme malformed inserts cannot bypass the identity constraint through wraparound
+  Live fee source: Same resolved-prevout fee persisted in transactions.fee_satoshis
+  Coinbase output source: Every transaction-zero output, without script/spendability filtering
+  Atomic ApplyBlock: Accounting is inside the block’s PostgreSQL transaction
+  Checkpoint last: Yes
+  Idempotency: Matching replay verifies without mutation
+  Immutable conflict: Contradictory row returns ErrImmutableConflict; no UPDATE path
+
+  ## REORG
+
+  Accounting retained: Yes; RollbackTo never deletes block_accounting
+  Replacement branch: Separate immutable rows
+  Orphan re-promotion: Existing accounting is reverified unchanged
+
+  ## BACKFILL
+
+  PostgreSQL only: Yes; no Core RPC
+  Occurrence semantics: Fees and coinbase identity originate through the exact block_transactions occurrence
+  NULL fee: Explicitly rejected
+  Missing coinbase outputs: Zero rows rejected; present rows summing to zero accepted
+  Restart: Safe; existing rows reverify
+  Conflict: Contradictory rows fail without overwrite
+  Completeness: Block/accounting/missing counts checked before and after CLI backfill
+  Canonical + orphan: Both included
+
+  ## NETWORK IDENTITY
+
+  Main genesis: 78cf9e38dad7e61400f3a3e4e987efa7c90c09f69d9be7ce95e504bfa447aadc
+  Test genesis: 8e7f8c6096865a08773b52fd776a0e283d9037ff2b50b20a04f6a0feb01c68d9
+  Regtest genesis: 7a69b7bb0c8f5ced03c9e64b770c30b52582d072cbe506339b8d5331b014d727
+  Signet: Correctly rejected; Core stable has no asserted usable signet genesis
+  Wrong-network rejection: Confirmed with real PostgreSQL, including regtest DB plus main configuration
+  Missing-genesis rejection: Confirmed fail-closed
+  Zero writes before preflight: Confirmed
+  Store arbitrary bootstrap preserved: Yes; genesis verification remains explicit/operational, not an ApplyBlock precondition
+
+  ## ADVISORY LOCK
+
+  Fixed namespace: 728341001
+  Schema identity source: current_schema()
+  Pool/schema consistency: Correct. Production URL runtime parameters and test AfterConnect configuration apply the same search_path to every physical connection
+  Same-schema exclusion: Confirmed deterministically
+  Different-schema independence: Confirmed deterministically in one database
+  NULL/empty schema fail-closed: ErrSchemaIdentityUnavailable
+  Unlock same key: Captured namespace/schemaKey pair reused exactly
+  Session-loss release: Yes; PostgreSQL releases session advisory locks when the holding session closes
+  hashtext collision possible: Yes, theoretically; second key is 32-bit
+  hashtext collision consequence: False contention/availability failure between different schemas only. It cannot defeat same-schema exclusion or create false accounting
+  Schema OID preferable?: Collision-free among simultaneously existing schemas, but not materially simpler or necessary here
+  Current design acceptable?: Yes. Collision behavior is fail-closed and cannot corrupt accounting
+
+  ## CONCURRENCY
+
+  Two backfills: Same schema mechanically excluded; different schemas independent
+  Backfill + index: Not mechanically serialized; stopping index remains explicitly required
+  Crash/restart: Session lock releases on connection loss; immutable rows make interrupted backfill restartable
+  Potential false-row race: Correct-schedule ApplyBlock is atomic and cannot expose partial source rows. A wrong-schedule internal-library caller could win the first immutable insert; production CLI network preflight prevents this, while direct library misuse remains outside that guarantee
+
+  ## PARALLEL TEST REGRESSION
+
+  Original Grok issue reproduced/understood: Database-global lock caused unrelated test schemas to contend under normal package parallelism
+  Different-schema regression test: PASS
+  Same-schema regression test: PASS
+  Default test run 1: PASS
+  Default test run 2: PASS
+  Default test run 3: PASS
+  Default race suite: PASS
+  -p 1 required: NO
+
+  ## NON-MUTATION
+
+  Confirmed tables: PASS; fingerprinted source tables unchanged
+  Mempool: PASS
+  Deployments: PASS
+
+  ## MIGRATION
+
+  0004: Schema-only immutable block_accounting table; down drops only that table
+  Round trip: PASS, including confirmed, orphan, mempool, and deployment state preservation
+  0001-0003 unchanged: Production migration files unchanged
+  0005 absent: Confirmed
+
+  ## PHASE BOUNDARY
+
+  Public supply API: NONE
+  Supply HTML: NONE
+  Rich list: NONE
+  query public accounting changes: NONE
+  api public accounting changes: NONE
+  web public accounting changes: NONE
+
+  ## QUALITY
+
+  gofmt: PASS
+  go vet: PASS
+  go test: PASS — three fresh default-parallel runs
+  go test -race: PASS — default parallelism
+  go build: PASS
+  PostgreSQL genuinely executed: Yes; QOGE_TEST_DATABASE_URL was set, and PostgreSQL tests executed in cmd/qoge-explorer, internal/store, internal/mempool, internal/deployments, query/API/web, and other fixtures
+
+  ## ADVERSARIAL
+
+  Most dangerous attempted false-accounting path: Regtest database backfilled as mainnet, which could otherwise fabricate a plausible positive residual
+  Result: Rejected before Store construction/backfill; nonzero result and zero accounting writes. Correct regtest configuration succeeds with the 150-block schedule
+  Remaining false-accounting paths: Externally corrupted legacy SQL can still yield self-consistent false rows when corruption is not inferable from frozen schema—for example wrong non-NULL fees, wrong block heights, missing non-coinbase occurrences, or a partially retained coinbase output set
+  Operational risks: Running backfill while live indexing is unsupported. It may omit newly committed blocks from the captured list and fail the final completeness check; rerun after stopping index
+  Library misuse risks: Direct callers can bypass CLI genesis preflight or construct a Store for the wrong network
+  Legacy-data risks: NULL fees, absent tx_index 0, non-coinbase tx_index 0, and zero coinbase-output rows are detected. Wrong non-NULL values, missing later occurrences, partial-but-nonempty outputs, or manual is_coinbase/value tampering may not be detectable from PostgreSQL alone
+  Advisory-lock risks: A theoretical hashtext collision causes unnecessary exclusion only. Best-effort unlock failure could retain a lock until that pooled session closes, causing availability failure but not false accounting
+  Data-loss/corruption risks: No production path found that wraps arithmetic, overwrites immutable history, deletes orphan accounting, bypasses network preflight, or mutates confirmed/mempool/deployment source state
+  Architecture concerns: No blocking concern. Immutable facts remain separate from canonical selection; Core remains authoritative; PostgreSQL is the backfill/read source; writes are idempotent and reorg-safe; no additive global monetary state exists
+
+  No blocking monetary/accounting/Core/backfill/advisory-lock discrepancy found. Phase 2H.1 is safe to merge at 7020fe2e100e092789b487262420fc34a703f3a4.
+
+─ Worked for 23m 05s ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ 
+› Explain this codebase
+ 
+  gpt-5.6-sol default · ~/qoge-explorer
