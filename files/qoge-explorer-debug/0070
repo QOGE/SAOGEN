@@ -1,0 +1,128 @@
+● Confirmed — both are the legitimate "different schema" claim, unrelated to the two-commands wording issue. No changes needed here. Let's mark #116 done and run the full quality gate.
+
+  Ran 1 shell command 
+
+● All clean. Now the full test suite, then -race.
+
+  Ran 1 shell command 
+
+● I'll wait for this to complete before starting the race run, to avoid contention on the shared test DB.
+
+  Ran 1 shell command 
+
+● Background command "cd /home/ion/qoge-explorer
+go test -count=1 ./... > /tmp/claude-1000/-home-ion/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/ancestry_test.log 2>&1
+echo "exit=$?"" completed (exit code 0)
+
+● The full test suite completed. Let's check the results.
+
+  Read 1 file 
+
+● All 12 packages pass. Now the -race run.
+
+  Ran 1 shell command 
+
+● While the race test runs, let's verify the phase boundary for this correction.
+
+  Ran 1 shell command 
+
+● Phase boundary confirmed clean: only docs/ARCHITECTURE.md, internal/store/supply_rollup_backfill.go, and one new test file. No migration, no api/web/query changes. Waiting for the race test.
+
+  Ran 1 shell command 
+
+● Background command "cd /home/ion/qoge-explorer
+go test -race -count=1 ./... > /tmp/claude-1000/-home-ion/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/ancestry_race.log 2>&1
+echo "exit=$?"" completed (exit code 0)
+
+● The race test completed. Let's check the results.
+
+  Read 1 file 
+
+● All 12 packages pass under -race. Full quality gate is green. Let's commit, push, and update PR #15.
+
+  Committed cba2f1f, pushed to phase2h-supply-rollup, ran 2 shell commands 
+
+● PR #15 now reflects the new commit; PR #14 remains completely untouched.
+
+● FINAL REPORT
+  ============
+
+  PHASE 2H.2a — BACKFILL ANCESTRY CORRECTION
+  ==========================================
+
+  Previous head: f2ed08e9b206c211cefbc0a831ef344c30b534f8
+  New commit:    cba2f1fe9d5373c244f81c6e50153b14da4c5635
+  New head:      cba2f1fe9d5373c244f81c6e50153b14da4c5635 (PR #15 updated, OPEN, not merged)
+
+  CANONICAL PREFLIGHT
+  --------------------
+  count: unchanged — canonicalCount == indexed_height+1
+  min height: unchanged — must equal 0
+  max height: unchanged — must equal indexed_height
+  genesis prev_hash: NEW — must be NULL, checked by findCanonicalAncestryBreach
+  parent continuity: NEW — every height>0 canonical block's prev_hash must equal the canonical block's hash at height-1, via lag(hash) OVER (ORDER BY height)
+  error type: ErrSupplyRollupCanonicalAncestryInvalid (new, specific sentinel — distinct from ErrSupplyRollupCanonicalShapeInvalid), includes child hash, child height, observed prev_hash, expected canonical parent hash
+
+  BROKEN-ANCESTRY TEST
+  ---------------------
+  canonical heights: 0 (genesis), 1 (a), 2 (b) — all shape-valid (count=3, min=0, max=2)
+  wrong child: b (height 2)
+  wrong observed parent: orphaned block X (structurally valid, canonical=false, unrelated to the real chain)
+  expected parent: a's real hash
+  accounting otherwise complete: YES — block_accounting untouched
+  UTXO otherwise consistent: YES — transaction_outputs/utxo_state untouched
+  result: BackfillSupplyRollup fails with ErrSupplyRollupCanonicalAncestryInvalid
+  rows published: 0
+
+  VALID CHAIN
+  -----------
+  normal chain: G→A→B→C backfills successfully, tip rollup byte-identical to the live-ApplyBlock-computed rollup
+  reorg replacement: G→A→B rolled back and replaced by G→C→D — backfill follows ONLY the current canonical chain (3 blocks: G, C, D), tip rollup matches live computation exactly, orphaned A/B never gain a rollup
+  backfill: PASS for both cases (TestBackfillSupplyRollup_NormalChainAncestryValid, TestBackfillSupplyRollup_ReorgedChainAncestryValid)
+
+  ROLLUP
+  ------
+  formula changed: NO
+  schema changed: NO
+  hot lookup changed: NO
+  ApplyBlock changed: NO
+  reorg changed: NO
+
+  LOCK DOCUMENTATION
+  -------------------
+  disjoint-table wording removed: YES — both occurrences describing backfill-accounting vs. backfill-supply-rollup (not the legitimate different-schema cases, which remain accurate and unchanged)
+  actual block_accounting dependency documented: YES — backfillSupplyRollupAdvisoryLockNamespace's doc comment now explains supply-rollup backfill reads block_accounting, and why separate lock namespaces remain safe anyway (immutable rows, fail-closed source-completeness preflight)
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, 12/12 packages, default parallelism
+  go test -race: PASS, 12/12 packages
+  go build: clean
+  PostgreSQL genuinely executed: YES (store package alone: 106s normal / 122.7s race, consistent with real DB-backed execution)
+
+  PHASE BOUNDARY
+  --------------
+  api: ZERO
+  web: ZERO
+  query: ZERO
+  migration change: ZERO
+  0006: NONE
+
+  Stop.
+  Do not merge.
+  Do not modify PR #14.
+
+  Four new regression tests added (TestBackfillSupplyRollup_BrokenAncestryDetected, _GenesisPrevHashMustBeNull, _NormalChainAncestryValid, _ReorgedChainAncestryValid), all 30 supply-rollup-related tests plus the full 12-package suite pass under both normal and -race. PR #14 untouched, main unchanged.
+
+✻ Churned for 12m 52s · 2 shells still running
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Background
+  2 active shells
+
+  ❯ while pgrep -f "go test -race" > /dev/null 2>&1; do sleep 5; done; echo finished; tail -20 /tmp/claude-1000/-home-ion/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/ancestry_race.log (running)
+    while pgrep -f "go test -count=1" > /dev/null 2>&1; do sleep 5; done; echo finished; tail -20 /tmp/claude-1000/-home-ion/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/ancestry_test.log (running)
+
+  ↑/↓ to select · Enter to view · x to stop · Esc to close
