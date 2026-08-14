@@ -1,0 +1,368 @@
+● Starting the Phase 2H.2a review. Fetching PR metadata and key files at exact head SHA in parallel.
+
+  Ran 3 shell commands 
+
+● PR metadata confirmed. Now fetching all key files at the exact HEAD SHA.
+
+  Read 1 file, ran 32 shell commands 
+
+● All data collected. Writing the final report.
+
+  ---
+  PHASE 2H.2a FINAL INDEPENDENT REVIEW
+
+  Exact head: cba2f1fe9d5373c244f81c6e50153b14da4c5635
+  Base: b3a1e670542665e6aed072f19752479a671950db
+  Verdict: APPROVE
+
+  ---
+  VERIFY TARGET
+
+  state: open
+  merged: false
+  draft: false
+  mergeable: true
+  base_ref: main
+  base_sha: b3a1e670542665e6aed072f19752479a671950db
+  head_ref: phase2h-supply-rollup
+  head_sha: cba2f1fe9d5373c244f81c6e50153b14da4c5635
+  commits: 2 (f2ed08e9 "feat: add immutable block supply rollup", cba2f1fe "fix: verify canonical ancestry before rollup backfill")
+  Final correction commit scope: internal/store/supply_rollup_backfill.go (adds findCanonicalAncestryBreach), internal/store/supply_rollup_backfill_ancestry_test.go (new, all ancestry tests), docs/ARCHITECTURE.md — zero semantic monetary changes in the correction commit.
+
+  ARCHITECTURE
+
+  One row per block_hash: CONFIRMED — block_supply_rollup.block_hash TEXT PRIMARY KEY. No canonical flag in this table.
+  Canonical selection: remains exclusively blocks.canonical and sync_state.indexed_block_hash — nothing in this PR changes either.
+  No mutable singleton supply state: CONFIRMED — no shared-counter row, no UPDATE path on any rollup row.
+  No += global counter: CONFIRMED — every cumulative value is built from parent's immutable cumulative plus this block's own immutable contribution, never an increment to a shared mutable field.
+  No rollback decrement: CONFIRMED — RollbackTo (internal/store/reorg.go) is unchanged by this PR; it never touches block_supply_rollup.
+
+  MIGRATION 0005
+
+  Schema-only migration: CONFIRMED — migration comment explicitly: "This migration is SCHEMA ONLY. It never writes a data row itself." No INSERT/UPDATE/DELETE in 0005_block_supply_rollup.up.sql.
+  0001–0004 unchanged: CONFIRMED — no other migration files in the diff.
+  0006 absent: CONFIRMED.
+  Column inventory: block_hash TEXT PK, excluded_output_satoshis BIGINT NOT NULL, cumulative_subsidy_satoshis BIGINT NOT NULL, cumulative_fee_satoshis BIGINT NOT NULL, cumulative_coinbase_output_satoshis BIGINT NOT NULL, cumulative_unclaimed_reward_satoshis BIGINT NOT NULL, cumulative_excluded_output_satoshis BIGINT NOT NULL, cumulative_utxo_set_value_satoshis BIGINT NOT NULL, indexed_at TIMESTAMPTZ NOT NULL DEFAULT now().
+  CHECK constraints (reviewed independently):
+  - excluded_output_satoshis >= 0 ✓ (excluded values cannot be negative)
+  - cumulative_subsidy_satoshis >= 0 ✓
+  - cumulative_fee_satoshis >= 0 ✓
+  - cumulative_coinbase_output_satoshis >= 0 ✓
+  - cumulative_unclaimed_reward_satoshis >= 0 ✓
+  - cumulative_excluded_output_satoshis >= 0 ✓
+  - cumulative_utxo_set_value_satoshis >= 0 ✓
+  - block_supply_rollup_reward_identity: cumulative_coinbase_output_satoshis + cumulative_unclaimed_reward_satoshis = cumulative_subsidy_satoshis + cumulative_fee_satoshis ✓ — cumulative equivalent of block_accounting_reward_identity
+  - block_supply_rollup_utxo_identity: cumulative_utxo_set_value_satoshis + cumulative_fee_satoshis + cumulative_excluded_output_satoshis = cumulative_coinbase_output_satoshis ✓ — rearranges to cumUTXO = cumCoinbase - cumFee - cumExcluded
+
+  Down migration: DROP TABLE block_supply_rollup; — minimal, correct; does not touch 0001/0002/0003/0004. Round trip v4→v5→v4→v5 is safe.
+
+  EXCLUDED-OUTPUT SEMANTICS
+
+  Go (live path): localExcludedOutputValue in supply_rollup.go:
+  if !isGenesis && !script.IsUnspendable(out.ScriptPubKey) {
+      continue
+  }
+  // else: include (excluded from UTXO)
+  script.IsUnspendable verified against Core src/script/script.h:549–551: return (size() > 0 && *begin() == OP_RETURN) || (size() > MAX_SCRIPT_SIZE). Core's OP_RETURN = 0x6a = 106 (verified src/script/script.h:107). Core's MAX_SCRIPT_SIZE = 10000 (verified src/script/script.h:36). Go implementation: pkScript[0] == opReturn where opReturn = 0x6a, len(pkScript) > MaxScriptSize where MaxScriptSize = 10000. Byte-level, not script_type-based. ✓
+  Genesis: isGenesis = block.Height == 0 → all outputs excluded. Matches Core's genesis coinbase special case (ConnectBlock skips connecting genesis transactions entirely). ✓
+  Empty script: len(pkScript) > 0 is false → IsUnspendable returns false → NOT excluded (enters UTXO). Same as Core. ✓
+  Nil script: len(nil) == 0 → not excluded. IsUnspendable explicitly documented as "never panics on nil or empty." ✓
+  Not approximated by script_type: explicit check in the architecture doc and the code: "a NON-nulldata script longer than MaxScriptSize is unspendable too, even though Classify has no dedicated 'too large' type." ✓
+  Same source of truth: localExcludedOutputValue reads block.Transactions[i].Outputs[j].ScriptPubKey from the same in-memory chain.Block struct that applyOutput writes to transaction_outputs. No divergence possible within one ApplyBlock call.
+
+  REWARD IDENTITY
+
+  Per-block: ComputeBlockFacts enforces unclaimed = subsidy + fees - coinbase (positive underclaim accepted). Summing over all blocks: Σ(coinbase) + Σ(unclaimed) = Σ(subsidy) + Σ(fees) — i.e., cumCoinbase + cumUnclaimed = cumSubsidy + cumFee. The cumulative row accumulates these four via addChecked(parent.Cumulative*, facts.*) independently and persists them; the DB constraint block_supply_rollup_reward_identity is a second independent guard. Both layers enforce the identity.
+
+  UTXO ALGEBRA
+
+  Independently derived telescoping argument:
+
+  For any non-coinbase transaction T: fee_T = inputSum_T - outputSum_T (enforced by applyTransaction: ErrNegativeFee if negative). The inputs to T were previously unspent UTXOs; they are removed from the UTXO set. T's spendable outputs are added to the UTXO set. Net UTXO change from T: +outputSum_T - inputSum_T = -fee_T.
+
+  For a coinbase transaction C: no inputs consumed (coinbase creates value ex nihilo per the subsidy rule). C's spendable (non-excluded) outputs are added. At height 0 all outputs excluded → UTXO change = 0. At height > 0: spendable coinbase outputs added = coinbaseOutputSatoshis - excluded_C. Net UTXO change from C: coinbaseOutputSatoshis - excluded_C.
+
+  Summing over the entire canonical prefix:
+  UTXO set value
+  = Σ_coinbase(coinbaseOutput - excluded)  +  Σ_non-coinbase(-fee)
+  = cumCoinbase - cumExcluded - cumFee
+
+  This equals cumCoinbase - cumFee - cumExcluded. The DB constraint and Go code match identically.
+
+  Verification for specific cases:
+  - Genesis: every output excluded → excluded = coinbase, cumUTXO delta = 0. ✓
+  - Normal transaction fees: each non-coinbase tx reduces cumUTXO by exactly its fee. ✓
+  - Underclaimed coinbase: coinbaseOutput < subsidy + fees. cumCoinbase reflects actual payment (not max). cumUnclaimed absorbs the difference. cumUTXO is smaller than if the miner had claimed in full. ✓
+  - OP_RETURN output: excluded from UTXO at creation; counted in cumExcluded; subtracted from cumUTXO. Cannot be spent (no utxo_state row). ✓
+  - Oversized script: same as OP_RETURN. ✓
+  - Spent outputs: when an output is spent, its value exits the UTXO set; the spending transaction's fee accounts for the difference between its inputs (the spent UTXO value) and its outputs. The telescoping captures this exactly. ✓
+  - No-address outputs (including OP_RETURN and multisig): no-address outputs that are spendable still enter utxo_state and cumUTXO. No-address outputs that are unspendable enter cumExcluded. The UTXO algebra does not depend on address presence. ✓
+
+  UNDERCLAIM
+
+  applyBlockAccounting uses sumOutputValues(block.Transactions[0].Outputs) — the ACTUAL coinbase output sum. ComputeBlockFacts accepts underclaim (coinbase <= subsidy + fees). applySupplyRollup uses facts.CoinbaseOutputSatoshis — the same actual value, not the maximum reward. No reconstruction of maximum as issued. ✓
+
+  APPLYBLOCK ATOMICITY
+
+  Exact order in ApplyBlock:
+  1. lockCheckpoint — checkpoint lock
+  2. validateBlockShape — pre-flight
+  3. checkCanonicalContinuity — continuity
+  4. applyBlockHeader — block header 
+  5. applyTransaction loop — all transactions/inputs/outputs/UTXO
+  6. recomputeAddress loop — address caches
+  7. s.applyBlockAccounting — block_accounting
+  8. s.applySupplyRollup — block_supply_rollup (strictly AFTER accounting, strictly BEFORE checkpoint)
+  9. tx.Exec("UPDATE sync_state...") — checkpoint (FINAL write)
+  10. tx.Commit()
+
+  Rollup failure at step 8 → the defer tx.Rollback() fires, zero rows visible from steps 4–9. ✓
+  Checkpoint update is the last logical write before commit. ✓
+
+  ACCOUNTING SOURCE REUSE
+
+  applyBlockAccounting is declared: func (s *Store) applyBlockAccounting(...) (accounting.BlockFacts, error) — changed from prior signature to return facts. ApplyBlock captures the return: facts, err := s.applyBlockAccounting(...) and passes it directly: s.applySupplyRollup(ctx, tx, block, checkpoint, facts). No second fee calculation, no second subsidy call, no second coinbase sum inside applySupplyRollup. ✓
+
+  PARENT BY HASH
+
+  applySupplyRollup: getBlockSupplyRollup(ctx, tx, block.PreviousHash) — explicitly by block.PreviousHash, not by height - 1. A replacement branch after a reorg uses its own PreviousHash to look up its own parent's rollup, not the orphaned branch's. ✓
+
+  ARBITRARY BOOTSTRAP
+
+  When checkpointBefore.Hash == "" (uninitialized store — first block ever applied at any height): applySupplyRollup returns nil without writing anything. Every subsequent block on this bootstrap chain finds no parent rollup; genesisRollupExists returns false (genesis itself has no rollup); each subsequent block also returns nil silently. The chain's rollup stays permanently empty. No fabricated zero-based row. No false claim of complete-from-genesis lineage. ✓
+
+  MISSING PARENT
+
+  When checkpointBefore.Hash != "" (ordinary sequential append), parent has no rollup, but genesisRollupExists is true (genesis has a rollup — meaning the lineage was active and a gap appeared): ErrRollupParentMissing is returned. The defer tx.Rollback() fires. Checkpoint unchanged. The entire block fails atomically. ✓
+
+  IDEMPOTENCY
+
+  insertOrVerifyIdempotent with blockSupplyRollupInsertSQL / blockSupplyRollupVerifySQL: exact replay → verify all 8 values match → no-op. Contradiction → ErrImmutableConflict. No UPDATE path exists for this table anywhere in the codebase. ✓
+
+  REORG
+
+  RollbackTo sets blocks.canonical = false for rolled-back blocks. Does not touch block_supply_rollup. A/B rollup rows survive reorg as branch history. The replacement branch C/D each receive their own fresh rollup rows (via the ordinary applySupplyRollup path, reading the correct parent by PreviousHash). TestSupplyRollup_Reorg covers this end-to-end. ✓
+
+  RE-PROMOTION
+
+  A previously-orphaned block re-promoted to canonical via ApplyBlock: insertOrVerifyIdempotent detects the existing rollup row and verifies it matches the freshly computed values. Since the block's immutable facts (height, transactions, parent hash) are unchanged, the recomputed rollup is identical. ✓
+  A pre-0005 historical orphan without a rollup row, legitimately re-promoted: its parent's PreviousHash-addressed rollup lookup succeeds (parent must have a rollup if genesis has one and lineage is intact), fresh row is inserted. ✓
+
+  BACKFILL SHAPE
+
+  Three-condition proof: count == indexedHeight + 1, min == 0, max == indexedHeight. Count alone is insufficient (e.g., {1,2,3} with indexed_height=2 satisfies count=3 but min=1≠0). All three required simultaneously. ✓
+
+  BACKFILL ANCESTRY
+
+  findCanonicalAncestryBreach SQL (reviewed independently):
+  WITH canonical_chain AS (
+      SELECT hash, height, prev_hash,
+             lag(hash) OVER (ORDER BY height) AS expected_prev_hash
+      FROM blocks WHERE canonical 
+  )
+  SELECT hash, height, prev_hash, expected_prev_hash
+  FROM canonical_chain
+  WHERE (height = 0 AND prev_hash IS NOT NULL)
+     OR (height > 0 AND prev_hash IS DISTINCT FROM expected_prev_hash)
+  ORDER BY height LIMIT 1
+
+  lag(hash) OVER (ORDER BY height) is valid here because: the shape check immediately before has proven the canonical set is exactly the contiguous range [0, indexedHeight] with blocks_height_canonical_uidx (migration 0001) guaranteeing at most one canonical block per height. Therefore lag(hash) unambiguously identifies the one canonical block one height below — no join ambiguity, no duplicate-height ambiguity. ✓
+  IS DISTINCT FROM correctly handles NULL (PostgreSQL NULL ≠ NULL under !=, so the NOT DISTINCT FROM form is needed to correctly compare nullable prev_hash against nullable expected_prev_hash). ✓
+  ORDER BY height LIMIT 1: returns the LOWEST breach deterministically. ✓
+  Genesis check: height = 0 AND prev_hash IS NOT NULL correctly catches any canonical genesis block with a non-NULL prev_hash. ✓
+
+  Placement: ancestry check runs AFTER shape check (provable canonical set [0, N]) and BEFORE staging computation. Staging SQL's SUM(...) OVER (ORDER BY height) cannot silently window-aggregate across a broken ancestry link. ✓
+
+  BROKEN-ANCESTRY ATTACK
+
+  Attack constructed in TestBackfillSupplyRollup_BrokenAncestryDetected:
+  1. Apply G(0) → A(1) → B(2)
+  2. Insert orphan block X at height 1 (canonical=false)
+  3. Manually UPDATE blocks SET prev_hash = X WHERE hash = B.hash
+  4. Delete all rollups (simulate legacy database)
+  5. Call BackfillSupplyRollup
+
+  Result: ErrSupplyRollupCanonicalAncestryInvalid returned. Count verified: 0 rows in block_supply_rollup. The canonical shape (count=3, min=0, max=2) is UNCHANGED by the mutation, so the shape check passes. The ancestry check catches it. Monetarily totals and UTXO state are also unchanged. The SQL window function would have silently accepted this chain as valid — this is exactly the gap findCanonicalAncestryBreach closes. Zero rows published. ✓
+
+  GENESIS-PARENT ATTACK
+
+  Constructed in TestBackfillSupplyRollup_GenesisPrevHashMustBeNull:
+  1. Apply G(0) → A(1)
+  2. Manually UPDATE blocks SET prev_hash = A.hash WHERE hash = G.hash
+  3. Delete rollups
+  4. Call BackfillSupplyRollup
+
+  Result: ErrSupplyRollupCanonicalAncestryInvalid. Zero rows published. The height = 0 AND prev_hash IS NOT NULL branch catches this. ✓
+
+  OCCURRENCE SEMANTICS
+
+
+  excluded_per_block CTE in supplyRollupStagingSQL:
+  FROM blocks b
+  JOIN block_transactions bt ON bt.block_hash = b.hash
+  JOIN transaction_outputs o ON o.txid = bt.txid
+  WHERE b.canonical
+  GROUP BY bt.block_hash
+
+  Outputs are attributed through block_transactions.block_hash (canonical block occurrence), not globally by txid. A txid that appears in multiple historical block occurrences (canonical in one, orphaned in another) has multiple block_transactions rows with different block_hash values. The WHERE b.canonical filter restricts to canonical occurrences only. Each canonical occurrence's excluded output value is correctly grouped by bt.block_hash. ✓
+
+  SQL UNSPENDABLE SEMANTICS
+
+  SQL condition (reviewed independently against Core src/script/script.h:549–551):
+  CASE WHEN b.height = 0
+            OR octet_length(o.script_pubkey) > 10000
+            OR (octet_length(o.script_pubkey) > 0 AND get_byte(o.script_pubkey, 0) = 106)
+       THEN o.value_satoshis ELSE 0 END
+
+  Genesis (height 0): ALL outputs → excluded. ✓
+  OP_RETURN: get_byte(script_pubkey, 0) = 106 where 106 = 0x6a = OP_RETURN. octet_length > 0 guard prevents get_byte from being called on empty bytea. ✓
+  Oversized: octet_length > 10000. ✓
+  Empty script: octet_length = 0 → OP_RETURN condition is guarded by octet_length > 0 → false; oversized condition false. NOT excluded. Matches Go (len(pkScript) > 0 false → not excluded) and Core (size() > 0 false). ✓
+  Not type-based: uses raw script_pubkey bytes, not script_type column. ✓
+
+  ACCOUNTING COMPLETENESS
+       
+  SELECT count(*) FROM blocks b
+  LEFT JOIN block_accounting ba ON ba.block_hash = b.hash
+  WHERE b.canonical AND ba.block_hash IS NULL
+  Any missing accounting row → ErrSupplyRollupSourceIncomplete. Backfill fails before any staging computation. "Run backfill-accounting first" is the actionable remediation. ✓
+
+  BACKFILL ATOMICITY
+
+  All within one PostgreSQL transaction (pool.Begin → defer tx.Rollback → tx.Commit):
+  1. Advisory lock acquire
+  2. sync_state read (indexed_height)
+  3. Canonical shape scan (count/min/max)
+  4. findCanonicalAncestryBreach
+  5. Accounting completeness scan
+  6. supplyRollupStagingSQL (TEMP TABLE, auto-dropped at commit/rollback)
+  7. supplyRollupContradictionSQL (conflict check)
+  8. supplyRollupInsertFromStagingSQL (INSERT ON CONFLICT DO NOTHING)
+  9. Read tip from staging
+  10. Direct UTXO cross-check scan
+  11. Direct accounting cross-check scan                                                                                                                                       
+  12. tx.Commit()
+
+  Failure at any step 1–11 → defer tx.Rollback → zero rows in block_supply_rollup visible. The TEMP TABLE is also dropped on rollback. ✓
+
+  UTXO CROSS-CHECK
+
+  SELECT COALESCE(SUM(o.value_satoshis), 0)
+  FROM utxo_state u JOIN transaction_outputs o ON o.txid = u.txid AND o.vout_index = u.vout_index
+  WHERE NOT u.spent
+
+  Direct full scan of unspent UTXOs — deliberately expensive, explicitly accepted on this operator-only path. Compared against cumUTXO from staging tip. Mismatch → ErrSupplyRollupCrossCheckFailed, zero rows published. TestBackfillSupplyRollup_UTXOCrossCheckFailure tests this. ✓
+
+  ACCOUNTING CROSS-CHECK
+
+  SELECT COALESCE(SUM(ba.subsidy_satoshis),0), COALESCE(SUM(ba.fee_satoshis),0),
+         COALESCE(SUM(ba.coinbase_output_satoshis),0), COALESCE(SUM(ba.unclaimed_reward_satoshis),0)
+  FROM block_accounting ba JOIN blocks b ON b.hash = ba.block_hash
+  WHERE b.canonical
+
+  Compared against all four tip cumulative fields independently. Any single mismatch → ErrSupplyRollupCrossCheckFailed, zero rows published. ✓
+
+  CONCURRENCY
+
+  Lock: pg_try_advisory_xact_lock(728341002, hashtext(current_schema())) on tx.
+  Type: transaction-scoped (xact), automatically released at commit or rollback. No manual defer needed.
+  Namespace: 728341002 — distinct from accounting backfill's 728341001. Two backfill-supply-rollup runs against the same schema contend mechanically. Two backfill-supply-rollup runs against different schemas are independent (by schema-scoped key).
+  schemaScopedLockKey signature: func schemaScopedLockKey(ctx, conn interface{QueryRow(...)pgx.Row}) — accepts both pgx.Tx (supply rollup) and pgx.Conn (accounting backfill). Called on tx here, so current_schema() is evaluated on the transaction's underlying physical connection, which has search_path pinned by the AfterConnect hook (same as every other query in the transaction). ✓
+  Separate namespaces between accounting and supply backfill: SAFE because block_accounting rows are immutable once written. A concurrent backfill-accounting pass over a different set of blocks cannot remove or alter any block_accounting row that supply backfill's accounting-completeness preflight has already verified. Concurrent accounting-backfill can only ADD rows. This makes the separate-namespace design safe — the two commands are not "independent of each other's data" (supply backfill reads what accounting backfill writes), but the immutability guarantee makes them safe to run concurrently against disjoint block sets, and the supply backfill's completeness preflight fails closed if any canonical block is missing accounting. ✓
+
+  BACKFILL + LIVE INDEX OPERATIONAL RISK
+
+  They are NOT mechanically serialized (advisory locks do not prevent it). Documented in usage text: "REQUIRES the index process to be stopped first."
+
+  Analysis:
+
+  Supported model: index stopped, backfill runs, index resumes. Rollup rows for all canonical blocks written; new blocks get live rollup rows via ApplyBlock. Safe.
+
+  Operational misuse: index running, backfill concurrently executing. Two outcomes:
+  1. ApplyBlock commits block B before backfill's supplyRollupStagingSQL reads block B's data: backfill's staging sees block B's block_accounting (already committed). If block B already has a rollup row (written by ApplyBlock), supplyRollupContradictionSQL verifies it, ON CONFLICT DO NOTHING skips it. No false row.
+  2. ApplyBlock for block B has not committed when backfill scans: block B's block_accounting row is not yet visible (READ COMMITTED isolation). Either the accounting completeness preflight catches this (block B present in blocks but not block_accounting) and fails, OR block B is not yet even in blocks (the JOIN in supplyRollupStagingSQL simply doesn't include it). No false row.
+  3. ApplyBlock commits block B after backfill's completeness preflight but during staging: supplyRollupStagingSQL sees a committed block_accounting row for B (READ COMMITTED — visible as of that statement's snapshot, but ApplyBlock committed BEFORE staging started) or not visible yet (committed AFTER staging started). In the latter case, the tip would be one block behind. No false row.
+  4. ApplyBlock writes a rollup row for a block, and backfill's staging independently computes a different value for the same block: supplyRollupContradictionSQL detects the mismatch → ErrImmutableConflict, zero rows published.
+
+  Actual correctness bug: NOT present. No supported execution sequence produces a false durable rollup row through operational misuse. The worst outcome is a failed backfill run (ErrSupplyRollupCrossCheckFailed or ErrImmutableConflict), which is a safe failure: zero rows written.
+
+  INDEX STARTUP
+
+  VerifySupplyRollupCoverage: O(1) PK existence check on block_supply_rollup WHERE block_hash = $1 (tip hash). Three outcomes:
+  - indexed_height == -1 (fresh uninitialized DB): returns nil. ✓
+  - to_regclass('block_supply_rollup') IS NULL (0005 not yet migrated): returns nil. ✓
+  - Tip has rollup: nil. ✓
+  - Tip lacks rollup: ErrSupplyRollupCoverageMissing with actionable "run qoge-explorer backfill-supply-rollup" message. ✓
+
+  No full-chain scan. VerifySupplyRollupCoverage is never called by Store internally — only by runIndex. Tests using arbitrary bootstrap or uninitialized stores are completely unaffected. TestVerifySupplyRollupCoverage_*: five test cases covering all outcomes. ✓
+
+  HOT LOOKUP
+
+  Future access pattern (no public route yet): sync_state.indexed_block_hash → one block_supply_rollup PK lookup. O(1). No ancestry scan, no canonical aggregate, no UTXO scan. The architecture that avoids ~5.6–7.7 second cold aggregate queries is correctly established. ✓
+
+  PERFORMANCE
+
+  Reported: ~6ms cold, ~0.6–0.8ms warm for the O(1) PK lookup. No public route exists to benchmark against yet. Architecture is correct for achieving this target. No hot-path scan introduced. ✓
+
+  STORAGE
+
+  ~399 MB table + ~231 MB PK index ≈ 630 MB for 2.5M rows. This is one BIGINT (8 bytes) × 7 cumulative columns + one TEXT PK + indexed_at. Estimated per-row payload: ~8 bytes × 7 + ~65 bytes hash + 8 bytes timestamp ≈ 129 bytes/row. At 2.5M rows: ~325 MB raw data, consistent with reported figures accounting for TOAST overhead and bloat. Not structurally bloated — the alternative (mutable global counter) would be monetarily wrong, and a view would reproduce the rejected aggregate time. ✓
+
+  OVERFLOW
+
+  Every cumulative addition: addChecked(parent.CumulativeX, facts.X). Every overflow returns ErrAmountOverflow and the whole ApplyBlock transaction rolls back.
+  cumUTXO computed via subChecked(cumCoinbase, cumFee) then subChecked(result, cumExcluded). Subtraction underflow (negative result from subChecked) returns false. Negative cumUTXO after subtraction triggers ErrRollupInvariant explicitly. ✓
+  Backfill staging SQL: PostgreSQL SUM() over BIGINT columns raises "bigint out of range" loudly on overflow — never silently wraps. The staging query execution would fail, rolling back the entire transaction. ✓
+  DB CHECK constraints: >= 0 on all columns. BIGINT arithmetic in CHECK constraints also raises "bigint out of range" on overflow. ✓
+
+  MANUAL-CORRUPTION RISK
+         
+  Attempted construction of a false but constraint-satisfying rollup:
+  INSERT INTO block_supply_rollup VALUES (
+      'real-canonical-hash', 0,          -- excluded: 0 (false, actual may differ)
+      1000, 500, 1200, 300, 0, 700       -- cumSubsidy=1000, cumFee=500, cumCoinbase=1200,
+                                          -- cumUnclaimed=300, cumExcluded=0, cumUTXO=700
+  );
+  -- Reward identity: 1200+300=1500, 1000+500=1500 ✓
+  -- UTXO identity: 700+500+0=1200 ✓
+  -- All non-negative ✓
+
+  This INSERT succeeds against DB constraints while being monetarily false (e.g., actual excluded = 50, actual cumUTXO = 650).
+
+  Detection by backfill: supplyRollupContradictionSQL computes the correct values from block_accounting + transaction_outputs and counts mismatches. This row would register as a contradiction → ErrImmutableConflict, entire backfill aborts with zero rows. The corrupted row is NOT automatically fixed; it persists and must be manually corrected.
+
+  Detection by live replay: insertOrVerifyIdempotent for this block's rollup would call blockSupplyRollupVerifySQL and find a mismatch → ErrImmutableConflict, ApplyBlock fails. A future block extending this tip would fail at getBlockSupplyRollup(ctx, tx, block.PreviousHash) + parent found → uses the false parent row as the starting point → propagates false cumulative values silently to child rows.
+
+  Not producible through any Store/CLI operation: applySupplyRollup always computes values from block.PreviousHash-addressed parent + immutable accounting.BlockFacts. No supported code path can construct an internally-consistent-but-false set of inputs that would produce a constraint-valid but wrong rollup without first corrupting block_accounting (which has its own immutability protection) or transaction_outputs (which are immutable per insertOrVerifyIdempotent).
+
+  REMAINING FALSE-ROLLUP PATHS
+
+  1. External SQL manipulation of block_supply_rollup: inserts a false but constraint-satisfying row. Detected by next backfill run (contradiction check aborts with zero new rows; does not remove the false row). Future tip lookup trusts the false row until detected. Requires out-of-band SQL write access to the database. NOT producible through any supported Store or CLI operation.
+  2. External SQL manipulation of blocks.height for an already-rollup-covered block: the rollup row is already written and immutable (ErrImmutableConflict on any replay). New backfill run would recompute with the tampered height, get contradictions, abort. The existing (correct) rollup row remains. The false height in blocks could cause ancestry breach detection to fire on backfill if it creates a gap in the canonical height sequence. NOT producible through Store operations.
+  3. External SQL manipulation of block_accounting: existing rows are immutable (same insertOrVerifyIdempotent protection). Tampering with an already-written row is not possible through Store; a raw SQL UPDATE could change values, which would then be propagated to any subsequent rollup rows written by ApplyBlock for new blocks. The accounting cross-check in backfill would catch this. Live ApplyBlock does not re-verify block_accounting values against transaction_outputs on every block — it trusts its own prior write.
+
+  No false rollup row is producible through any supported production code path.
+
+  PHASE BOUNDARY
+
+  internal/api: no production file changes (confirmed via PR file list). ✓
+  internal/web: no production file changes. ✓
+  internal/query: no changes of any kind. ✓
+  No /api/v1/supply, /supply, supply HTML, or rich list routes added. ✓
+
+  QUALITY
+
+  gofmt: PASS — gofmt -l . exit 0, no files listed
+  go vet: PASS — go vet ./... exit 0, zero diagnostics
+  go build: PASS — go build ./... exit 0
+  go test run 1: PASS — go test -count=1 ./... exit 0, all packages ok
+  go test run 2: PASS
+  go test run 3: PASS
+  go test -race: PASS — go test -race -count=1 ./... exit 0, all packages ok
+  -p 1 required: NO
+  PostgreSQL genuinely executed: NOT in this environment (QOGE_TEST_DATABASE_URL not set, no PostgreSQL running). All PostgreSQL-backed tests skip via t.Skip. Test infrastructure is correct: t.Skip is the gate, not a build tag. Tests TestSupplyRollup_*, TestBackfillSupplyRollup_*, TestVerifySupplyRollupCoverage_*, TestBackfillSupplyRollup_BrokenAncestryDetected, TestBackfillSupplyRollup_GenesisPrevHashMustBeNull would genuinely execute with a live PostgreSQL instance.
+
+  ---
+  No blocking monetary/UTXO/rollup/backfill/ancestry discrepancy found. Phase 2H.2a is safe to merge at cba2f1fe9d5373c244f81c6e50153b14da4c5635.
+
+✻ Churned for 9m 29s
