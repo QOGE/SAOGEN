@@ -1,0 +1,69 @@
+• # PHASE 2H.2b FINAL INDEPENDENT REVIEW
+
+  Exact head: ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5
+  Base: 0d4c4c7e2a1e22d2e3749b56c11300906823ae5c
+  Verdict: APPROVE
+
+  Diff scope: PASS — prohibited production packages unchanged; migrations 0001–0005 unchanged; no 0006.
+  Hot query: PASS — snapshot reads sync_state, then one exact tip-hash PK lookup. No request-time aggregation or chain scan.
+  Public JSON contract: PASS — exactly 12 keys; satoshis are integers and QOGE values are chain.Amount(...).String() strings. Exact-key test prevents schema expansion.
+  Forbidden fields: PASS — no excluded-output, circulating, issued, or minted supply field exposed.
+  Metric semantics: PASS — all five fields map to the required cumulative rollup columns.
+
+  Reward identity: PASS
+  Reward LHS overflow: PASS
+  Reward RHS overflow: PASS
+  UTXO identity: PASS
+  UTXO first addition overflow: PASS
+  UTXO second addition overflow: PASS — UTXO tests preserve reward identity and genuinely reach both intended arithmetic paths.
+
+  Genesis: PASS — 100 QOGE subsidy/coinbase, zero fees/unclaimed/UTXO.
+  Fees: PASS — input-minus-output existing value; not presented as issuance or necessarily claimed.
+  Underclaim: PASS — actual coinbase value and positive unclaimed reward remain distinct.
+  OP_RETURN: PASS
+  Oversized script: PASS
+  No-address UTXO: PASS
+
+  Uninitialized: PASS — HTTP 200, height -1, null hash, zero totals and "0.00000000" strings; HTML states “No block has been indexed yet.”
+  Invalid checkpoint: PASS — initialized height with null hash returns ErrSupplyIntegrity, producing HTTP 500.
+  Missing tip rollup: PASS — ErrSupplyRollupUnavailable; API JSON 503 and actionable HTML 503.
+  Pre-0005 schema: PASS — SQLSTATE 42P01 maps to rollup unavailable without leaking database details.
+  Unexpected SQL errors: PASS — only pgx.ErrNoRows and 42P01 receive that mapping.
+
+  Orphan behavior: PASS — exact B-tip lookup; missing orphan A row is irrelevant.
+  Concurrent ApplyBlock: PASS — deterministic synchronization, wholly N then wholly N+1, no sleeps.
+  Concurrent reorg: PASS — in-flight A and fresh B; protected by REPEATABLE READ and immutable branch-addressed rows.
+  Mixed-tip response attack: PASS — no supported production sequence found. A false but internally consistent row requires privileged database corruption and is correctly classified as an operational/admin trust boundary.
+
+  API: PASS — GET JSON 200; POST JSON 405.
+  Web: PASS — GET HTML 200; POST HTML 405; security headers inherited.
+  Terminology: PASS — required labels and wording present, including the prominent circulating-supply disclaimer.
+  Core independence: PASS — supply serving does not construct or call an RPC client.
+  Non-mutation: PASS — production statements are read-only and PostgreSQL tests fingerprint all requested table groups.
+
+  Performance architecture: PASS — indexed checkpoint read followed by one rollup PK lookup; no cache, mutable counter, or chain-size fallback.
+  Documentation: PASS — §27/§28 separation is correct; §28 records the rejected 2.5M-row 5.6–7.7-second aggregation and correctly contextualizes the old 25k-row result.
+  Phase boundary: PASS — no rich list, ranking, distribution chart, or circulating-supply calculation.
+
+  gofmt: PASS
+  go vet: PASS
+  go test: PASS
+  go test -race: PASS
+  go build: PASS
+  PostgreSQL genuinely executed: YES — QOGE_TEST_DATABASE_URL was set and PostgreSQL-backed packages executed rather than skipping.
+
+  Remaining correctness risks:
+
+  - Privileged raw SQL can construct a source-false but identity-consistent rollup row. This is the documented operational/admin trust boundary handled by backfill/replay/operator verification, not by public request-time scans.
+  - Minor test-hardening opportunity: the supply-specific non-mutation test primarily compares row counts, so an UPDATE-only mutation would need structural review or the broader read-only coverage to catch it. The reviewed supply path contains only SELECTs, so this is not a correctness defect.
+
+  No blocking supply-read/rollup/snapshot/API/UI discrepancy found.
+  Phase 2H.2b is safe to merge at
+  ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5.
+
+─ Worked for 22m 52s ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ 
+› Find and fix a bug in @filename
+ 
+  gpt-5.6-sol default · ~/qoge-explorer
