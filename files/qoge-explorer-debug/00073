@@ -1,0 +1,78 @@
+● Query package passes fully. Now the API and web packages.
+
+  Ran 1 shell command 
+
+● Both pass. Now the full suite plus race detector, plus a source audit for forbidden SQL patterns (spec item 69).
+
+  Searched for 1 pattern, ran 1 shell command 
+
+● All 13 packages pass with default parallelism, real PostgreSQL, no forbidden SQL patterns in supply.go. Now the race build.
+
+  Searched for 1 pattern, ran 3 shell commands 
+
+● All production changes are confined to internal/api, internal/web, internal/query, docs, and test files — zero internal/store/etc. changes, migrations still exactly 0001-0005. Now committing.
+
+  Committed 951988a, ran 1 shell command 
+
+● Now let's push and update PR #14's title and body.
+
+  Pushed to phase2h-supply-read-ui, edited PR #14 
+
+● Now verifying the final PR state.
+
+  Ran 1 shell command 
+
+● PR #14 confirmed: OPEN, unmerged, title updated, base is main, head is the new commit 951988a619de34b74f233b421d3cac4c55b792ea — matching local push. Also confirming PR #14's stash is still preserved (not popped/dropped) and PR #15 remains untouched.
+
+  Ran 1 shell command 
+
+● Everything checks out. Final report per the runbook's template:
+
+  FINAL REPORT
+
+  PHASE 2H.2b — SUPPLY READ SURFACE
+  - Frozen base: 0d4c4c7e2a1e22d2e3749b56c11300906823ae5c
+  - Previous PR head: f27da91bc067be1e7f03d3b37b75abc6c395ada9
+  - Main merge commit on feature branch: 0039056f8019edb080947ca9e21772e2329f6079 (parents: f27da91b, 0d4c4c7e)
+  - Implementation commit: 951988a619de34b74f233b421d3cac4c55b792ea
+  - New PR head: 951988a619de34b74f233b421d3cac4c55b792ea
+  - PR: https://github.com/QOGE/qoge-explorer/pull/14
+
+  BRANCH RECONCILIATION: main merged: YES (--no-ff) · force push used: NO · stash inspected: YES (still preserved, not popped) · useful terminology restored: YES ("encoded in" / input-minus-output fee wording) · concurrent ApplyBlock test restored: YES (adapted) · canonical hot-scan experiment restored: NO
+
+  QUERY: status source: sync_state · rollup lookup: exact PK on block_supply_rollup.block_hash · request-time block_accounting aggregate: NO · request-time UTXO aggregate: NO · canonical scan: NO · ancestry scan: NO · rollup PK lookup: YES
+
+  PUBLIC METRICS: all five present, unchanged JSON shape · excluded-output metric public: NO · circulating-supply field: NONE · issued-supply field: NONE
+
+  INTEGRITY: reward identity: PASS · UTXO identity: PASS · checked arithmetic: YES · missing tip rollup → ErrSupplyRollupUnavailable: PASS · pre-0005 schema (42P01) → same error: PASS · administrative trust boundary documented: YES (§28)
+
+  SNAPSHOT: concurrent ApplyBlock: PASS · concurrent reorg: PASS · mixed response possible: NO
+
+  API: GET /api/v1/supply: PASS · rollup unavailable → 503: PASS · code: supply_rollup_unavailable · 405: PASS · Core dependency: NONE
+
+  WEB: GET /supply: PASS · rollup unavailable → 503: PASS · 405: PASS · template: updated · navigation: unchanged (already present) · coinbase wording: corrected · circulating-supply disclaimer: present
+
+  SEMANTICS: genesis/full claim/underclaim/OP_RETURN/oversized script/no-address output: all PASS
+
+  NON-MUTATION: block_supply_rollup included in fingerprint: YES · all reader paths mutation-free: YES
+
+  PERFORMANCE: old direct aggregation retained: NO · tip PK architecture: YES (reuses §27's benchmarked path) · new cache: NO · new mutable counter: NO
+
+  MIGRATIONS: 0001-0005 unchanged: YES · 0006: NONE
+
+  PHASE BOUNDARY: store/accounting/indexer/mempool/deployments/rpc/decode/script/chain production changes: ZERO (all) · rich list: NONE
+
+  REGRESSIONS: 2H.2a: PASS (full suite) · 2H.1/2G/2F: PASS · snapshot suites: PASS
+
+  QUALITY: gofmt: PASS · go vet: PASS · go test: PASS (13 packages) · go test -race: PASS · go build: PASS · PostgreSQL genuinely executed: YES · DB-backed skips: NONE
+
+  PR: title: updated · body updated: YES · state: OPEN · merged: NO · new exact head: 951988a619de34b74f233b421d3cac4c55b792ea
+
+  Stop. Not merged. Phase 2H.3 not begun.
+
+✻ Cooked for 18m 41s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Post the internal-review candidate for external review of PR #14
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #14 · ← 1 agent
