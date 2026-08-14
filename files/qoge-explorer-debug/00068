@@ -1,0 +1,107 @@
+● All 12 packages pass under -race as well. Quality gates and regressions all confirmed.
+
+  Ran 2 shell commands 
+
+● All work is done and verified. Per the correction spec's own instructions, since the large-scale benchmark failed the performance gate, nothing was committed or pushed — PR #14 remains untouched at its original head.
+
+  FINAL REPORT
+  ============
+
+  PHASE 2H.2 INTERNAL REVIEW CORRECTION
+  =====================================
+
+  Previous head: f27da91bc067be1e7f03d3b37b75abc6c395ada9
+  New commit:    NONE — not committed (performance gate failed; see item 30)
+  New head:      f27da91bc067be1e7f03d3b37b75abc6c395ada9 (unchanged; PR #14 still OPEN, untouched)
+
+  PERFORMANCE
+  -----------
+  PostgreSQL: only instance available in this environment (default config: shared_buffers=128MB, work_mem=4MB)
+  synthetic scale: 2,500,000 canonical blocks, bulk INSERT...SELECT generate_series, never Store.ApplyBlock
+  canonical blocks: 2,500,000
+  accounting rows: 2,500,000
+  UTXO 100k: 100,000 unspent rows seeded, seeding ~35s
+  UTXO 1m: 1,000,000 unspent rows seeded (cumulative), seeding ~6m11s for the added 900k
+  UTXO 2.5m: 2,499,999 unspent rows seeded (cumulative; one short of 2.5M — genesis-equivalent height excluded, mirroring production isGenesis exclusion), seeding ~12m21s for the added 1.5M
+  ANALYZE run: yes, all five tables, before every EXPLAIN
+  accounting plan: Parallel Hash Left Join, sequential scans on blocks/block_accounting; Batches=64 (disk spill) at default work_mem
+  accounting time: 2.7s–5.4s across repeated runs (default work_mem); ~2.16s with work_mem=256MB (session-only, no config change) eliminating the spill
+  UTXO plan: Parallel Hash Join, sequential scans on utxo_state/transaction_outputs
+  UTXO time: 63ms at 100k rows; 559ms at 1M rows; 2.4s at 2,499,999 rows (Batches=64, disk spill)
+  SupplyOverview cold: 7.70s (real query.Store.SupplyOverview, full 2.5M-block fixture)
+  SupplyOverview warm 1: 5.63s
+  SupplyOverview warm 2: 6.04s
+  SupplyOverview warm 3: 6.51s
+  performance verdict: STOPPED FOR PERFORMANCE REVIEW — consistently and materially above the 1-second target (roughly 6-8x), both cold and warm. Bottleneck: ~1.86GB of blocks+block_accounting against this environment's 128MB shared_buffers forces repeated re-reads outside PostgreSQL's buffer pool on every pass, compounded by work_mem=4MB forcing hash-join disk spill on the larger tables. Cannot distinguish "query doesn't scale" from "this sandbox's default
+  Postgres install is under-provisioned" — restarting the shared DB server with larger shared_buffers was deliberately not attempted (a global, shared-resource change, out of scope for a benchmark). Estimated public-request cost at this scale: 5.6-7.7s of DB time per /api/v1/supply or /supply request — unacceptable for a public HTTP endpoint (poor UX, connection-pool exhaustion risk under concurrency).
+  cache added: NO
+  migration added: NO
+
+  ANCHOR INTEGRITY
+  ----------------
+  uninitialized + zero canonical: enforced — ErrSupplyIntegrity if any canonical block exists while indexed_height=-1 (TestSupplyOverview_CanonicalShape_UninitializedWithCanonicalRow)
+  canonical count: enforced — must equal indexed_height+1 (TestSupplyOverview_CanonicalShape_ExtraCanonicalAboveCheckpoint)
+  min height: enforced — must equal 0 (TestSupplyOverview_CanonicalShape_CanonicalHeightGap proves count-alone would miss a {1,2,3} gap; only MIN catches it)
+  max height: enforced — must equal indexed_height
+  sync_state agreement: built on top of the existing sync_state_validate_checkpoint_trigger (indexed_block_hash exists + canonical at indexed_height); new check adds "and nothing else is canonical outside that range"
+  extra canonical above checkpoint: FAILS integrity (ErrSupplyIntegrity), never silently included
+  gap: FAILS integrity (ErrSupplyIntegrity)
+  integrity error: query.ErrSupplyIntegrity — same sentinel as the aggregate-identity check, distinct from ErrAccountingIncomplete; both API and web fall through to their existing generic 500/500 internal-error path (no handler change needed, no SQL/internal detail exposed)
+
+  SNAPSHOT
+  --------
+  concurrent ApplyBlock: new TestSnapshotConsistency_SupplyOverview_ConcurrentApplyBlock — in-flight response stays entirely at height N, fresh call sees entirely N+1
+  concurrent reorg: existing TestSnapshotConsistency_SupplyOverview_ConcurrentReorg — unchanged, still passes
+  mixed response possible: NO
+
+  TERMINOLOGY
+  -----------
+  coinbase "actually paid" removed: YES — replaced with "encoded in" in supply.tmpl, supply.go doc comments, and ARCHITECTURE.md's Phase 2H.2 section
+  genesis distinction preserved: YES
+  fees not new issuance: YES — reworded to also note fees are not necessarily fully transferred to a miner, since a block's reward can be underclaimed
+  circulating supply label: NONE
+  issued supply label: NONE
+
+  QUERY
+  -----
+  canonical completeness: unchanged — LEFT JOIN count(*) vs count(ba.block_hash), ErrAccountingIncomplete on mismatch
+  aggregate identity: unchanged — checked-arithmetic coinbase+unclaimed==subsidy+fees cross-check, ErrSupplyIntegrity on failure
+  UTXO source: unchanged — utxo_state JOIN transaction_outputs directly
+  address cache used: NO
+  Core dependency: NONE
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, 12/12 packages, EXIT=0, default parallelism
+  go test -race: PASS, 12/12 packages, EXIT=0
+  go build: clean
+  PostgreSQL genuinely executed: YES (store 80.9s, web 54.0s, query 57.3s under go test; store 97.8s, web 64.8s, query 66.5s under -race)
+
+  PHASE BOUNDARY
+  --------------
+  store production: ZERO
+  accounting production: ZERO
+  indexer production: ZERO
+  mempool production: ZERO
+  deployments production: ZERO
+  rpc: ZERO
+  decode: ZERO
+  script: ZERO
+  chain: ZERO
+  migrations: ZERO
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2H.3.
+
+  Not committed, not pushed, PR #14 unchanged — per item 30, a "correction commit" cannot claim performance was validated when it wasn't. All local working-tree changes remain on phase2h-supply-read-ui uncommitted (canonical-anchor integrity check + 4 tests, concurrent-ApplyBlock snapshot test, terminology fixes, honest large-scale benchmark writeup in docs/ARCHITECTURE.md) so they're available for whatever the architecture review decides — bundle with a caching
+  fix later, split out the integrity/terminology work separately, or something else. Awaiting direction on how to proceed with the performance question.
+
+✻ Cooked for 45s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ commit just the integrity and terminology fixes separately
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
