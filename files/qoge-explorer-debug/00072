@@ -1,0 +1,106 @@
+● Starting the merge protocol. First, verifying PR #15 metadata and local branch state.
+
+  Ran 2 shell commands 
+
+● PR #15 metadata matches exactly (OPEN, mergeable, not draft, base/head SHAs and commit count all correct). Working tree is clean and already on the right branch.
+
+  Ran 2 shell commands 
+
+● Local HEAD confirmed at cba2f1fe9d5373c244f81c6e50153b14da4c5635, and QOGE_TEST_DATABASE_URL is already set in the environment. Running the pre-merge quality gate now with real PostgreSQL and default parallelism.
+
+  Ran 3 shell commands 
+
+● gofmt, go vet, and go build all pass clean. Now running the full test suite and race suite against real PostgreSQL — these take longer, so running sequentially and capturing full output to confirm no skips.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● go test -count=1 ./... passes clean across all packages, no skips — PostgreSQL-backed suites (store, api, web, query, indexer, mempool, deployments) genuinely executed. Now running the race suite.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● Full pre-merge quality gate is green: gofmt, go vet, go build, go test, and go test -race all pass with real PostgreSQL and default parallelism, no skips, no races. Now confirming the specific 2H.2a regression tests, backfill tests, and ancestry tests by name.
+
+  Ran 2 shell commands 
+
+● All named regressions pass — rollup (genesis/fee/underclaim/OP_RETURN/oversized/address-independence/reorg/re-promotion/bootstrap/missing-parent/overflow), backfill (legacy/idempotent/partial-gap/contradiction/shape-gap/source-incomplete/UTXO-cross-check/uninitialized/concurrent-lock/different-schema), ancestry (broken-parent/genesis-null/normal/reorg), migration round-trip, coverage preflight, and CLI network-identity tests. Now verifying migration files and the phase boundary.
+
+  Ran 2 shell commands 
+
+● Migrations 0001-0004 byte-for-byte unchanged, 0005 present with no 0006, and internal/api, internal/web, internal/query show zero diff against the frozen base — phase boundary holds exactly. All changed files fall within the expected set (store package, migration 0005, main.go, docs, README, test-fix files).
+
+  Pre-merge gates 1-12 all pass. Proceeding to merge PR #15 with a normal merge commit.
+
+  Ran 3 shell commands 
+
+● PR #15 is merged. Actual merge commit: 0d4c4c7e2a1e22d2e3749b56c11300906823ae5c. Now pulling main and verifying the merge commit and its parents.
+
+  Ran 1 shell command 
+
+● Merge parents verified exactly: first parent b3a1e670542665e6aed072f19752479a671950db (frozen base), second parent cba2f1fe9d5373c244f81c6e50153b14da4c5635 (reviewed head). main HEAD matches origin/main. Now running the full post-merge quality gate on merged main.
+
+  Searched for 2 patterns, ran 4 shell commands 
+
+● Post-merge full quality gate green: gofmt, go vet, go build, go test, go test -race — all pass on merged main, real PostgreSQL, no skips, no races. Now rerunning the named critical tests post-merge.
+
+  Ran 2 shell commands 
+
+● All post-merge critical tests pass. Verifying PR #15 final state and PR #14 is untouched before branch cleanup.
+
+  Ran 1 shell command 
+
+● PR #15 merge SHA matches main HEAD exactly. PR #14 remains OPEN at its untouched pre-rollup head f27da91b.... All post-merge checks green — proceeding to branch cleanup.
+
+  Ran 1 shell command 
+
+● Branch cleanup complete — local and remote phase2h-supply-rollup both deleted. All 21 protocol steps done.
+
+  FINAL REPORT
+
+  PHASE 2H.2a MERGE
+  PR: https://github.com/QOGE/qoge-explorer/pull/15
+  Frozen base: b3a1e670542665e6aed072f19752479a671950db
+  Reviewed head: cba2f1fe9d5373c244f81c6e50153b14da4c5635
+  Merge method: normal merge commit (gh pr merge --merge)
+  Actual merge commit: 0d4c4c7e2a1e22d2e3749b56c11300906823ae5c
+
+  MERGE PARENTS
+  first: b3a1e670542665e6aed072f19752479a671950db ✓
+  second: cba2f1fe9d5373c244f81c6e50153b14da4c5635 ✓
+  verified: PASS
+
+  PRE-MERGE
+  working tree: clean
+  gofmt: PASS · go vet: PASS · go test: PASS · go test -race: PASS · go build: PASS
+  PostgreSQL genuinely executed: YES · PostgreSQL skips: NONE
+
+  ROLLUP: genesis/fees/underclaim/OP_RETURN/oversize/no-address/overflow/missing-parent/arbitrary-bootstrap/replay — all PASS
+
+  REORG: orphan retained: PASS · replacement: PASS · re-promotion: PASS
+
+  BACKFILL: legacy/idempotent/partial-gap/contradiction/accounting-completeness/UTXO-cross-check/accounting-cross-check/same-schema-lock/different-schema-lock — all PASS
+
+  ANCESTRY: shape: PASS · broken-parent: PASS · genesis-parent: PASS · normal: PASS · reorg-replacement: PASS
+
+  NETWORK: wrong-network rejected, zero writes: PASS · correct regtest: PASS
+
+  MIGRATION: 0001-0004 unchanged: PASS · 0005 up/down present: PASS · 0006 absent: PASS · round trip: PASS
+
+  PERFORMANCE ARCHITECTURE: tip PK lookup unchanged: YES · full hot scan: NO · mutable counter: NO
+
+  POST-MERGE: main HEAD == origin/main == 0d4c4c7e2a1e22d2e3749b56c11300906823ae5c
+  gofmt/vet/test/test-race/build: all PASS · PostgreSQL genuinely executed: YES
+
+  PR STATE: closed: YES · merged: YES · merge SHA matches main: YES
+
+  BRANCH CLEANUP: local deleted: YES · remote deleted: YES
+
+  PHASE BOUNDARY: api supply route: NONE · web supply route: NONE · rich list: NONE · PR #14 modified: NO (still OPEN at f27da91b...) · Phase 2H.2b started: NO
+
+  Stop.
+
+✻ Crunched for 12m 47s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Begin Phase 2H.2b: adapt PR #14 to the merged rollup foundation
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
