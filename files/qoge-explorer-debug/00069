@@ -1,0 +1,146 @@
+
+● Background command "cd /home/ion/qoge-explorer
+go test -race -count=1 ./... > /tmp/claude-1000/-home-ion/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/final_race.log 2>&1
+echo "exit=$?"" completed (exit code 0)
+
+● The race test completed. Let's check the results.
+
+  Read 1 file 
+
+  Ran 1 shell command 
+
+● Everything matches the expected phase boundary. Now let's stage, commit, push, and open the PR.
+
+  Ran 1 shell command 
+
+● All staged, nothing unexpected. Committing now.
+
+  Committed f2ed08e 
+
+● Now let's push and open the PR.
+
+  Pushed to phase2h-supply-rollup, created PR #15, ran 1 shell command 
+
+● Everything verified. PR #14 is untouched, main is unchanged, PR #15 is open with the new work. Let's deliver the final report.
+
+● FINAL REPORT
+  ============
+
+  PHASE 2H.2a — IMMUTABLE SUPPLY ROLLUP FOUNDATION
+  =================================================
+
+  Branch: phase2h-supply-rollup
+  Commit: f2ed08e9b206c211cefbc0a831ef344c30b534f8
+  PR:     https://github.com/QOGE/qoge-explorer/pull/15 (OPEN, not merged)
+  Base:   main @ b3a1e670542665e6aed072f19752479a671950db (unchanged)
+
+  SCHEMA
+  ------
+  table: block_supply_rollup (migrations/0005_block_supply_rollup.up.sql)
+  migration: 0005, schema-only, no data written by the migration itself
+  per-block immutable: yes — PRIMARY KEY block_hash REFERENCES blocks(hash), never UPDATEd
+  canonical flag: NONE
+  global mutable counter: NONE
+
+  LOCAL FACT
+  ----------
+  excluded output definition: value encoded in an output Core's coins view never admits at creation
+  genesis: every output value at height 0, unconditionally
+  OP_RETURN: script.IsUnspendable — leading byte 0x6a
+  oversized script: script.IsUnspendable — len(scriptPubKey) > MaxScriptSize(10000)
+  checked arithmetic: addChecked/subChecked throughout; ErrAmountOverflow on any overflow, whole ApplyBlock rolls back
+
+  CUMULATIVE
+  ----------
+  subsidy: parent + this block's subsidy, checked addition
+  fees: parent + this block's fee total, checked addition
+  coinbase: parent + this block's coinbase output total, checked addition
+  unclaimed: parent + this block's unclaimed reward, checked addition
+  excluded: parent + this block's local excluded value, checked addition
+  UTXO: derived — coinbase - fee - excluded (checked subtraction), never accumulated independently
+  reward identity: coinbase+unclaimed = subsidy+fee — CHECK constraint + holds by construction (sum of per-block identities)
+  UTXO identity: utxo+fee+excluded = coinbase — CHECK constraint + holds by construction (derivation, not independent sum)
+
+  APPLYBLOCK
+  ----------
+  same transaction: yes — applySupplyRollup runs after applyBlockAccounting, before the sync_state checkpoint (still final write)
+  parent by hash: yes — block.PreviousHash, never height-1
+  checkpoint last: yes, unchanged
+  replay: idempotent via insertOrVerifyIdempotent — exact match verified, mismatch is ErrImmutableConflict
+  missing parent: ErrRollupParentMissing when genesis has a rollup lineage but an intermediate parent doesn't (corruption) — whole transaction rolls back, checkpoint does not advance
+  arbitrary bootstrap: silently produces zero rollup rows, forever, for that chain — no fabricated row, existing bootstrap tests unaffected (verified: full suite still passes)
+
+  REORG
+  -----
+  rollback mutation: NONE — RollbackTo (reorg.go) is byte-for-byte unmodified by this migration
+  orphan retained: proven — TestSupplyRollup_Reorg asserts A/B rollups unchanged after rollback
+  replacement branch: proven — D's cumulative state is numerically distinct from orphaned B's, tip correctly selects D
+  re-promotion: proven — TestSupplyRollup_RePromotion re-applies an orphaned block, rollup re-verifies byte-identical
+
+  BACKFILL
+  --------
+  Core RPC: NONE
+  network/genesis preflight: reuses store.VerifyNetworkIdentity, same as backfill-accounting
+  canonical-only: yes — WHERE b.canonical throughout; orphans never backfilled, only ever gain a rollup via live re-promotion
+  set-based: yes — single SUM(...) OVER (ORDER BY height) window-function pass into a transaction-scoped TEMP TABLE, never per-block round trips
+  atomic publication: yes — shape preflight + computation + insert + both cross-checks all in ONE transaction; any failure rolls back everything
+  UTXO cross-check: direct utxo_state/transaction_outputs scan vs. tip's derived cumulative UTXO value — mismatch aborts with zero rows published
+  accounting cross-check: direct SUM over canonical block_accounting vs. tip's cumulative monetary totals — mismatch aborts with zero rows published
+  same-schema lock: pg_try_advisory_xact_lock, distinct namespace (728341002) from backfill-accounting's (728341001) — mechanically excludes concurrent same-schema runs, never contends with backfill-accounting
+  index must be stopped: yes, documented (operational requirement, not mechanically enforced against a live indexer)
+  restart/idempotency: already-correct rows verified and left alone; missing rows filled via ON CONFLICT DO NOTHING; contradictory rows abort the whole run with ErrImmutableConflict before any write
+
+  PERFORMANCE
+  -----------
+  fixture rows: 2,500,000 block_supply_rollup rows (disposable PostgreSQL schema, dropped after measurement)
+  table size: 399 MB
+  index size: 231 MB (PRIMARY KEY)
+  total size: 629 MB
+  tip lookup cold: 6.0 ms
+  tip lookup warm 1: 0.60 ms
+  tip lookup warm 2: 0.76 ms
+  tip lookup warm 3: 0.69 ms
+
+  MIGRATION
+  ---------
+  0001-0004 unchanged: YES (confirmed via git diff — zero bytes changed)
+  0005 up: CREATE TABLE + 7 CHECK constraints (nonnegativity x7, reward identity, UTXO identity)
+  0005 down: DROP TABLE block_supply_rollup only
+  round trip: TestMigrations_SupplyRollupRoundTrip — 0004→0005→0004→0005, existing block_accounting/blocks data survives every step, down removes ONLY block_supply_rollup
+
+  REGRESSIONS
+  -----------
+  2H.1: PASS (accounting, backfill-accounting, advisory lock same/different schema, network preflight — all rerun)
+  2G: PASS (deployments — including 2 migration round-trip tests fixed for the new migration count, test-only, no behavioral change)
+  2F: PASS (mempool — including 1 migration round-trip test fixed likewise)
+  confirmed/reorg: PASS (internal/store, internal/indexer, internal/api, internal/web all green)
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, 12/12 packages, default parallelism
+  go test -race: PASS, 12/12 packages
+  go build: clean
+  PostgreSQL genuinely executed: YES (per-package timings 20s-150s range, consistent with real DB-backed execution; race run store package alone took 143.6s)
+
+  PHASE BOUNDARY
+  --------------
+  api production: ZERO
+  web production: ZERO
+  public supply route: NONE
+  rich list: NONE
+
+  Stop.
+  Do not merge.
+  Do not modify PR #14.
+
+  PR #14 (phase2h-supply-read-ui) remains open and completely untouched at f27da91bc067be1e7f03d3b37b75abc6c395ada9. Its useful uncommitted work (terminology fixes, concurrent-ApplyBlock snapshot test) is preserved in a local git stash on that branch, ready to reconcile once 2H.2a merges and 2H.2b adapts the read path to query block_supply_rollup instead of aggregating live.
+
+✻ Cogitated for 8m 41s · 1 shell still running
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ pop the phase2h-supply-read-ui stash and diff it against the new rollup table
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on · 1 shell · ← 1 agent · ↓ to manage
+
