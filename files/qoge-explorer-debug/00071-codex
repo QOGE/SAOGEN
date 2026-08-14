@@ -1,0 +1,59 @@
+• # PHASE 2H.2a FINAL INDEPENDENT REVIEW
+
+  Exact head: cba2f1fe9d5373c244f81c6e50153b14da4c5635
+  Base: b3a1e670542665e6aed072f19752479a671950db
+  Verdict: APPROVE
+
+  Architecture: PASS — immutable, branch-addressed row per block_hash; no canonical flag or mutable global counter.
+  Migration: PASS — schema-only 0005; 0001–0004 unchanged; no 0006; down migration removes only the rollup table. All CHECK constraints are appropriate.
+  Excluded-output semantics: PASS — genesis excludes every output; later blocks use raw-script IsUnspendable: leading 0x6a or length greater than 10,000.
+  Reward identity: PASS — cumulative coinbase plus unclaimed equals subsidy plus fees.
+  UTXO identity: PASS — independently holds by telescoping transaction inputs/outputs: coinbase minus fees minus outputs never admitted to the UTXO set. Spends cancel prior outputs; underclaim remains absent issuance; no-address outputs remain UTXOs when otherwise spendable.
+  Underclaim: PASS — actual coinbase output is accumulated, not maximum available reward.
+  ApplyBlock atomicity: PASS — block data/UTXO, accounting, rollup, checkpoint last, then commit; any failure rolls back the transaction.
+  Accounting source reuse: PASS — the exact accounting.BlockFacts returned by applyBlockAccounting is reused.
+  Parent-by-hash: PASS — live extension reads block.PreviousHash.
+  Arbitrary bootstrap: PASS — non-zero synthetic bootstrap succeeds without fabricating rollup lineage; descendants remain uncovered.
+  Missing parent: PASS — a gap in an active genesis-rooted lineage returns ErrRollupParentMissing and rolls back.
+  Idempotency: PASS — exact rows verify; contradictions return ErrImmutableConflict; no production UPDATE.
+  Reorg: PASS — orphan rollups remain immutable while replacement branches receive independent cumulative rows.
+  Re-promotion: PASS — existing rows verify; historical missing rows are created only with a covered parent lineage.
+
+  Backfill shape: PASS — count, minimum, and maximum prove exactly heights 0..indexed_height, relying on the existing unique canonical-height index.
+  Backfill ancestry: PASS — genesis requires NULL prev_hash; every later block must reference lag(hash) from the preceding canonical height. Shape and uniqueness make the window predecessor unambiguous.
+  Broken-ancestry attack: PASS — the 0,1,2 orphan-parent attack returns ErrSupplyRollupCanonicalAncestryInvalid before staging/publication; test verifies zero rows.
+  Genesis-parent attack: PASS — non-NULL genesis parent is rejected with zero publication.
+  Occurrence semantics: PASS — canonical block → block_transactions → transaction_outputs; historical transaction occurrences are preserved.
+  SQL IsUnspendable: PASS — exact byte/length semantics; empty scripts are safely non-excluded above genesis.
+  Accounting completeness: PASS — every canonical block must have block_accounting, otherwise the command fails closed.
+  Atomic publication: PASS — validation, staging, contradiction detection, insertion, and both cross-checks share one transaction.
+  UTXO cross-check: PASS — direct unspent utxo_state/output aggregation.
+  Accounting cross-check: PASS — independent canonical block_accounting sums.
+  Concurrency: PASS — same-schema supply backfills are excluded; different schemas remain independent. Separate accounting/supply lock namespaces are safe because accounting rows are immutable and completeness is checked transactionally.
+  Backfill/index operational risk: Supported operation requires stopping the index. They are not mechanically serialized. Concurrent use may cause snapshot-dependent failure/retry, but I found no path whereby normal Store/index behavior makes a durable monetarily false row; this remains operational misuse, not a blocking correctness defect.
+
+  Index startup: PASS — fresh and pre-0005 databases succeed; covered initialized tips succeed; missing tips fail with an actionable backfill instruction; only an O(1) tip lookup is performed.
+  Hot lookup: PASS — exact sync_state.indexed_block_hash to primary-key lookup.
+  Performance: PASS — reported approximately 6 ms cold and 0.6–0.8 ms warm at 2.5 million rows is consistent with the PK architecture.
+  Storage: ACCEPTABLE — reported ~399 MB table plus ~231 MB PK, ~629 MB total. The row width is justified by immutable cumulative facts; no structurally unnecessary secondary indexes or canonical duplication were introduced.
+
+  Overflow: PASS — live cumulative additions and UTXO subtractions are checked. PostgreSQL BIGINT expressions fail loudly on overflow; set-based SUM(BIGINT) uses numeric intermediates and fails when an out-of-range result is inserted.
+  Manual-corruption risk: A privileged manual writer can construct a constraint-valid but source-false row by changing cumulative values while preserving both identities. Backfill detects this for canonical rows; replay detects it for the replayed block. A future tip lookup intentionally trusts the immutable table and would trust such manual corruption until backfill/
+  replay verification. This is an administrative-corruption trust boundary, not a supported production path.
+  Remaining false-rollup paths: None found through supported live apply, replay, reorg, re-promotion, or backfill paths.
+
+  Phase boundary: PASS — no supply API, HTML route, page, or rich list; production internal/api and internal/web are unchanged.
+
+  gofmt: PASS
+  go vet: PASS
+  go test: PASS
+  go test -race: PASS
+  go build: PASS
+  PostgreSQL genuinely executed: YES — QOGE_TEST_DATABASE_URL was set and database-backed packages ran with substantive execution times under default parallelism.
+
+  No files were modified, committed, pushed, or merged.
+
+  No blocking monetary/UTXO/rollup/backfill/ancestry discrepancy found.
+  Phase 2H.2a is safe to merge at
+  cba2f1fe9d5373c244f81c6e50153b14da4c5635.
+
