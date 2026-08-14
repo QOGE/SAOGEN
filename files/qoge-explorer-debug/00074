@@ -1,0 +1,95 @@
+● All clean. Now confirm PostgreSQL test DB is configured and run the full test suites.
+  
+  Ran 2 shell commands 
+
+● New identity fixtures pass. Now run the api/web packages, then the full suite.
+  
+  Ran 1 shell command 
+
+● New API contract test and web terminology test pass. Now the full suite and then the race suite.
+  
+  Ran 1 shell command 
+
+● All 13 packages pass. Now the race suite.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● No skips, everything green under -race too. Now let's verify the diff scope stays within the allowed surface before committing.
+  
+  Ran 1 shell command 
+
+● Scope matches exactly what the spec calls for — only test hardening plus the one comment-typo fix in supply.go. Now committing and pushing.
+
+  Committed ed8d3d0, pushed to phase2h-supply-read-ui, ran 3 shell commands 
+
+● The test-plan wording undercounts the overflow coverage now (it said "both overflow cases," but there are four distinct addition-overflow paths tested) and doesn't mention the new exact-JSON-contract test. I'll update the PR body to reflect this added coverage.
+  
+  Edited PR #14 
+
+● Final confirmation of PR #14 state.
+ 
+  Ran 1 shell command 
+
+● FINAL REPORT
+  
+  PHASE 2H.2b — FINAL TEST CORRECTION
+
+  Previous head: 951988a619de34b74f233b421d3cac4c55b792ea
+  New commit: ed8d3d0 (ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5)
+  New head: ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5
+
+  UTXO OVERFLOW
+  - first-addition fixture reaches UTXO code: YES
+  - reward identity passes first: YES (subsidy=10, fees=10, coinbase=20, unclaimed=0)
+  - first-addition overflow detected: YES (utxo=MaxInt64, fees=10)
+  - second-addition fixture: YES (new test, TestCheckSupplyRollupIdentities_UTXOSecondAdditionOverflow)
+  - first UTXO addition fits: YES (utxo=MaxInt64-5, fees=0)
+  - excluded addition overflows: YES (excluded=10)
+  - detected: YES (ErrSupplyIntegrity)
+  - reward RHS overflow test: YES (new, TestCheckSupplyRollupIdentities_RewardRHSAdditionOverflow)
+
+  API CONTRACT
+  - exact key count: 12
+  - exact keys: indexed_height, indexed_block_hash, scheduled_subsidy_sats/_qoge, transaction_fees_sats/_qoge, coinbase_outputs_sats/_qoge, unclaimed_reward_sats/_qoge, utxo_set_value_sats/_qoge
+  - excluded metric absent: YES
+  - circulating absent: YES
+  - issued/minted absent: YES
+  - sats integer: YES (checked not string-prefixed)
+  - QOGE strings: YES (checked string-prefixed)
+
+  WEB
+  - five labels: YES
+  - coinbase wording: YES ("encoded in canonical coinbase transaction outputs")
+  - fee wording: YES ("input-minus-output value paid as fees")
+  - circulating disclaimer: YES ("None of the values on this page is labelled circulating supply.")
+
+  PRODUCTION
+  - SupplyOverview SQL changed: NO
+  - rollup architecture changed: NO
+  - store changed: NO
+  - migration changed: NO
+  - (only production-file touch: one duplicated-word comment typo fix in supply.go)
+
+  QUALITY
+  - gofmt: PASS
+  - go vet: PASS
+  - go test: PASS (13 packages)
+  - go test -race: PASS (13 packages, no skips)
+  - go build: PASS
+  - PostgreSQL genuinely executed: YES
+  - DB skips: NONE
+
+  PR
+  - state: OPEN
+  - merged: false
+  - new exact head: ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5
+  - title/body updated to reflect added coverage: YES
+
+  Stop. Not merged. Phase 2H.3 not begun.
+
+✻ Cogitated for 10m 18s
+                        
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ check the internal review team's reply on PR #14
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #14 · ← 1 agent
