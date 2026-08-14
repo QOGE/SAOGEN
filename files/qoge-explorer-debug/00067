@@ -1,0 +1,144 @@
+● Now push the branch and open the PR (base main, explicitly not merging).
+
+  Pushed to phase2h-supply-read-ui, created PR #14, ran 1 shell command 
+
+● All 16 spec sections complete. Per §71, stopping here without merging or beginning Phase 2H.3.
+
+  FINAL REPORT
+  ============
+
+  PHASE 2H.2 — SUPPLY & MONETARY ACCOUNTING READ SURFACE
+  =======================================================
+
+  Branch: phase2h-supply-read-ui
+  Commit: f27da91bc067be1e7f03d3b37b75abc6c395ada9
+  PR:     https://github.com/QOGE/qoge-explorer/pull/14 (OPEN, base=main, head=phase2h-supply-read-ui)
+
+  BASELINE
+  --------
+  main:        b3a1e670542665e6aed072f19752479a671950db (exact match required)
+  origin/main: b3a1e670542665e6aed072f19752479a671950db (exact match confirmed)
+  working tree: clean before branch creation
+
+  PERFORMANCE
+  -----------
+  canonical blocks: 25,000 (synthetic, seeded via bulk SQL into a disposable test schema — no separate production-scale database exists in this environment)
+  canonical accounting rows: 25,000
+  unspent UTXOs: 24,999 (one fewer than blocks: genesis's coinbase output is never inserted into utxo_state)
+  accounting aggregate plan: Hash Left Join, sequential scans on blocks + block_accounting
+  accounting aggregate time: 29.3 ms
+  UTXO aggregate plan: Hash Join, sequential scans on utxo_state + transaction_outputs
+  UTXO aggregate time: 19.8 ms
+  combined time: ~45 ms (cold and warm both), well under the 1s target
+  cache added: NO
+  migration added: NO
+
+  QUERY
+  -----
+  snapshot: one REPEATABLE READ / ReadOnly transaction per SupplyOverview call (sync_state → accounting aggregate → UTXO value)
+  canonical-only: WHERE b.canonical, LEFT JOIN so a missing accounting row still counts toward canonical_blocks
+  accounting completeness: accounted_blocks != canonical_blocks -> ErrAccountingIncomplete (never an understated total)
+  aggregate identity: coinbase+unclaimed == subsidy+fees, re-verified in Go with checked int64 arithmetic (ErrSupplyIntegrity on failure)
+  UTXO source: utxo_state JOIN transaction_outputs directly
+  address cache used: NO
+  Core dependency: NONE (newRootHandler takes only *query.Store — proven with QOGE_RPC_USER/PASSWORD unset)
+
+  PUBLIC METRICS
+  --------------
+  scheduled subsidy: scheduled_subsidy_sats / _qoge
+  transaction fees: transaction_fees_sats / _qoge
+  coinbase outputs: coinbase_outputs_sats / _qoge
+  unclaimed reward: unclaimed_reward_sats / _qoge
+  UTXO-set value: utxo_set_value_sats / _qoge
+  circulating supply label: NONE
+  issued supply label: NONE
+
+  GENESIS
+  -------
+  scheduled included: YES
+  coinbase outputs included: YES
+  UTXO value excluded: YES (TestSupplyOverview_GenesisExcludedFromUTXOSet)
+
+  UNSPENDABLE
+  -----------
+  UTXO exclusion: YES (OP_RETURN counted in coinbase_outputs, excluded from UTXO value — TestSupplyOverview_UnspendableOutputExcluded)
+  burn metric added: NO
+
+  API
+  ---
+  route: GET /api/v1/supply
+  uninitialized: HTTP 200, height=-1, hash=null, all totals 0
+  incomplete: HTTP 503 "accounting_incomplete"
+  GET-only: 405 + Allow header on other methods
+  content type: application/json
+
+  WEB
+  ---
+  route: GET /supply
+  navigation: added to header.tmpl (Blocks, Mempool, Deployments, Supply)
+  title: "Supply & Monetary Accounting"
+  uninitialized: "No block has been indexed yet."
+  incomplete: HTTP 503, mentions `qoge-explorer backfill-accounting`
+  terminology: "UTXO-set value" / "current UTXO-set value"; page explicitly states none of these values is circulating supply
+  charts: NONE
+  polling: NONE
+
+  SNAPSHOT
+  --------
+  concurrent ApplyBlock: not separately exercised (composite read unaffected by pure appends)
+  concurrent reorg: TestSnapshotConsistency_SupplyOverview_ConcurrentReorg — in-flight response stays branch-A-consistent, fresh call sees branch B
+  mixed state possible: NO
+
+  REORG
+  -----
+  orphan accounting stored: YES (never deleted by RollbackTo)
+  orphan included in totals: NO
+  replacement totals: verified exact (TestSupplyOverview_OrphanExcludedAndReorgSwitchesTotals)
+
+  NON-MUTATION
+  ------------
+  confirmed: TestSupplyOverview_NonMutation — row-count fingerprint before/after, empty DB + populated DB + incomplete-accounting error path
+  accounting: unchanged
+  UTXO: unchanged
+  mempool: unchanged
+  deployments: unchanged
+
+  PHASE BOUNDARY
+  --------------
+  store production: ZERO
+  accounting production: ZERO
+  indexer production: ZERO
+  mempool production: ZERO
+  deployments production: ZERO
+  rpc: ZERO
+  decode: ZERO
+  script: ZERO
+  chain: ZERO
+  migrations: ZERO (still only 0001-0004, confirmed via directory listing)
+
+  REGRESSIONS
+  -----------
+  Phase 2H.1: advisory-lock same/different-schema PASS, wrong-network preflight PASS, correct-network backfill PASS
+  Phase 2G: TestSnapshotConsistency_DeploymentOverview/Detail/SurvivesFullReplacementAway PASS
+  Phase 2F: TestSnapshotConsistency_MempoolOverview/Detail_ConcurrentReplacement PASS
+  confirmed snapshots: TestSnapshotConsistency_TransactionDetail/BlockDetail/ExplorerOverview/AddressDetail_ConcurrentReorg PASS
+
+  QUALITY
+  -------
+  gofmt: clean
+  go vet: clean
+  go test: PASS, 12/12 packages, EXIT=0, default parallelism (no -p 1)
+  go test -race: PASS, 12/12 packages, EXIT=0
+  go build: clean
+  PostgreSQL genuinely executed: YES (store 82-115s, web 54-70s, query 54-68s — all real DB-backed)
+
+  Stop.
+  Do not merge.
+  Do not begin Phase 2H.3.
+
+✻ Cogitated for 1m 18s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ go check the PR checks are green
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
