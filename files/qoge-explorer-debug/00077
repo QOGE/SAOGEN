@@ -1,0 +1,202 @@
+ Documentation done. Marking task 125 complete and moving to the final quality gate + commit + PR.
+
+  Ran 3 shell commands 
+
+● All clean. Now the full test suite with real PostgreSQL, capturing output to check for skips.
+
+  Ran 2 shell commands 
+
+● I'll wait for the background test task instead of polling manually.
+
+● Monitor(Wait for full go test run to finish)
+  ⎿  Monitor started · task br3drhxtx · timeout 300s
+
+● Waiting for the full test suite to finish running.
+
+  Ran 3 shell commands 
+
+● Background command "mkdir -p /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad
+go test -count=1 ./... 2>&1 | tee /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/gotest.log | tail -40" completed (exit code 0)
+
+● The full test run completed successfully. Let's check the output for any skips and confirm all packages passed.
+
+  Searched for 1 pattern 
+
+● Monitor event: "Wait for full go test run to finish"
+
+● Monitor "Wait for full go test run to finish" stream ended
+
+● All packages pass, zero DB-backed skips. Now running go test -race -count=1 ./... with default parallelism.
+
+  Ran 1 shell command 
+
+● Waiting for the race-detector run to finish.
+
+  Ran 2 shell commands 
+
+● Background command "go test -race -count=1 ./... > /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/gotest-race.log 2>&1 &
+echo "started pid $!"" completed (exit code 0)
+
+● Still running in the background. Let me monitor it properly until it finishes.
+
+● Monitor(Wait for go test -race full run to finish)
+  ⎿  Monitor started · task bjnsckw5k · timeout 600s
+
+● Waiting for the race-detector test run to complete.
+
+  Ran 2 shell commands 
+
+● I'll wait for the monitor notification before proceeding.
+
+  Ran 1 shell command 
+
+● The race-detector test suite is running in the background. I'll pause here and wait for it to complete before continuing with the commit and PR steps.
+
+✻ Baked for 22m 49s
+
+● Monitor event: "Wait for go test -race full run to finish"
+
+  Ran 1 shell command 
+
+● The race-detector run completed with all packages passing.
+
+  Searched for 1 pattern 
+
+● Quality gate fully green. Now let's commit and prepare the PR.
+
+  Ran 3 shell commands 
+
+● All 20 files staged, matching the intended change set exactly. Committing now.
+
+  Committed cf51afa 
+
+● Now pushing the branch and opening the PR.
+
+  Pushed to phase2h-rich-list, created PR #16 
+
+● PR #16 opened as expected. Let's capture the exact head SHA and confirm PR state.
+
+  Ran 1 shell command 
+
+● All quality gates and PR creation confirmed. Marking the final task complete.
+
+● FINAL REPORT
+
+  PHASE 2H.3 — RICH LIST
+
+  - Frozen base: 1945b9037d4a1a52a21a54665d6c1f84d6a3b5f3
+  - Branch: phase2h-rich-list
+  - Commit: cf51afaf3c79d2df9d29787942385767f773dbad
+  - PR: https://github.com/QOGE/qoge-explorer/pull/16
+  - Exact head: cf51afaf3c79d2df9d29787942385767f773dbad
+
+  SEMANTICS
+  - source: addresses.balance_satoshis cache only (never recomputed)
+  - positive balances only: YES (WHERE balance_satoshis > 0)
+  - address != entity: YES (no holder/owner/entity language anywhere)
+  - confirmed only: YES (no mempool tables queried)
+  - genesis: excluded (never in utxo_state → never in addresses)
+  - no-address UTXO: excluded, verified
+  - bare multisig: excluded, verified (output_participants never credited)
+  - P2QPK: participates normally, verified
+
+  ORDERING
+  - primary: balance_satoshis DESC
+  - tie break: address COLLATE "C" ASC
+  - deterministic: YES (repeated-call test)
+  - top limit: 100 (RichListLimit), no pagination/OFFSET
+
+  INDEX
+  - migration: 0006_addresses_richlist_index
+  - index: addresses_richlist_positive_balance_idx
+  - partial predicate: balance_satoshis > 0
+  - production query uses index: YES (Index Only Scan, confirmed via EXPLAIN (ANALYZE, BUFFERS))
+  - full table sort: NO
+  - migration round trip: PASS (0005→0006→0005→0006, data untouched)
+
+  QUERY
+  - snapshot: readTx REPEATABLE READ / READ ONLY
+  - sync_state anchor: YES (statusFrom)
+  - addresses query: one SELECT, LIMIT 100
+  - other monetary tables queried: NONE
+  - writes: NONE (structurally + behaviorally proven)
+
+  REORG
+  - normal reorg: PASS
+  - concurrent reorg: PASS (snapshot test)
+  - concurrent append: PASS (snapshot test)
+  - mixed snapshot possible: NONE observed
+
+  API
+  - route: GET /api/v1/richlist
+  - top-level contract: indexed_height, indexed_block_hash, entries (exact)
+  - entry contract: rank, address, balance_sats, balance_qoge (exact)
+  - integer sats: YES
+  - QOGE strings: YES
+  - 405: YES
+  - Core dependency: NONE (extended TestRootHandler_SupplyRoutesCoreIndependent)
+
+  WEB
+  - route: GET /richlist
+  - table: Rank / Address / Balance (QOGE) / Balance (satoshis)
+  - address links: YES (/address/{address})
+  - disclaimer: YES ("ranks addresses, not people, wallets, or entities" + bare-multisig/no-address exclusions)
+  - navigation: YES (header nav link added)
+  - 405: YES
+  - security headers: inherited, verified
+
+  PERFORMANCE
+  - fixture rows: 2,500,000
+  - plan: Index Only Scan using addresses_richlist_positive_balance_idx
+  - index used: YES
+  - cold timing: 10.98 ms
+  - warm timing: 2.49 ms / 1.93 ms / 1.06 ms
+  - table size: 279 MB
+  - index size: 248 MB
+  - cache added: NO
+  - materialized view added: NO
+  (benchmark test file was env-var-gated, run manually, numbers captured in docs/ARCHITECTURE.md §29, then deleted before commit — same convention as §26/§27)
+
+  NON-MUTATION
+  - PASS/FAIL: PASS (row-count fingerprint + structural: one SELECT, no INSERT/UPDATE/DELETE)
+
+  MIGRATIONS
+  - 0001-0005 unchanged: YES (byte-for-byte)
+  - 0006: addresses_richlist_positive_balance_idx (schema only)
+  - 0007: NONE
+
+  PHASE BOUNDARY
+  - store changes: NONE (test-only arithmetic fixes for two existing round-trip tests, no production code)
+  - accounting changes: NONE
+  - supply changes: NONE (/api/v1/supply, /supply behaviorally unchanged)
+  - indexer changes: NONE
+  - mempool changes: NONE
+  - rpc changes: NONE
+  - script/chain changes: NONE
+  - entity clustering: NONE
+  - distribution percentages: NONE
+  - historical rankings: NONE
+
+  QUALITY
+  - gofmt: PASS
+  - go vet: PASS
+  - go test: PASS (all 14 packages, real PostgreSQL)
+  - go test -race: PASS (all 14 packages)
+  - go build: PASS
+  - PostgreSQL genuinely executed: YES
+  - DB-backed skips: NONE
+
+  PR
+  - state: OPEN
+  - merged: false
+  - exact head: cf51afaf3c79d2df9d29787942385767f773dbad
+
+  Stop.
+  Do not merge.
+
+✻ Baked for 1m 6s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ start the internal review of PR #16
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #16 · ← 1 agent
