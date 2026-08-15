@@ -1,0 +1,173 @@
+
+● Now let's run the target test first with real PostgreSQL.
+
+  Ran 1 shell command 
+
+● Test passes on the first try. Now let's rerun the full rich-list matrix plus API/web tests.
+
+  Ran 1 shell command 
+
+● All 16 query-level rich-list tests pass. Now API and web rich-list tests, plus the full quality gate.
+
+  Ran 1 shell command 
+
+● All API/web rich-list tests pass. Now let's confirm the source audit (production query unchanged) and run the full quality gate.
+
+  Searched for 1 pattern, ran 1 shell command 
+
+● Source audit confirms: the only SQL is the exact spec'd SELECT, and the forbidden-table hits are only in comments (explaining what's not queried), not in actual SQL. gofmt is clean. Now go vet, then the full test suite and race suite, then go build.
+
+  Ran 2 shell commands 
+
+● go vet and go build are both clean. Now the full test suite (this exceeds the 120s foreground timeout, so run in background and monitor).
+
+  Ran 1 shell command 
+
+● I'll wait for that to finish before starting the race suite (to avoid resource contention on the test DB).
+
+● I'll wait for the background test run's own completion notification rather than polling.
+
+● Monitor(Wait for full test suite to finish)
+  ⎿  Monitor started · task b9m585zk3 · timeout 300s
+
+● I'll wait for that notification before proceeding to the race suite.
+
+  Ran 1 shell command 
+
+● Checking on the background full test suite run.
+
+  Searched for 1 pattern, read 1 file, ran 1 shell command 
+
+● Still running — only 4 packages reported so far. I'll wait for it to finish rather than poll further.
+
+● Monitor(Wait for full test suite completion marker)
+  ⎿  Monitor started · task bww6l5zvr · timeout 300s
+
+● I'll wait for the monitor's completion notification before proceeding.
+
+● Progress is visible; still going. I'll continue waiting for the completion notification.
+
+✻ Brewed for 1m 49s
+
+● Background command "Run full test suite in background" completed (exit code 0)
+
+  Searched for 1 pattern 
+
+● Monitor event: "Wait for full test suite to finish"
+
+● Monitor "Wait for full test suite to finish" stream ended
+
+● Monitor event: "Wait for full test suite completion marker"
+
+● Monitor "Wait for full test suite completion marker" stream ended
+
+● Full suite passed: 14 packages, all ok, 0 skips, 0 fails, exit 0. Now the race suite.
+
+  Ran 1 shell command 
+
+● While that runs, I'll do the phase-boundary git diff audit in parallel.
+
+  Ran 2 shell commands 
+
+● Background command "Run full test suite with race detector in background" completed (exit code 0)
+
+● Phase-boundary audit is clean: exactly one file changed (internal/query/richlist_test.go, +81 lines), zero changes to any protected directory, richlist.go and migration 0006 byte-identical. The race suite has also already completed — let me verify its results.
+
+  Searched for 1 pattern 
+
+● Race suite fully clean: all 12 tested packages pass, 0 skips, 0 data races, exit 0. Quality gate is complete. Now committing the single test file and updating the PR body.
+
+  Committed 7a6e532, pushed to phase2h-rich-list, ran 2 shell commands 
+
+● Now let's update the PR body wording per Section 6 of the runbook.
+
+  Edited PR #16, ran 1 shell command 
+
+● Now let's confirm the final PR state and exact head SHA.
+
+  Ran 1 shell command 
+
+● headRefOid matches local HEAD exactly. All correction steps complete.
+
+  FINAL REPORT
+
+  PHASE 2H.3 — INTERNAL REVIEW CORRECTION
+
+  Previous head: cf51afaf3c79d2df9d29787942385767f773dbad
+  New commit: 7a6e5320fc574dbecd5aaec2e819df0d53cc1f29 — "test: cover rich-list orphan re-promotion"
+  New head: 7a6e5320fc574dbecd5aaec2e819df0d53cc1f29
+
+  RE-PROMOTION
+  - A initially canonical: YES (70 QOGE)
+  - A ranking: rank 1
+  - A orphaned: YES (RollbackTo genesis)
+  - B canonical: YES (50 QOGE)
+  - A absent while B canonical: YES (confirmed, only B present)
+  - B orphaned: YES (RollbackTo genesis)
+  - same persisted A re-promoted: YES (identical a1 block struct re-applied via st.ApplyBlock(ctx, a1), same deterministic hash — not a freshly constructed block)
+  - A ranking restored: YES (rank 1, balance 70 QOGE)
+  - B absent: YES (asserted absent from final entries)
+  - indexed hash restored to A: YES (final.IndexedHash == a1.Hash)
+  - duplicate rows: NONE (len(final.Entries) == 1)
+
+  PRODUCTION
+  - richlist.go changed: NO
+  - store production changed: NO (zero production files touched, confirmed via git diff --stat per protected directory — all zero)
+  - migration changed: NO (0006 byte-identical)
+  - API contract changed: NO
+  - web semantics changed: NO
+
+  PR BODY
+  - scope wording corrected: YES — replaced "Zero production changes outside ..." with the runbook-specified accurate wording naming the query/API/web surface, route/template/view registration, nav link, and migration 0006, explicitly excluding store/accounting/indexer/mempool/deployments/rpc/decode/script/chain
+
+  REGRESSIONS (all rerun, real PostgreSQL)
+  - normal ordering: PASS
+  - spend: PASS
+  - zero balance: PASS
+  - reorg: PASS
+  - re-promotion: PASS (new)
+  - concurrent reorg: PASS
+  - concurrent append: PASS
+  - no-address: PASS
+  - bare multisig: PASS
+  - P2QPK: PASS
+  - top-100: PASS
+  - non-mutation: PASS
+  - API (5 tests incl. exact JSON contract): PASS
+  - web (6 tests incl. disclaimer/nav/security headers): PASS
+
+  QUALITY
+  - gofmt: PASS (clean)
+  - go vet: PASS (clean)
+  - go test: PASS (14 packages, 0 skips, 0 fails, exit 0)
+  - go test -race: PASS (12 tested packages, 0 skips, 0 data races, exit 0)
+  - go build: PASS (clean)
+  - PostgreSQL genuinely executed: YES
+  - DB skips: NONE
+
+  PR
+  - state: OPEN
+  - merged: false
+  - new exact head: 7a6e5320fc574dbecd5aaec2e819df0d53cc1f29 (confirmed matching headRefOid)
+
+  Stop.
+  Do not merge.
+
+✻ Sautéed for 56s
+
+✻ Claude resuming /loop wakeup (Aug 15 7:20am)
+
+● This was already completed in the prior turn — this is a stale wakeup firing after the work finished. Let me verify current state is still as reported before confirming.
+
+  Ran 2 shell commands 
+
+● This work is already done — this wakeup was a stale fallback that fired after the correction was completed in the previous turn. Confirmed current state matches: working tree clean, HEAD at 7a6e5320fc574dbecd5aaec2e819df0d53cc1f29, PR #16 still OPEN and unmerged with headRefOid matching. All steps (full test suite, race suite, phase-boundary audit, commit, push, PR body update) were already completed and the FINAL REPORT was already delivered in my prior message. No further action needed.
+
+  Stop. Do not merge.
+
+✻ Sautéed for 8s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Ping internal review with the new head SHA for re-review
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #16 · ← 1 agent
