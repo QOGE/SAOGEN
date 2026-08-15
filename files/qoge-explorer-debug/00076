@@ -1,0 +1,215 @@
+I'll work through this systematically, starting with the pre-merge freeze checks.
+
+  Ran 2 shell commands 
+
+● Working tree is clean, already on the right branch. Fixing the field name and retrying.
+
+  Ran 1 shell command 
+
+● Step 1 PASS — state=OPEN, merged=false, draft=false, mergeable=true, base/head SHAs match exactly.
+
+  Ran 1 shell command 
+
+● Step 2 PASS — local HEAD and origin/main match exactly. Now checking PostgreSQL test database setup.
+
+  Ran 1 shell command 
+
+● PostgreSQL is up and QOGE_TEST_DATABASE_URL is set. Step 3 satisfied — running the full pre-merge quality gate now.
+
+  Ran 3 shell commands 
+
+● gofmt, go vet, and go build all clean. Now running the test suites (these take longer).
+
+  Ran 1 shell command 
+
+● All 13 packages PASS (2 with no test files, as expected). Now running with -race.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● Pre-merge quality gate: all PASS, zero DB skips. Now verifying the supply query architecture (steps 5-6).
+
+  Searched for 1 pattern, read 1 file, ran 1 shell command 
+
+● Step 5 PASS — confirmed sync_state → single PK lookup on block_supply_rollup, no forbidden aggregation patterns. Now verifying the specific semantic test scenarios exist and map to the required list.
+
+  Searched for 4 patterns, ran 1 shell command 
+
+● Both found. Let me run these specific tests explicitly to confirm PASS individually, as required by steps 6, 7, 10, and 11.
+
+  Ran 1 shell command 
+
+● All 19 semantic/integrity tests PASS individually. Now steps 7, 8, 9, 10, 11 — snapshot, API, web, core independence, non-mutation.
+
+  Ran 5 shell commands 
+
+● All target tests PASS individually. Now confirming step 11's structural requirement — READ ONLY / REPEATABLE READ transaction mode.
+
+  Searched for 2 patterns, read 1 file, ran 1 shell command 
+
+● Step 11 confirmed — readTx uses pgx.RepeatableRead + pgx.ReadOnly, and supply.go contains zero mutation keywords. Now checking phase boundary (step 12) via diff against frozen base.
+
+  Listed 1 directory, ran 3 shell commands 
+
+● Zero changes to protected directories, migrations remain 0001–0005 only, no rich list/rankings/distribution content. Step 12 PASS. Everything is green — proceeding to merge (step 13).
+
+  Ran 1 shell command 
+
+● Confirmed scope is fully contained to the supply feature (api/query/web/cmd/docs). All 12 pre-merge sections verified. Now merging PR #14 with a normal merge commit as specified.
+
+  Ran 3 shell commands 
+
+● PR #14 merged. Merge commit: 1945b9037d4a1a52a21a54665d6c1f84d6a3b5f3. Now pulling main and verifying merge parents.
+
+  Ran 2 shell commands 
+
+● main HEAD == origin/main. Now verifying merge parents (step 15).
+
+  Ran 1 shell command 
+
+● Exactly two parents, matching exactly: first = 0d4c4c7e (frozen base), second = ed8d3d01 (reviewed head). Step 15 PASS. Now running post-merge quality gate on main.
+
+  Ran 3 shell commands 
+
+● Clean. Running the full test suite and race suite on main now.
+
+  Ran 1 shell command 
+
+● All PASS on main. Now the race suite.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● Post-merge quality gate: all PASS, zero skips. Now step 17 — rerunning the critical regression tests explicitly on main.
+
+  Ran 5 shell commands 
+
+● Let me find the actual Phase 2H.2a rollup/backfill test names.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● All Phase 2H.2a rollup/backfill regressions PASS. Step 17 complete. Now step 18 — confirming PR state, and step 19 — branch cleanup.
+
+  Ran 1 shell command 
+
+● PR #14: state=MERGED, closed=true, merge SHA 1945b9037d4a1a52a21a54665d6c1f84d6a3b5f3 matches main HEAD exactly. Step 18 PASS. Now branch cleanup (step 19) and stash inspection (step 20).
+
+  Ran 3 shell commands 
+
+● Both branches deleted successfully. Now inspecting the stash content to assess what's useful vs. obsolete.
+
+  Searched for 1 pattern, ran 5 shell commands 
+
+● Confirmed — the stash's terminology wording and snapshot-test logic are already present in merged main (verified above via grep against supply.go, supply.tmpl, and ARCHITECTURE.md, and the snapshot test is a near-identical earlier revision of what's already in internal/query/supply_snapshot_test.go). The remaining stash content is the pre-rollup direct-aggregation query architecture (canonicalAccountingAggregateFrom, checkCanonicalShape, utxoSetValueFrom with SUM(o.value_satoshis) over transaction_outputs) — obsolete, superseded by the block_supply_rollup O(1) PK-lookup architecture. Leaving the stash untouched, not applying it, not dropping it.
+
+  FINAL REPORT
+
+  PHASE 2H.2b MERGE
+
+  - Frozen base: 0d4c4c7e2a1e22d2e3749b56c11300906823ae5c
+  - Reviewed head: ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5
+  - Merge method: normal merge commit
+  - Actual merge commit: 1945b9037d4a1a52a21a54665d6c1f84d6a3b5f3
+
+  MERGE PARENTS
+  - first: 0d4c4c7e2a1e22d2e3749b56c11300906823ae5c ✓
+  - second: ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5 ✓
+  - verified: YES (exactly two parents)
+
+  PRE-MERGE
+  - working tree: clean
+  - gofmt: PASS
+  - go vet: PASS
+  - go test: PASS (13 packages)
+  - go test -race: PASS (13 packages)
+  - go build: PASS
+  - PostgreSQL genuinely executed: YES
+  - DB skips: NONE
+
+  QUERY
+  - tip hash source: sync_state.indexed_block_hash
+  - rollup PK lookup: SELECT ... FROM block_supply_rollup WHERE block_hash = $1
+  - request-time chain scan: NO
+  - request-time accounting aggregate: NO
+  - request-time UTXO aggregate: NO
+
+  SEMANTICS
+  - genesis: PASS
+  - fees: PASS
+  - underclaim: PASS
+  - OP_RETURN: PASS
+  - oversized: PASS
+  - no-address: PASS
+  - missing rollup: PASS
+  - pre-0005: PASS
+
+  INTEGRITY
+  - reward mismatch: PASS
+  - reward LHS overflow: PASS
+  - reward RHS overflow: PASS
+  - UTXO mismatch: PASS
+  - UTXO first-add overflow: PASS
+  - UTXO second-add overflow: PASS
+
+  SNAPSHOT
+  - concurrent append: PASS
+  - concurrent reorg: PASS
+  - mixed response: NONE observed
+
+  API
+  - GET: 200 JSON
+  - exact 12 keys: PASS
+  - 503: PASS (supply_rollup_unavailable)
+  - 405: PASS
+  - forbidden fields absent: PASS
+
+  WEB
+  - GET: 200 HTML
+  - 503: PASS
+  - 405: PASS
+  - terminology: PASS
+  - circulating disclaimer: PASS
+
+  CORE INDEPENDENCE
+  - PASS
+
+  NON-MUTATION
+  - PASS (also structurally confirmed: readTx uses pgx.RepeatableRead + pgx.ReadOnly; supply.go contains zero INSERT/UPDATE/DELETE/CREATE/DROP/ALTER)
+
+  POST-MERGE
+  - main HEAD: 1945b9037d4a1a52a21a54665d6c1f84d6a3b5f3
+  - origin/main: 1945b9037d4a1a52a21a54665d6c1f84d6a3b5f3 (match)
+  - gofmt: PASS
+  - go vet: PASS
+  - go test: PASS (13 packages)
+  - go test -race: PASS (13 packages, zero skips)
+  - go build: PASS
+  - PostgreSQL genuinely executed: YES
+
+  PR
+  - closed: true
+  - merged: true
+  - merge SHA matches main: YES (1945b9037d4a1a52a21a54665d6c1f84d6a3b5f3)
+
+  BRANCH CLEANUP
+  - local deleted: YES
+  - remote deleted: YES
+
+  STASH
+  - still present: YES (stash@{0}, untouched)
+  - useful content remaining: NONE — terminology wording and snapshot-test logic already incorporated into merged main (verified by direct comparison)
+  - obsolete content identified: YES — pre-rollup direct-aggregation query architecture (canonicalAccountingAggregateFrom/checkCanonicalShape/utxoSetValueFrom with SUM(...) over transaction_outputs), superseded by the block_supply_rollup PK-lookup design; not applied to main
+
+  PHASE BOUNDARY
+  - 0006: NONE
+  - rich list: NONE
+  - Phase 2H.3 started: NO
+
+  Stop.
+
+✻ Churned for 14m 17s
+
+※ recap: PR #14 (Phase 2H.2b supply read UI) merged into main and passed all pre/post-merge checks; branches cleaned up. No action needed now — awaiting your go-ahead before starting Phase 2H.3. (disable recaps in /config)
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ drop the stash
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
