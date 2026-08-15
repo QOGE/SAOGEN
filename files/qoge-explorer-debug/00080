@@ -1,0 +1,125 @@
+● Alive. Continuing to wait.
+
+  Read 1 file 
+
+● query done. store and web remain.
+
+  Read 1 file 
+
+● Continuing to wait on store/web.
+
+  Read 1 file, ran 1 shell command 
+
+● Alive, on store. Continuing to wait.
+
+● Background command "Post-merge race test suite" completed (exit code 0)
+
+● Post-merge race suite completed. Confirming the log, then running the final targeted regression reruns and branch cleanup.
+
+  Read 1 file 
+
+● Post-merge race suite: all 12 tested packages ok, exit 0, no data races. Now rerunning the critical regression list on main and the migration round-trip tests.
+
+  Ran 2 shell commands 
+
+● All post-merge critical regressions pass. Everything is green — proceeding to branch cleanup per Section 23.
+
+  Ran 2 shell commands 
+
+● Everything verified. PR #16 is MERGED/closed=true, merge SHA matches main HEAD, and both branches are deleted. Here's the FINAL REPORT.
+
+  FINAL REPORT
+
+  PHASE 2H.3 MERGE
+  - Frozen base: 1945b9037d4a1a52a21a54665d6c1f84d6a3b5f3
+  - Reviewed head: 7a6e5320fc574dbecd5aaec2e819df0d53cc1f29
+  - Merge method: normal merge commit (no squash/rebase/amend/force-push)
+  - Actual merge commit: 85d22e755001dd860f3872c15fbd1f3dd7449694
+
+  MERGE PARENTS
+  - first: 1945b9037d4a1a52a21a54665d6c1f84d6a3b5f3 ✓ matches frozen base
+  - second: 7a6e5320fc574dbecd5aaec2e819df0d53cc1f29 ✓ matches reviewed head
+  - verified: PASS (git show --no-patch --pretty='%H %P' HEAD)
+
+  PRE-MERGE
+  - working tree: clean
+  - gofmt / go vet / go build: PASS
+  - go test: PASS (14 packages, exit 0)
+  - go test -race: PASS (12 tested packages, exit 0, no data races)
+  - PostgreSQL genuinely executed: YES (QOGE_TEST_DATABASE_URL set, real DB confirmed via ps showing active postgres backends)
+  - DB skips: 0
+
+  QUERY
+  - monetary source: addresses.balance_satoshis only
+  - positive predicate: balance_satoshis > 0
+  - primary ordering: balance_satoshis DESC
+  - tie ordering: address COLLATE "C" ASC
+  - limit: $1 (100)
+  - request-time aggregation: NONE (no SUM/COUNT/OFFSET)
+  - request-time UTXO scan: NONE
+  - mempool access: NONE
+
+  INDEX
+  - migration: 0006_addresses_richlist_index only, no 0007
+  - index: addresses_richlist_positive_balance_idx
+  - predicate: WHERE balance_satoshis > 0
+  - ordering: balance_satoshis DESC, address COLLATE "C" ASC
+  - present: YES (post-0006)
+  - query/index relationship: index key order matches ORDER BY exactly (index-only scan capable)
+
+  SEMANTICS — uninitialized/genesis/normal/ties/multi-UTXO/spend/zero-balance/no-address/bare-multisig/P2QPK/top-100: all PASS
+
+  REORG
+  - normal reorg: PASS
+  - re-promotion: PASS (same persisted A1 block re-applied via real ApplyBlock/RollbackTo, ranking + indexed hash restored, B absent, no duplicates)
+  - concurrent reorg: PASS
+  - concurrent append: PASS
+  - mixed response: none observed
+
+  API — GET 200/exact contract (indexed_height,indexed_block_hash,entries; each entry rank,address,balance_sats,balance_qoge), integer sats, QOGE strings, 405 on POST, forbidden fields absent: all PASS
+
+  WEB — GET 200/405, table columns, links, disclaimer, navigation, security headers: all PASS
+
+  CORE / MEMPOOL — Core independent: YES (internal/rpc has no test files, no RPC dependency in rich-list path). Mempool independent: YES
+
+  NON-MUTATION — PASS (TestRichListOverview_NonMutation, read-only/REPEATABLE READ/SELECT-only)
+
+  MIGRATIONS — 0001–0005 unchanged (byte-identical), 0006 as specified, no 0007
+
+  POST-MERGE
+  - main HEAD: 85d22e755001dd860f3872c15fbd1f3dd7449694
+  - origin/main: 85d22e755001dd860f3872c15fbd1f3dd7449694 (match)
+  - gofmt / go vet / go build: PASS
+  - go test: PASS (14 packages, exit 0)
+  - go test -race: PASS (12 tested packages, exit 0, no data races)
+  - PostgreSQL genuinely executed: YES
+  - DB skips: 0
+
+  PR
+  - closed: true
+  - merged: true
+  - merge SHA matches main: YES (85d22e755001dd860f3872c15fbd1f3dd7449694)
+
+  BRANCH CLEANUP
+  - local deleted: YES
+  - remote deleted: YES
+
+  LIVE-OPS NOTE
+  - 0006 must be applied before live /richlist: YES — qoge-explorer serve does not auto-apply migrations; run migrate up and verify addresses_richlist_positive_balance_idx exists
+  - index existence verified: confirmed structurally via migration round-trip test, not against a live deployment
+  - CREATE INDEX locking note recorded: YES — 0006 uses plain CREATE INDEX (not CONCURRENTLY); applying to a live populated DB may block writers during index build
+
+  PHASE BOUNDARY
+  - entity clustering: NONE
+  - distribution percentages: NONE
+  - historical ranking: NONE
+  - next phase started: NO
+
+  Stop.
+
+✻ Worked for 12m 25s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ confirm CI is green on main
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
