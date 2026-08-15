@@ -1,0 +1,127 @@
+● Confirmed: HEAD and origin/main both at the frozen 85d22e755001dd860f3872c15fbd1f3dd7449694, working tree clean, go.mod declares go 1.22.2. Now finding a stable existing PostgreSQL-backed test to use for the preflight check.
+
+  Searched for 2 patterns, read 1 file, ran 2 shell commands 
+
+● Write(.github/workflows/ci.yml)
+  ⎿  Wrote 124 lines to .github/workflows/ci.yml
+       1 name: CI
+       2 
+       3 on:
+       4   pull_request:
+       5     branches: [main]
+       6   push:
+       7     branches: [main]
+       8   workflow_dispatch:
+       9 
+      10 concurrency:
+     … +114 lines 
+
+● Now verifying: YAML parses, no production files changed, and the local quality suite is still green.
+
+  Ran 2 shell commands 
+
+● YAML parses correctly, and only the new .github/ directory is untracked — no production Go/migration files touched. Now rechecking the local quality suite before committing.
+
+  Ran 4 shell commands 
+
+● No Go files changed — the full suite was already verified clean on this exact commit moments ago. Committing and pushing.
+
+  Committed 1457053, pushed to ci/github-actions, ran 1 shell command 
+
+● Pushed. Now opening the PR against main.
+
+  Created PR #17 
+
+● PR #17 opened. Now watching its Actions run.
+
+  Ran 1 shell command 
+
+● A CI run genuinely started: run 31880468408, in progress. Watching it to completion.
+
+  Ran 1 shell command 
+
+● Background command "Watch the CI run to completion" completed (exit code 0)
+
+● The CI run completed with exit code 0 (success). Let me pull the full details to verify each step genuinely passed.
+
+  Ran 1 shell command 
+
+● Job succeeded in 2m41s (only a benign Node.js version deprecation notice, unrelated to correctness). Let's confirm each step passed and that PostgreSQL was genuinely exercised.
+
+  Ran 1 shell command 
+
+● Every step passed, including "Initialize containers" (PostgreSQL service). Now checking the logs to confirm PostgreSQL was genuinely reachable and no DB-backed tests were skipped.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● The only two matches for QOGE_TEST_DATABASE_URL not set are the grep commands in the workflow's own guard code (not actual skip messages) — the guard never fired. The 6 skips are exactly the expected live-RPC/indexer integration tests (gated on QOGE_RPC_INTEGRATION/QOGE_INDEXER_INTEGRATION, intentionally not provided), not DB skips. Let me confirm the connectivity and preflight steps genuinely exercised PostgreSQL.
+
+  Searched for 2 patterns, ran 1 shell command 
+
+● Fully verified: PostgreSQL reachable (SELECT 1 succeeded), schema create/drop privileges confirmed, preflight test passed genuinely, and all 14 packages in the full go test run reported ok — no FAIL, no unexpected skips. Everything is green on the workflow's own first run.
+
+  FINAL REPORT
+
+  CI WORKFLOW
+  - Base main: 85d22e755001dd860f3872c15fbd1f3dd7449694
+  - Branch: ci/github-actions
+  - Commit: 1457053 (ci: add PostgreSQL-backed GitHub Actions workflow)
+  - PR: https://github.com/QOGE/qoge-explorer/pull/17
+  - Workflow path: .github/workflows/ci.yml
+
+  TRIGGERS
+  - pull_request: targeting main ✓
+  - push main: ✓
+  - workflow_dispatch: ✓
+  - concurrency cancellation for superseded PR runs: ✓
+
+  PERMISSIONS
+  - contents: read
+  - other write permissions: NONE
+
+  GO
+  - version source: go-version-file: go.mod (declares 1.22.2, not hardcoded)
+  - setup-go: actions/setup-go@v5
+  - cache: enabled (cache: true)
+
+  POSTGRESQL
+  - image: postgres:16
+  - database: qoge_test (user postgres/postgres)
+  - health check: pg_isready on the service, 5s interval, 10 retries
+  - QOGE_TEST_DATABASE_URL: set at job level, postgres://postgres:postgres@localhost:5432/qoge_test?sslmode=disable
+  - connectivity confirmed: explicit pg_isready/psql SELECT 1 step, ran and succeeded (log-verified)
+  - schema creation permitted: explicit CREATE SCHEMA/DROP SCHEMA privilege check step, ran and succeeded (log-verified)
+
+  QUALITY
+  - gofmt: PASS
+  - go vet: PASS
+  - go test: PASS (all 14 packages ok, zero FAIL)
+  - go test -race: PASS
+  - go build: PASS
+  - default package parallelism: yes (no -p 1 anywhere)
+
+  DB COVERAGE
+  - PostgreSQL-backed tests genuinely executed: YES
+  - DB skips: 0 (the 6 skips present — TestLiveRPC_*, TestLiveIndexer_* — are the expected, intentionally-excluded Qogecoin Core RPC/indexer integration tests, gated on QOGE_RPC_INTEGRATION/QOGE_INDEXER_INTEGRATION, unrelated to the DB guard)
+  - evidence: preflight step's --- PASS: TestMigrations_RichListIndexRoundTrip log line; zero occurrences of the QOGE_TEST_DATABASE_URL not set skip-reason string anywhere in test output; all 14 packages report ok with real elapsed times (e.g. internal/store 25.155s, internal/query 18.431s) consistent with genuine PostgreSQL I/O, not instant skips
+
+  SCOPE
+  - production code changed: NO
+  - migrations changed: NO
+  - deployment added: NO
+  - secrets required: NO
+
+  GITHUB ACTIONS
+  - workflow run ID: 31880468408
+  - status: completed
+  - conclusion: success (job "Quality gate (gofmt, vet, test, race, build)" — 2m41s, all 17 steps ✓; only annotation is GitHub's routine Node.js 20→24 runner deprecation notice, unrelated to this workflow's correctness)
+
+  Stop.
+  Do not merge.
+
+✻ Churned for 2m 58s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ merge PR #17
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
