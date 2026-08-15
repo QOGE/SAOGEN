@@ -1,0 +1,101 @@
+● All pre-merge conditions confirmed exactly: PR #17 OPEN/mergeable, base 85d22e755001dd860f3872c15fbd1f3dd7449694, head 14570530cc6d3ec96c4c5c7adcc4b06a32911bb1, and CI run 31880468408 completed/success against that exact head SHA. Merging now.
+
+  Ran 4 shell commands 
+
+● Good — 40 hex chars, confirmed. Merge commit f806cb0ce73c2deeae768ff00b6caad61b259b9c with correct parents (base then head). PR #17 is MERGED/closed=true, merge SHA matches main HEAD. Now waiting for the new CI run triggered by the push to main.
+
+  Ran 1 shell command 
+
+● New push-triggered CI run confirmed: 31883785428, in progress against the merge commit on main. Watching it to completion.
+
+  Ran 1 shell command 
+
+  Read 1 file 
+
+● Still running early steps. Continuing to wait.
+
+  Read 1 file 
+
+● Progressing well (through gofmt, on go vet). Continuing to wait.
+
+  Read 1 file 
+
+● Progressing well — now on go test. Continuing to wait.
+
+  Read 1 file 
+
+● Still on go test (the longest step, ~35s in the prior run). Continuing to wait.
+
+  Read 1 file 
+
+● Still on go test — this includes the full suite plus race afterward. Continuing to wait.
+
+  Read 1 file 
+
+● Continuing to wait for go test to complete.
+
+  Read 1 file, ran 1 shell command 
+
+● Still genuinely in progress. Continuing to wait.
+
+  Ran 1 shell command 
+
+● Still in progress. Continuing to wait.
+
+  Ran 2 shell commands 
+
+● go test finished, now on go test -race (started at 12:08:51). Continuing to wait — this step took ~2m20s in the PR run baseline.
+
+  Ran 1 shell command 
+
+● Still in progress. Continuing to wait.
+
+  Ran 2 shell commands 
+
+● Only 1 minute elapsed on go test -race — well within normal range (prior race runs took ~2-3 minutes). Continuing to wait.
+
+  Ran 1 shell command 
+
+● Still in progress. Continuing to wait.
+
+  Ran 2 shell commands 
+
+● ~1.5 min elapsed, still within normal range. Continuing to wait.
+
+  Ran 1 shell command 
+
+● Continuing to wait.
+
+  Ran 1 shell command 
+
+● Post-merge CI run completed successfully. Let's pull the full job log to verify each step in detail.
+
+  Ran 1 shell command 
+
+● Background command "Watch the post-merge CI run to completion" completed (exit code 0)
+
+● All 17 steps succeeded, headSha matches f806cb0ce73c2deeae768ff00b6caad61b259b9c. Now confirming no DB-skip guard fired in the logs, then proceeding to branch cleanup.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● All 12 tested packages report ok, zero FAIL, and the only skips are the expected RPC/indexer live-integration tests — the DB-skip guard never fired. Everything genuinely green. Proceeding to branch cleanup.
+
+  Ran 1 shell command 
+
+● Done. Summary:
+
+  - Merge SHA: f806cb0ce73c2deeae768ff00b6caad61b259b9c (normal merge commit, parents = base 85d22e7... + head 1457053...)
+  - PR #17: MERGED, closed, merge SHA matches main HEAD
+  - Post-merge CI run: 31883785428 — triggered by the push to main, conclusion success
+    - PostgreSQL service initialized/healthy, connectivity + schema create/drop privileges confirmed
+    - gofmt, go vet, PostgreSQL-backed preflight test, go test (12 packages ok, only expected live-RPC/indexer skips, DB-skip guard never fired), go test -race, go build — all passed
+  - ci/github-actions deleted locally and on the remote
+
+  No new phase started.
+
+✻ Churned for 4m 12s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ show the PR link
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
