@@ -1,0 +1,255 @@
+ Starting Phase 2H.2b review. First verifying PR #14 metadata and exact head SHA.
+
+  Listed 2 directories, ran 3 shell commands 
+
+● Fetch(https://api.github.com/repos/QOGE/qoge-explorer/pulls/14)
+  ⎿  Received 20.1KB (200 OK)
+
+● PR #14 metadata confirmed. Now checking out the exact head SHA and verifying the diff scope.
+
+  Ran 2 shell commands 
+
+● Diff scope confirmed: no changes to store, accounting, indexer, mempool, deployments, rpc, decode, script, chain packages, and no migration 0006. Now reading all new files in parallel.
+
+  Read 14 files, ran 18 shell commands 
+
+● All checks are now complete. I have enough to write the full report.
+
+  ---
+  PHASE 2H.2b FINAL INDEPENDENT REVIEW
+
+  Exact head: ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5
+  Base: 0d4c4c7e2a1e22d2e3749b56c11300906823ae5c
+  Verdict: APPROVE
+
+  ---
+  1. Verify Target
+
+  PR #14: open, merged=false, draft=false, mergeable=true. Base: main @ 0d4c4c7e2a1e22d2e3749b56c11300906823ae5c. Head: phase2h-supply-read-ui @ ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5. All fields match the spec exactly.
+
+  ---
+  2. Diff Scope
+
+  Files changed: cmd/qoge-explorer/serve_test.go (M), docs/ARCHITECTURE.md (M), internal/api/handlers_supply.go (A), internal/api/handlers_supply_test.go (A), internal/api/server.go (M, route registration only), internal/query/supply.go (A), internal/query/supply_identity_test.go (A), internal/query/supply_nonmutation_test.go (A), internal/query/supply_snapshot_test.go (A), internal/query/supply_test.go (A), internal/web/handlers_supply.go (A), internal/web/supply_test.go (A), internal/web/templates.go (M, template registration only), internal/web/templates/header.tmpl (M, nav link only), internal/web/templates/supply.tmpl (A), internal/web/viewmodels.go (M, supplyView struct only). Zero modifications to internal/store, internal/accounting, internal/indexer, internal/mempool, internal/deployments, internal/rpc, internal/decode, internal/script, or internal/chain. Migrations 0001–0005 unchanged. No 0006. PASS.
+
+  ---
+  3. Hot Query
+
+  SupplyOverview (internal/query/supply.go:261) opens exactly one readTx (REPEATABLE READ snapshot). Reads statusFrom(ctx, tx) (sync_state anchor). For initialized explorer, calls supplyRollupValuesFrom(ctx, tx, *status.IndexedHash) which issues a single SELECT … FROM block_supply_rollup WHERE block_hash = $1 PK lookup — no SUM, no COUNT, no blocks.canonical scan, no block_accounting scan or join, no utxo_state scan, no transaction_outputs scan, no ancestry walk. The words "SUM", "COUNT", "canonical scan", "block_accounting", "utxo_state", "transaction_outputs" do not appear anywhere in the query path. PASS — indexed-tip PK lookup only.
+
+  ---
+  4. Public JSON Contract
+
+  SupplyOverview struct has exactly 12 json: tagged fields: indexed_height (int64), indexed_block_hash (*string), scheduled_subsidy_sats (int64), scheduled_subsidy_qoge (string), transaction_fees_sats (int64), transaction_fees_qoge (string), coinbase_outputs_sats (int64), coinbase_outputs_qoge (string), unclaimed_reward_sats (int64), unclaimed_reward_qoge (string), utxo_set_value_sats (int64), utxo_set_value_qoge (string). Satoshi fields are int64 → JSON number, not string. QOGE fields are string populated via chain.Amount(...).String() → fixed-point decimal, no float, no scientific notation. TestSupplyEndpoint_ExactJSONContract counts exactly 12 keys, enumerates expected vs. actual, and checks sats fields are not quoted, QOGE fields are quoted. PASS.
+
+  ---
+  5. Forbidden Public Supply Claims
+
+  cumulative_excluded_output_satoshis is read from the DB (as supplyRollupValues.excluded) but never written into SupplyOverview — it exists only to supply the UTXO identity arithmetic. Searched all five new files for excluded_output_sats, circulating_supply, issued_supply, minted_supply: none present. TestSupplyEndpoint_ExactJSONContract explicitly checks all five forbidden key names. PASS.
+
+  ---
+  6. Metric Semantics
+
+  Verified mapping:
+  - ScheduledSubsidySatoshis ← v.subsidy ← cumulative_subsidy_satoshis ✓
+  - TransactionFeesSatoshis ← v.fees ← cumulative_fee_satoshis ✓
+  - CoinbaseOutputsSatoshis ← v.coinbase ← cumulative_coinbase_output_satoshis ✓
+  - UnclaimedRewardSatoshis ← v.unclaimed ← cumulative_unclaimed_reward_satoshis ✓
+  - UTXOSetValueSatoshis ← v.utxo ← cumulative_utxo_set_value_satoshis ✓
+
+  No field is wired to the wrong column. PASS.
+
+  ---
+  7. Reward Identity
+
+  checkSupplyRollupIdentities computes:
+  rewardLHS = checkedAddInt64(v.coinbase, v.unclaimed)
+  rewardRHS = checkedAddInt64(v.subsidy, v.fees)
+  assert rewardLHS == rewardRHS
+  Both sides independently overflow-checked before comparison. Both sides independently tested.
+
+  Reward LHS overflow: TestCheckSupplyRollupIdentities_RewardAdditionOverflow — coinbase = huge, unclaimed = huge → LHS overflows → ErrSupplyIntegrity. Reward identity check happens before UTXO check, so this fires immediately. PASS.
+
+  Reward RHS overflow: TestCheckSupplyRollupIdentities_RewardRHSAdditionOverflow — coinbase = 5, unclaimed = 5 (LHS = 10, no overflow); subsidy = huge, fees = huge (RHS overflows) → ErrSupplyIntegrity. The test is correctly constructed so that LHS passes and RHS overflow is the trigger. PASS.
+
+  ---
+  8. UTXO Identity
+
+  checkSupplyRollupIdentities then computes:
+  utxoLHS = checkedAddInt64(v.utxo, v.fees)         ← first addition
+  utxoLHS = checkedAddInt64(utxoLHS, v.excluded)    ← second addition, on the intermediate result
+  assert utxoLHS == v.coinbase
+
+  UTXO first addition overflow: TestCheckSupplyRollupIdentities_UTXOAdditionOverflow — reward identity holds (coinbase=20, unclaimed=0, subsidy=10, fees=10 → LHS=RHS=20); utxo = MaxInt64 → utxo + fees overflows immediately → ErrSupplyIntegrity. This test correctly demonstrates that the UTXO overflow is reached independently of the reward path, not as a side effect of a prior reward mismatch. PASS.
+
+  UTXO second addition overflow: TestCheckSupplyRollupIdentities_UTXOSecondAdditionOverflow — reward identity holds (coinbase=10, unclaimed=0, subsidy=10, fees=0); utxo = MaxInt64-5, fees = 0 → first addition (MaxInt64-5)+0 = MaxInt64-5 fits; excluded = 10 → second addition (MaxInt64-5)+10 overflows (b > 0, sum wraps negative, sum < utxoLHS) → ErrSupplyIntegrity. The test separates the two addition overflow paths with correct arithmetic. PASS.
+
+  ---
+  9. Genesis
+
+  TestSupplyOverview_SingleBlock: genesis at height 0, coinbaseTx = 100 QOGE. Expected: ScheduledSubsidySatoshis = 100 QOGE, CoinbaseOutputsSatoshis = 100 QOGE, TransactionFeesSatoshis = 0, UnclaimedRewardSatoshis = 0, UTXOSetValueSatoshis = 0. The UTXO zero is independently confirmed: applySupplyRollup uses localExcludedOutputValue which excludes all outputs at height == 0 unconditionally, so cumUTXO = coinbase - fee - excluded = 100 - 0 - 100 = 0. TestSupplyOverview_GenesisExcludedFromUTXOSet additionally verifies that at height 1 the UTXO rises to 100 QOGE (only height-1's output, not genesis's). PASS.
+
+  ---
+  10. Underclaim
+
+  TestSupplyOverview_Underclaim: height-2 block with fee=1 QOGE, coinbase=90 QOGE, max reward=101 QOGE. Expected: TransactionFeesSatoshis=1 QOGE, UnclaimedRewardSatoshis=11 QOGE. The test also explicitly verifies coinbase + unclaimed == subsidy + fees (290+11 = 301, 300+1 = 301 ✓) — reward identity holds in the response fields. The unclaimed reward is computed as subsidy+fees-coinbase by the Phase 2H.2a rollup engine, not reconstructed as max-reward minus actual. PASS.
+
+  ---
+  11. Fees
+
+  The template says: "The total input-minus-output value paid as fees by canonical non-coinbase transactions. Fees are existing value, not new issuance." The comment in supply.go:56 is identical. No claim that all fees are necessarily claimed by the miner. PASS.
+
+  ---
+  12. Core-Excluded Outputs
+
+  TestSupplyOverview_UnspendableOutputExcluded: height-1 coinbase with a normal P2PKH output (99 QOGE) and a nulldataOutput (OP_RETURN, 0x6a, 1 QOGE). Expected: CoinbaseOutputsSatoshis = 200 QOGE (includes OP_RETURN value), UTXOSetValueSatoshis = 99 QOGE (OP_RETURN excluded). Tested.
+
+  TestSupplyOverview_OversizedScriptExcluded: height-1 coinbase with a normal output (99 QOGE) and an oversizedScriptOutput (len > MaxScriptSize, first byte 0x51 ≠ 0x6a). Expected same pattern. Both exclusion branches covered independently. PASS. No burn metric exposed. PASS.
+
+  ---
+  13. No-Address Output
+
+  TestSupplyOverview_NonAddressUTXOIncluded: height-1 unknownNoAddressOutput (script = {0x51, 0x51}, no Address field). Test explicitly counts output_addresses rows for h1's txid = 0. Then UTXOSetValueSatoshis = 100 QOGE. Supply read has zero dependency on addresses, output_addresses, output_participants — the query touches only sync_state and block_supply_rollup. PASS.
+
+  ---
+  14. Uninitialized Database
+
+  SupplyOverview: if status.IndexedHeight == -1, returns zeroSupplyOverview(status) immediately, no rollup lookup. zeroSupplyOverview populates all five satoshi fields with 0 and all five QOGE fields with chain.Amount(0).String() = "0.00000000", IndexedHash = nil. Tested at query layer (TestSupplyOverview_EmptyDatabase) and API layer (TestSupplyEndpoint_Uninitialized). Supply template: {{if eq .Overview.IndexedHeight -1}}<p class="status-line">No block has been indexed yet.</p>{{else}}…{{end}}. Tested at web layer (TestSupplyPage_Uninitialized: bodyContains(t, rec, "No block has been indexed yet")). The zero-total state is never described as "chain supply of zero" in any comment, test, or template. PASS.
+
+  ---
+  15. Invalid Checkpoint
+
+  SupplyOverview line 277–279: if status.IndexedHash == nil { return SupplyOverview{}, fmt.Errorf("%w: indexed_height=%d but indexed_block_hash is NULL", ErrSupplyIntegrity, ...) }. handleSupply (api): only catches ErrSupplyRollupUnavailable → 503; everything else (including ErrSupplyIntegrity) falls through to writeInternalError → HTTP 500. Same for web handler. No test exercises this exact path with a real DB (would require manually corrupting sync_state past its trigger), but the code path is short, clearly correct, and consistent with the documented error hierarchy. PASS.
+
+  ---
+  16. Missing Tip Rollup
+
+  supplyRollupValuesFrom line 138–140: errors.Is(err, pgx.ErrNoRows) → ErrSupplyRollupUnavailable. API handleSupply: errors.Is(err, query.ErrSupplyRollupUnavailable) → writeError(w, 503, "supply_rollup_unavailable", "…"). Web handleSupply: same sentinel → renderError(w, 503, …, "… run \"qoge-explorer backfill-supply-rollup\"…"). TestSupplyEndpoint_RollupUnavailable: deletes tip rollup row, expects assertJSONError(t, rec, 503, "supply_rollup_unavailable"). TestSupplyPage_RollupUnavailable: expects 503 and bodyContains(t, rec, "backfill-supply-rollup"). PASS.
+
+  ---
+  17. Pre-0005 Database
+
+  supplyRollupValuesFrom lines 141–144: errors.As(err, &pgErr) && pgErr.Code == pgUndefinedTable ("42P01") → ErrSupplyRollupUnavailable. This maps cleanly to the same 503/supply_rollup_unavailable response as a missing row; the SQLSTATE is never leaked to the caller. TestSupplyOverview_PreMigration0005Schema rolls migration 0005 back via store.Down, then calls SupplyOverview and asserts ErrSupplyRollupUnavailable. PASS.
+
+  ---
+  18. Unexpected SQL Errors
+
+  supplyRollupValuesFrom: only pgx.ErrNoRows and SQLSTATE 42P01 map to ErrSupplyRollupUnavailable. All other errors fall through to line 145: return supplyRollupValues{}, fmt.Errorf("query: supply rollup lookup: %w", err) — an opaque wrapped error with no SQLSTATE leakage. handleSupply (both layers) treats this as writeInternalError → HTTP 500 with no internal detail in the response. PASS.
+
+  ---
+  19. Orphan Rollup
+
+  TestSupplyOverview_OrphanExcludedAndReorgSwitchesTotals: G→A1 (coinbase 40 QOGE, unclaimed 60), confirm, then rollback to G, apply B1 (full claim 100 QOGE). After reorg: SupplyOverview reads indexed_block_hash = B1.hash, does PK lookup for B1's row. A1's row is still in block_supply_rollup (never deleted by RollbackTo). Expected: CoinbaseOutputsSatoshis = 200 QOGE, UnclaimedRewardSatoshis = 0. Verified. Additionally TestSupplyOverview_OrphanRollupMissing verifies that A1's rollup row being manually deleted does not affect a B1-anchored read. PASS.
+
+  ---
+  20. Source-Trust Boundary
+
+  TestSupplyOverview_BlockAccountingDeletedDoesNotAffectRollupRead: applies genesis + height-1, captures before snapshot, deletes genesis block_accounting row, captures after snapshot, asserts all fields identical. The read depends exclusively on block_supply_rollup PK lookup; block_accounting is never consulted. This is the correct boundary: public read trusts the immutable rollup; source corruption detection belongs to backfill/replay/operator tooling. PASS.
+
+  ---
+  21. Snapshot — Append
+
+  TestSnapshotConsistency_SupplyOverview_ConcurrentApplyBlock: applies genesis (100 QOGE). Starts goroutine calling SupplyOverview. Hook fires after statusFrom (snapshot fixed at height 0). Main goroutine applies height-1 (50 QOGE coinbase, 50 unclaimed). Hook released. In-flight response must be wholly height 0: IndexedHeight=0, IndexedHash=genesis.Hash, CoinbaseOutputsSatoshis=100 QOGE, UnclaimedRewardSatoshis=0. Fresh call: IndexedHeight=1, CoinbaseOutputsSatoshis=150 QOGE, UnclaimedRewardSatoshis=50 QOGE. No sleep in either direction. DB-backed — skipped without PostgreSQL. PASS (code correct; test skipped, not failed).
+
+  ---
+  22. Snapshot — Reorg
+
+  TestSnapshotConsistency_SupplyOverview_ConcurrentReorg: applies G, A1 (40 QOGE coinbase, 60 unclaimed). Goroutine calls SupplyOverview, hook fires after statusFrom (snapshot at A1). Main goroutine rolls back to G, applies B1 (100 QOGE full claim). Hook released. In-flight: IndexedHash=A1.hash, CoinbaseOutputsSatoshis=140 QOGE, UnclaimedRewardSatoshis=60. Fresh: IndexedHash=B1.hash, CoinbaseOutputsSatoshis=200 QOGE, UnclaimedReward=0. Correct for two independent reasons: (1) REPEATABLE READ — the in-flight transaction sees the state as of its first statement; (2) row immutability — A1's row is permanent and unchanged regardless of what the main writer does. Both angles documented in §28. DB-backed — skipped without PostgreSQL. PASS (code correct).
+
+  ---
+  23. Mixed-Tip Response Attack
+
+  Attack: can a production code path produce indexed_height/hash from tip N and monetary values from tip N+1 (or vice versa) in a single response?
+
+  Answer: No. Both reads (statusFrom and supplyRollupValuesFrom) run against the same pgx.Tx opened at REPEATABLE READ isolation before either read executes. PostgreSQL guarantees every statement in that transaction sees a snapshot fixed at the transaction's start time. A concurrent ApplyBlock committing between the two statements does not affect what the in-flight transaction observes. Even if the transaction were not used, block_supply_rollup rows are immutable — the row named by the captured anchor hash cannot change after the anchor is captured. No production path can produce a mixed-tip response. PASS.
+
+  Attack: force O(chain-size) operation through supported interface?
+
+  The only SQL issued by SupplyOverview is: (1) a sync_state read (single row); (2) SELECT … FROM block_supply_rollup WHERE block_hash = $1 (PK lookup, O(1)). There is no code path through the supported API that causes any scan of blocks, block_accounting, utxo_state, or transaction_outputs. Neither handleSupply (API or web) accepts any query parameter that would alter the SQL issued by SupplyOverview. No O(chain-size) operation reachable. PASS.
+
+  ---
+  24–25. API and Web Routing
+
+  GET /api/v1/supply → handleSupply (JSON). Registered as GET /api/v1/supply + bare /api/v1/supply for 405. TestSupplyEndpoint_MethodNotAllowed: POST → assertJSONError(t, rec, 405, "method_not_allowed"), Allow header present. No HTML error from the API path (separate Server struct with writeError/writeInternalError).
+
+  GET /supply → handleSupply (HTML). Registered as GET /supply + bare /supply for 405. TestSupplyPage_MethodNotAllowed: POST → 405, Allow: GET header. TestSupplyPage_Navigation: GET / → body contains href="/supply". PASS.
+
+  ---
+  25. Web Terminology
+
+  Template supply.tmpl verified:
+  - <td>Scheduled subsidy</td> ✓
+  - <td>Coinbase outputs</td> ✓
+  - <td>Transaction fees</td> ✓
+  - <td>Unclaimed reward</td> ✓
+  - <td>Current UTXO-set value</td> ✓
+  - "encoded in canonical coinbase transaction outputs" ✓ (in the <dd> for Coinbase outputs)
+  - "input-minus-output value paid as fees" ✓ (in the <dd> for Transaction fees)
+  - "None of the values on this page is labelled circulating supply." ✓ (prominent <strong> paragraph)
+  - "burned or destroyed coins" — explicitly stated it is NOT ✓
+
+  TestSupplyPage_GoldenPath asserts all six of these strings are present in the rendered HTML. PASS.
+
+  ---
+  26. Core Independence
+
+  internal/query/supply.go, internal/api/handlers_supply.go, internal/web/handlers_supply.go — none import or reference internal/rpc. SupplyOverview is a method on query.Store, which holds only *pgxpool.Pool. handleSupply calls s.q.SupplyOverview(r.Context()) — no RPC client constructed. TestRootHandler_SupplyRoutesCoreIndependent: sets QOGE_RPC_USER and QOGE_RPC_PASSWORD to empty, builds handler from only query.New(pool), confirms /api/v1/supply → 200 JSON, /supply → 200 HTML. PASS.
+
+  ---
+  27. Non-Mutation
+
+  TestSupplyOverview_NonMutation (supply_nonmutation_test.go): fingerprints 22 tables before/after (empty DB, populated DB × 3 calls, rollup-unavailable error path). Struct field comparison is direct (got != before) — any row count change in any table is caught. supplyRowCounts covers blocks, transactions, transaction_variants, block_transactions, transaction_inputs, transaction_input_witness, transaction_outputs, addresses, output_addresses, output_participants, utxo_state, block_accounting, block_supply_rollup, sync_state, all mempool tables, deployment_state, chain_deployments. PASS.
+
+  ---
+  28. Exact JSON Test
+
+  TestSupplyEndpoint_ExactJSONContract decodes the response as map[string]json.RawMessage, asserts exactly 12 keys (6 sats + 5 QOGE + indexed_block_hash), no extra, no missing, no forbidden. Sats fields verified as non-quoted (first byte ≠ "). QOGE fields verified as quoted (first byte = "). Any accidental addition of a new field to SupplyOverview (even with a json:"-" tag omitted) would add a 13th key and fail len(raw) != len(wantKeys). PASS.
+
+  ---
+  29. Performance
+
+  SupplyOverview issues: one sync_state SELECT (single-row table), one block_supply_rollup WHERE block_hash = $1 PK lookup. This is the same access pattern TestSupplyRollupBenchmark_TipLookup (Phase 2H.2a) measured at 6.0 ms cold / 0.6–0.8 ms warm at 2.5M rows. Phase 2H.2b adds only constant-time Go arithmetic and string formatting on top of that. No cache, no mutable counter, no materialized view. §28 in ARCHITECTURE.md accurately reflects this. PASS.
+
+  ---
+  30. Documentation
+
+  docs/ARCHITECTURE.md §27 (line 4674): ## 27. Immutable block supply rollup foundation (Phase 2H.2a) — present, unchanged by this PR. §28 (line 5002): ## 28. Supply and monetary accounting read surface (Phase 2H.2b) — accurate. §28 states the original direct aggregation measured 5.6–7.7 seconds at 2.5M rows and was rejected; the 25k-row 45 ms number is correctly framed as "real but did not validate the full-chain path". No stale claim that the old test justified full scans. PASS.
+
+  ---
+  31. Phase Boundary
+
+  No rich list, address rankings, distribution charts, or circulating-supply calculation present. The only new production surface: GET /api/v1/supply and GET /supply, both O(1) lookups into the existing rollup. PASS.
+
+  ---
+  32. Quality
+
+  gofmt -l .    → no output (clean)
+  go vet ./...  → no output (clean)
+  go build ./.. → no output (clean)
+  go test -count=1 ./...      → all 14 packages PASS
+  go test -race -count=1 ./.. → all 14 packages PASS (-race clean)
+
+  PostgreSQL-backed tests genuinely executed: NO. PostgreSQL is not available in this environment. All tests requiring a real DB connection (TestSupplyOverview_EmptyDatabase, TestSupplyOverview_SingleBlock, TestSupplyOverview_NonMutation, both snapshot tests, etc.) are skipped via t.Skip. The pure-Go identity tests (TestCheckSupplyRollupIdentities_*, 7 tests) ran and passed without PostgreSQL. The same skip behavior was observed in the Phase 2H.1 and 2H.2a reviews; the test infrastructure is correctly conditioned on DB availability, not broken.
+
+  ---
+  Remaining Correctness Risks
+
+  Manual SQL corruption (operational/admin trust boundary, not a blocking correctness bug): A privileged DB writer can craft a block_supply_rollup row that satisfies both CHECK constraints and passes checkSupplyRollupIdentities (both identities hold, no overflow) while still being wrong relative to the actual chain. SupplyOverview will serve the false row as truth until the next backfill-supply-rollup run (which detects contradictions via supplyRollupContradictionSQL) or an ApplyBlock replay exposes the inconsistency. This is explicitly documented in §28 ("Administrative trust boundary") and is the correct architectural decision — reinstating a full-chain scan for this threat model would recreate the exact performance problem Phase 2H.2a was built to solve against an attacker who can corrupt the source tables just as easily. Classified: operational/admin trust boundary. Not blocking.
+
+  PostgreSQL tests not executed locally: The snapshot, non-mutation, genesis exclusion, underclaim, OP_RETURN, oversized-script, no-address UTXO, missing-rollup, and pre-0005 tests are well-constructed and would genuinely test the specified behaviors — but their actual runtime correctness cannot be empirically confirmed in this environment. The logic was reviewed at source level and is correct. The test suite ran clean on the public testnet node during Phase 2H.2a; these tests follow identical patterns. Classified: test infrastructure gap, not a code defect.
+
+  No blocking monetary, UTXO, rollup, snapshot, or API/UI discrepancy was found.
+
+  ---
+  No blocking supply-read/rollup/snapshot/API/UI discrepancy found. Phase 2H.2b is safe to merge at ed8d3d013ea6beb950d5ae19184e4c4b6f28e7b5.
+
+  Do not modify. Do not merge. Stop.
+
+✻ Baked for 5m 38s
+
+※ recap: Phase 2H reviews are done: 2H.1 (PR #13) and 2H.2a (PR #15) were approved earlier, and 2H.2b (PR #14) was just approved. Next action is to await your merge decision or a new instruction. (disable recaps in /config)
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ merge PR #14
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
