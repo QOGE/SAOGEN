@@ -1,0 +1,198 @@
+● Let me add a note about the migration-step-count test fix, mirroring the existing "Prior-phase migration test updates" pattern.
+
+● Update(docs/ARCHITECTURE.md)
+  ⎿  Added 10 lines
+      5703  value are excluded by construction, so it is never divided by subsidy,
+      5704  coinbase totals, or UTXO-set value, and no percentage is ever computed
+      5705  from it in this phase.
+      5706 +                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+      5707 +**Prior-phase migration test update (test-only, not a phase-boundary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+      5708 +violation).** Adding migration 0007 shifted the same "how many migrations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+      5709 +sit on top of 0005" arithmetic §29's own note already flagged once:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+      5710 +`internal/query/supply_test.go`'s `TestSupplyOverview_PreMigration0005Schema`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+      5711 +now computes its rollback step count as `len(migrations)-4` (mirroring                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+      5712 +the `len(migrations)-N` convention `internal/deployments` and                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+      5713 +`internal/mempool`'s own migration tests already use) instead of a                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+      5714 +hardcoded literal, so it survives whatever gets layered on top of 0005                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+      5715 +next without needing another edit.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+
+● Let's check the race test progress.
+
+  Ran 1 shell command 
+
+● Still running (query/store/web packages remain). Let me wait for it.
+
+  Ran 1 shell command 
+
+● Still running (query/store/web are the slow, DB-heavy packages under -race). Let's wait longer.
+
+  Ran 2 shell commands 
+
+● Good, three test binaries genuinely running in parallel (query, store, web), all actively using CPU. Let's wait for completion.
+
+  Ran 1 shell command 
+
+● Still running — let's keep waiting.
+
+  Ran 1 shell command 
+
+  Ran 1 shell command 
+
+● Progress — query package passed under -race. Store and web still running. Let's wait for the actual notification this time rather than polling.
+
+  Ran 1 shell command 
+
+● I'll stop polling and genuinely wait for the scheduled wakeup at 17:57.
+
+● Waiting for the scheduled wakeup now.
+
+✻ Sautéed for 31m 20s
+
+✻ Claude resuming /loop wakeup (Aug 15 5:57pm)
+
+  Ran 1 shell command 
+
+● go test -race -count=1 ./... completed — all packages ok, no failures, no data races. Let's run gofmt/vet one more time, then commit and push.
+
+  Ran 1 shell command 
+
+● Background command "gofmt -l . && go vet ./... 2>&1 && echo "CLEAN"" completed (exit code 0)
+
+● That completed with exit code 0. Let's confirm the output and then proceed with commit/push/PR.
+
+  Read 1 file 
+
+● gofmt/vet clean. Let's do a final phase-boundary audit before committing.
+
+  Ran 1 shell command 
+
+● Clean — zero changes outside the allowed scope (protected consensus/RPC/mempool/deployments/accounting/API/web/rich-list/supply-contract dirs are untouched; the only test file change is the mechanical migration-count fix). Now let's commit.
+
+  Committed ef1377b, ran 1 shell command 
+
+● Now let's push and open the PR.
+
+  Pushed to phase2h4a-address-distribution-rollup, created PR #18, ran 1 shell command 
+
+● PR #18 opened. Let's find its CI run and watch it.
+
+  Ran 1 shell command 
+
+● Run 31899971858 is in progress against our exact commit. Let's wait for it.
+
+  Ran 1 shell command 
+
+● Just getting started (still setting up Go). Let's wait for the scheduled check.
+
+  Ran 1 shell command 
+
+● Good progress — through the preflight steps, now on go test. Let's wait.
+
+  Ran 1 shell command 
+
+● Still on go test (~4+ minutes elapsed on this step, consistent with our local timing). Let's wait longer.
+
+  Ran 2 shell commands 
+
+● I'll wait for the actual wakeup now rather than polling.
+
+✻ Worked for 5m 35s
+
+✻ Claude resuming /loop wakeup (Aug 15 6:07pm)
+
+  Ran 1 shell command 
+
+● The run completed with conclusion: success, every step succeeded, and it's against the exact commit ef1377b. Let's pull the full log to verify no silent DB-skip false-pass.
+
+  Searched for 1 pattern, ran 2 shell commands 
+
+● All verification complete: CI run 31899971858 succeeded genuinely — all 13 packages ok under both plain and -race runs, all 22 distribution tests pass, zero real FAIL/panic/data-race lines, and the only two "QOGE_TEST_DATABASE_URL not set" matches are the workflow's own guard-script source lines, not actual skips.
+
+  PHASE 2H.4a IMPLEMENTATION REPORT
+
+  Base: f806cb0ce73c2deeae768ff00b6caad61b259b9c
+  Branch: phase2h4a-address-distribution-rollup
+  Head: ef1377bc80da4bbf73d16996ee372713f150a738
+  PR: https://github.com/QOGE/qoge-explorer/pull/18
+
+  SCHEMA
+  - migration: 0007_address_balance_distribution (up/down)
+  - bucket table: address_balance_distribution — 8 fixed rows, bucket_id CHECK-constrained to the exact 8 values, immutability trigger blocks DELETE and changes to bucket_id/min/max
+  - state table: address_balance_distribution_state — singleton, structurally identical to sync_state, own checkpoint-validation trigger
+  - bucket count: 8 (verified: TestMigrations_DistributionRoundTrip, TestDistributionBuckets_MatchMigrationSeed)
+  - 0001-0006 unchanged: yes (verified via git diff --stat)
+  - 0008: none
+
+  SEMANTICS
+  - monetary source: addresses.balance_satoshis only, no second engine
+  - positive addresses only: yes (zero belongs to no bucket)
+  - exact satoshi arithmetic: yes, all int64
+  - WholeQOGE used for classification: no — exact integer boundaries only
+  - no-address excluded: yes (TestApplyBlock_Distribution_NoAddressExcluded)
+  - bare multisig excluded: yes (TestApplyBlock_Distribution_BareMultisigExcluded)
+  - P2QPK: participates normally (TestApplyBlock_Distribution_P2QPKParticipatesNormally)
+  - address != holder/entity: yes, enforced in naming/docs throughout
+
+  BUCKETS (all boundary-tested: 1 sat, 1 QOGE−1 sat, and each exact power-of-ten QOGE through 1,000,000)
+  lt_1 / 1_10 / 10_100 / 100_1k / 1k_10k / 10k_100k / 100k_1m / gte_1m — all present, all pass TestBucketForBalance_ExactBoundaries
+
+  INCREMENTAL MAINTENANCE
+  - old/new balance captured: yes (recomputeAddressTracked)
+  - same-bucket delta: yes
+  - cross-bucket delta: yes
+  - zero->positive: yes
+  - positive->zero: yes
+  - full-address scan in ApplyBlock: none
+  - full-address scan in RollbackTo: none
+
+  ANCHOR
+  - distribution state: singleton, mirrors sync_state
+  - sync_state consistency: enforced unconditionally every ApplyBlock/RollbackTo call (no arbitrary-bootstrap carve-out, unlike §27 supply rollup)
+  - fresh DB: works normally, no backfill needed
+  - upgraded DB refusal: VerifyDistributionCoverage/ErrDistributionCoverageMissing, wired into index startup
+
+  REORG
+  - normal reorg: yes (TestRollbackTo_Distribution_NormalReorg)
+  - re-promotion: yes (TestApplyBlock_Distribution_OrphanRePromotion, real Store orphan re-promotion path)
+  - orphan leakage: none
+  - duplicate counts: none
+
+  BACKFILL
+  - command: qoge-explorer backfill-address-distribution
+  - full scan: yes, operator-only path
+  - atomic: yes, single transaction
+  - cross-check: yes, independent literal-boundary SQL formulation, per-bucket + global
+  - idempotent: yes (TestBackfillAddressDistribution_PopulatedDatabase reruns and compares)
+  - failure rollback: yes (TestBackfillAddressDistribution_CrossCheckFailure)
+
+  QUALITY
+  - gofmt: clean
+  - go vet: clean
+  - go test: pass (local + CI)
+  - go test -race: pass (local + CI), no data races
+  - go build: clean
+  - PostgreSQL genuinely executed: confirmed (preflight test + realistic elapsed times)
+  - DB skips: zero
+
+  CI
+  - workflow run: 31899971858
+  - status: completed
+  - conclusion: success
+
+  PHASE BOUNDARY
+  - API added: none
+  - HTML added: none
+  - percentages: none
+  - Gini/Lorenz: none
+  - entity inference: none
+  - historical snapshots: none
+
+  Stop.
+  Do not merge.
+
+✻ Cogitated for 46s
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               new task? /clear to save 334.6k tokens
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Merge PR #18
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #18 · ← 1 agent
