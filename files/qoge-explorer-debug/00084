@@ -1,0 +1,114 @@
+● Now checking if functionExists name collides with anything existing, then running the targeted migration test.
+
+  Searched for 1 pattern 
+
+● No collisions. Now checking QOGE_TEST_DATABASE_URL is set locally and running the targeted test.
+
+  Ran 2 shell commands 
+
+● Passes. Now running the full quality gate sequence.
+
+  Ran 3 shell commands 
+  ⎿  Error: `prompt` is required when `stop` is not true.
+
+  Ran 2 shell commands 
+
+● I'll wait for the background go test ./... run to finish before continuing.
+
+✻ Cooked for 3m 6s
+
+● Background command "go test -count=1 ./... 2>&1 | tee /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/gotest_fix.log | tail -40" completed (exit code 0)
+
+  Read 1 file 
+
+● All 13 packages pass. Now checking for DB skips, then starting the race run.
+
+  Searched for 1 pattern 
+
+● Zero skips. Now running the race build and go build in parallel background.
+
+  Ran 2 shell commands 
+
+● Background command "sleep 90 && echo waited" completed (exit code 0)
+
+● Background command "go test -race -count=1 ./... > /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/race_fix.log 2>&1" completed (exit code 0)
+
+● go build clean, race run finished. Verifying results.
+
+  Searched for 1 pattern 
+
+● All 12 test-having packages pass under -race, zero data races, zero DB skips. Now committing and pushing.
+
+  Committed a336ad3, pushed to phase2h4a-address-distribution-rollup, ran 2 shell commands 
+
+● Pushed. Now waiting for the new GitHub Actions run to appear and complete.
+
+  Ran 1 shell command 
+
+● New run 31912755470 for the correct head a336ad3 is in progress. Waiting for it to complete.
+
+  Ran 1 shell command 
+
+● I'll wait for the CI run to complete before producing the final report.
+
+✻ Churned for 48s
+
+● Background command "until [ "$(gh run view 31912755470 --repo QOGE/qoge-explorer --json status -q .status)" = "completed" ]; do sleep 20; done; gh run view 31912755470 --repo QOGE/qoge-explorer --json status,conclusion,headSha" completed (exit code 0)
+
+  Read 1 file 
+
+● CI succeeded on the corrected commit. Let me pull the job log to confirm no real failures/skips, mirroring the same verification done for the previous run.
+
+  Ran 2 shell commands 
+
+● All verification confirms a clean, genuine CI pass on the corrected commit. Composing the final report.
+
+  PHASE 2H.4a — INTERNAL REVIEW CORRECTION REPORT
+
+  Previous head: ef1377bc80da4bbf73d16996ee372713f150a738
+  New commit: a336ad374a403bd86b31a64d36055de6bf1dbfd5 — "fix: fully reverse distribution migration"
+  New exact head: a336ad374a403bd86b31a64d36055de6bf1dbfd5
+
+  DOWN MIGRATION
+  - distribution table dropped: yes
+  - distribution state table dropped: yes
+  - immutable-bounds function dropped: yes (DROP FUNCTION address_balance_distribution_immutable_bounds())
+  - checkpoint-validation function dropped: yes (DROP FUNCTION address_balance_distribution_state_validate_checkpoint())
+
+  ROUND TRIP
+  - functions absent before 0007: yes (verified via to_regprocedure)
+  - functions present after up: yes
+  - functions absent after down: yes
+  - functions present after re-up: yes
+  - addresses row survives: yes, unchanged throughout all four steps
+
+  SCOPE
+  - production Go changed: no
+  - migrations 0001-0006 changed: no
+  - 0008 added: no
+
+  Changed files exactly as expected: migrations/0007_address_balance_distribution.down.sql, internal/store/distribution_migration_test.go.
+
+  QUALITY
+  - target migration test: pass (TestMigrations_DistributionRoundTrip)
+  - gofmt: clean
+  - go vet: clean
+  - go test: pass, all 12 test-bearing packages ok
+  - go test -race: pass, all 12 test-bearing packages ok, zero data races
+  - go build: clean
+  - PostgreSQL genuinely executed: confirmed (realistic non-zero elapsed times, internal/store 37.5s→51.6s under -race)
+  - DB skips: zero
+
+  CI
+  - run: 31912755470
+  - conclusion: success (head a336ad3, confirmed via full job log: zero real FAIL/panic/DATA RACE lines, 22 PASS.../0 FAIL... distribution-test lines, the only 2 "QOGE_TEST_DATABASE_URL not set" matches are the workflow's own guard-script source lines, not actual skips)
+
+  Stop.
+  Do not merge.
+
+✻ Sautéed for 32s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Check CI status on PR #18
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · PR #18 · ← 1 agent
