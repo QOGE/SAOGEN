@@ -1,0 +1,178 @@
+• I’m using the GitHub review workflow to verify PR metadata and CI against the exact frozen head, then I’ll audit the local diff and run the full real-PostgreSQL and Go validation suite without modifying the repository.
+
+• Explored
+  └ Read SKILL.md (github:github skill)
+
+✔ You approved codex to always run commands that start with pwd
+
+• Ran pwd && rg --files -g 'AGENTS.md' -g '!vendor' -g '!node_modules' && git status --short --branch && git rev-parse HEAD && git remote -v
+  └ /home/ion/qoge-explorer
+
+• Exploring
+  └ List rg --files -g AGENTS.md -g '!vendor' -g '!node_modules'
+
+✔ You approved codex to always run commands that start with git remote -v
+
+• Ran git rev-parse HEAD
+  └ a336ad374a403bd86b31a64d36055de6bf1dbfd5
+
+• Explored
+  └ List rg --files -g AGENTS.md -g '!vendor' -g '!node_modules'
+
+• Ran git status --short --branch
+  └ ## phase2h4a-address-distribution-rollup...origin/phase2h4a-address-distribution-rollup
+
+• Ran git remote -v
+  └ origin    https://github.com/QOGE/qoge-explorer.git (fetch)
+    origin    https://github.com/QOGE/qoge-explorer.git (push)
+
+• Ran gh pr view 18 --repo QOGE/qoge-explorer --json state,isDraft,mergeable,baseRefOid,headRefOid,statusCheckRollup,url
+  └ {"baseRefOid":"f806cb0ce73c2deeae768ff00b6caad61b259b9c","headRefOid":"a336ad374a403bd86b31a64d36055de6bf1dbfd5","isDraft":false,"mergeable":"MERGEABLE","state":"OPEN","statusCheckRollup":[{"__typename":"CheckRun","completedAt":"2026-08-15T22:43:23Z","conclusion":"SUCCESS","detailsUrl":"https://github.com/QOGE/qoge-explorer/actions/runs/31912755470/job/95080189358","name":"Quality gate (gofmt, vet, test, race, build)","startedAt":"2026-08-15T22:40:39Z","status":"COMPLETED","workflowName":"CI"}],"url":"https://github.com/QOGE/qoge-explorer/pull/18"}
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Target verification passed: PR #18 is open, non-draft, unmerged, mergeable, and its base/head exactly match the frozen SHAs. CI run 31912755470 completed successfully on that exact head. I’m proceeding with the phase-boundary, implementation, migration, and database attacks.
+
+✔ You approved codex to always run commands that start with find migrations -maxdepth 1 -type f -printf "%f\\n"
+
+• Ran git diff --name-status f806cb0ce73c2deeae768ff00b6caad61b259b9c..a336ad374a403bd86b31a64d36055de6bf1dbfd5
+  └ M    cmd/qoge-explorer/main.go
+    M    docs/ARCHITECTURE.md
+    … +10 lines (ctrl + t to view transcript)
+    A    migrations/0007_address_balance_distribution.down.sql
+    A    migrations/0007_address_balance_distribution.up.sql
+
+• Ran git diff --stat f806cb0ce73c2deeae768ff00b6caad61b259b9c..a336ad374a403bd86b31a64d36055de6bf1dbfd5
+  └  cmd/qoge-explorer/main.go                          |  98 ++++
+     docs/ARCHITECTURE.md                               | 203 +++++++
+    … +11 lines (ctrl + t to view transcript)
+     .../0007_address_balance_distribution.up.sql       | 157 ++++++
+     14 files changed, 2183 insertions(+), 14 deletions(-)
+
+• Ran git diff --exit-code f806cb0ce73c2deeae768ff00b6caad61b259b9c..a336ad374a403bd86b31a64d36055de6bf1dbfd5 -- migrations/0001_initial.up.sql migrations/0001_initial.down.sql migrations/0002_mempool_cache.up.sql migrations/0002_mempool_cache.down.sql migrations/0003_deployment_state.up.sql migrations/0003_deployment_state.down.sql migrations/0004_block_accounting.up.sql migrations/0004_block_accounting.down.sql migrations/0005_block_supply_rollup.up.sql migrations/0005_block_supply_rollup.down.sql migrations/0006_address_balance_ranking.up.sql migrations/0006_address_balance_ranking.down.sql
+  └ (no output)
+
+• Explored
+  └ List migrations
+    Read distribution.go, distribution_backfill.go, distribution_preflight.go, 0007_address_balance_distribution.up.sql, 0007_address_balance_distribution.down.sql
+
+• Ran git diff f806cb0ce73c2deeae768ff00b6caad61b259b9c..a336ad374a403bd86b31a64d36055de6bf1dbfd5 -- internal/store/apply.go internal/store/reorg.go cmd/qoge-explorer/main.go internal/query/supply_test.go
+  └ diff --git a/cmd/qoge-explorer/main.go b/cmd/qoge-explorer/main.go
+    index c922e55..3388c30 100644
+    … +261 lines (ctrl + t to view transcript)
+         if _, err := tx.Exec(ctx, `
+             UPDATE sync_state SET indexed_block_hash = $1, updated_at = now() WHERE name = 'main'
+
+• Explored
+  └ Read distribution_test.go
+
+• Running env | rg '^QOGE_TEST_DATABASE_URL='
+
+• Exploring
+  └ Search address_balance_distribution|recomputeAddressTracked|recomputeAddress\(|WholeQOGE|FROM addresses|UPDATE addresses
+
+• Running pg_isready
+
+✔ You approved codex to always run commands that start with env
+
+✔ You approved codex to always run commands that start with pg_isready
+
+✔ You approved codex to always run commands that start with rg -n "address_balance_distribution|recomputeAddressTracked|recomputeAddress\...
+
+• Ran pg_isready
+  └ /var/run/postgresql:5432 - accepting connections
+
+• Explored
+  └ Read distribution_backfill_test.go, distribution_migration_test.go, distribution_preflight_test.go
+
+• Ran env | rg '^QOGE_TEST_DATABASE_URL='
+  └ QOGE_TEST_DATABASE_URL=postgres://qoge_explorer:qoge_explorer_test_pw@127.0.0.1:5432/qoge_explorer_test?sslmode=disable
+
+• Explored
+  └ Search address_balance_distribution|recomputeAddressTracked|recomputeAddress\(|WholeQOGE|FROM addresses|UPDATE addresses
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• PostgreSQL is available and the test database URL is configured, so database-backed tests will execute rather than skip. The hot path uses one primary-key balance lookup per touched address, the existing recomputation path, accumulated transitions, and at most eight rollup updates; full address scans appear confined to the offline backfill. I’m now running the required default-parallelism quality suite.
+
+✔ You approved codex to always run commands that start with rg -n 'MaxMoney|max.*satoshi|subsidy|TotalSupply|total.*supply|overflow|check...
+
+✔ You approved codex to always run commands that start with rg -n 'Schema|Immutable|DELETE|ninth|duplicate|bucket.*definition|anchor.*no|...
+
+• Waited for background terminal · gofmt_files=$(gofmt -l .); if [ -z "$gofmt_files" ]; then echo 'gofmt: PASS'; else echo 'gofmt: FAIL'; printf '%s\n' "$gofmt_files"; fi; go vet ./...; echo 'go vet: PASS'; go test -count=1 ./...; echo 'go test: PASS'; go test -race -count=1 ./...; echo 'go test -race: PASS'; go build ./...; echo 'go build: PASS'
+
+• Explored
+  └ Search MaxMoney|max.*satoshi|subsidy|TotalSupply|total.*supply|overflow|checked|bits.Add|MaxInt64 in internal
+    Search Schema|Immutable|DELETE|ninth|duplicate|bucket.*definition|anchor.*no|NoAddress|NoTouched|Atomic|failure in distribution*_test.go
+    Read apply.go, reorg.go
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The normal database-backed test suite passed, including migration round-trip, transition, reorg, orphan re-promotion, attribution, startup guard, backfill, and direct aggregate checks. The race suite is still running under default package parallelism. So far I have not found a blocking invariant violation.
+
+• Waited for background terminal · gofmt_files=$(gofmt -l .); if [ -z "$gofmt_files" ]; then echo 'gofmt: PASS'; else echo 'gofmt: FAIL'; printf '%s\n' "$gofmt_files"; fi; go vet ./...; echo 'go vet: PASS'; go test -count=1 ./...; echo 'go test: PASS'; go test -race -count=1 ./...; echo 'go test -race: PASS'; go build ./...; echo 'go build: PASS'
+
+• Ran gofmt_files=$(gofmt -l .); if [ -z "$gofmt_files" ]; then echo 'gofmt: PASS'; else echo 'gofmt: FAIL'; printf '%s\n' "$gofmt_files"; fi; go vet ./...; echo 'go vet: PASS'; go test -count=1 ./...; echo 'go test: PASS'; go test -race -count=1 ./...; echo 'go test -race: PASS'; go build ./...; echo 'go build: PASS'
+  └ gofmt: PASS
+    go vet: PASS
+    … +31 lines (ctrl + t to view transcript)
+    go test -race: PASS
+    go build: PASS
+
+✔ You approved codex to always run commands that start with gh run view
+
+• Ran git diff --name-only f806cb0ce73c2deeae768ff00b6caad61b259b9c..a336ad374a403bd86b31a64d36055de6bf1dbfd5 -- internal/api internal/web internal/rpc internal/mempool internal/deployments internal/decode internal/script internal/chain migrations/0001_initial.up.sql migrations/0001_initial.down.sql migrations/0002_mempool_cache.up.sql migrations/0002_mempool_cache.down.sql migrations/0003_deployment_state.up.sql migrations/0003_deployment_state.down.sql migrations/0004_block_accounting.up.sql migrations/0004_block_accounting.down.sql migrations/0005_block_supply_rollup.up.sql migrations/0005_block_supply_rollup.down.sql migrations/0006_addresses_richlist_index.up.sql migrations/0006_addresses_richlist_index.down.sql
+  └ (no output)
+
+• Ran git status --short --branch
+  └ ## phase2h4a-address-distribution-rollup...origin/phase2h4a-address-distribution-rollup
+
+• Ran gh run view 31912755470 --repo QOGE/qoge-explorer --json databaseId,status,conclusion,headSha,event,workflowName,url
+  └ {"conclusion":"success","databaseId":31912755470,"event":"pull_request","headSha":"a336ad374a403bd86b31a64d36055de6bf1dbfd5","status":"completed","url":"https://github.com/QOGE/qoge-explorer/actions/runs/31912755470","workflowName":"CI"}
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• APPROVE
+
+  ## BLOCKERS
+
+  None.
+
+  ## NON-BLOCKING RISKS
+
+  - Delta arithmetic is unchecked in Go, but overflow is structurally impossible for valid QOGE chain state: positive address balances and their bucket totals are bounded by the conserved, consensus-limited monetary supply, far below int64. Malformed overclaims and monetary arithmetic overflow are rejected earlier.
+  - Privileged administrators can bypass triggers or directly corrupt mutable totals. This is outside supported application writes.
+
+  ## OPERATIONAL TRUST-BOUNDARY NOTES
+
+  - backfill-address-distribution must run with the live indexer stopped. Its advisory lock only excludes another distribution backfill.
+  - Violating that documented precondition can produce a stale anchor or abort through cross-check disagreement. This matches existing backfill conventions and is operator misuse, not an in-scope blocker.
+  - Supported application writes preserve the fixed eight-row schema: deletion and boundary/ID mutation are trigger-rejected; ninth IDs and duplicates are constraint-rejected.
+
+  Verified:
+
+  - PR #18: open, unmerged, non-draft, mergeable.
+  - Exact base/head match the frozen SHAs.
+  - Migrations 0001–0006 unchanged; only 0007 added; no 0008.
+  - No API, UI, navigation, percentage, concentration, clustering, ownership, or historical-distribution surface.
+  - Exact integer bucket boundaries partition every positive int64; no floats or WholeQOGE.
+  - Source remains addresses.balance_satoshis; no second balance engine.
+  - Apply/rollback remain proportional to touched addresses, with at most eight bucket updates and no full address scan.
+  - Transition, atomicity, anchor, reorg, persisted-orphan re-promotion, and attribution invariants passed against PostgreSQL.
+  - Migration 0006 → 0007 → 0006 → 0007, function lifecycle, and address-row survival passed.
+  - Empty/populated/idempotent/corruption/concurrent-backfill tests passed.
+  - Startup coverage guard and independent literal-range/global cross-checks passed.
+  - No PostgreSQL tests were skipped.
+  - gofmt -l ., go vet ./..., go test -count=1 ./..., go test -race -count=1 ./..., and go build ./... passed with default package parallelism.
+  - CI run 31912755470 (https://github.com/QOGE/qoge-explorer/actions/runs/31912755470) completed successfully at exact head a336ad374a403bd86b31a64d36055de6bf1dbfd5.
+  - Repository remained unchanged.
+
+  No blocking distribution/anchor/reorg/backfill/migration discrepancy found. Phase 2H.4a is safe to merge at
+  a336ad374a403bd86b31a64d36055de6bf1dbfd5.
+
+─ Worked for 13m 59s ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ 
+› Run /review on my current changes
+ 
+  gpt-5.6-sol default · ~/qoge-explorer
