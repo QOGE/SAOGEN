@@ -1,0 +1,316 @@
+● I'll begin the Phase 2H.4a review by verifying the PR and examining all changed files in parallel.
+
+  Ran 3 shell commands 
+
+● Head SHA matches a336ad374a403bd86b31a64d36055de6bf1dbfd5 and base matches f806cb0ce73c2deeae768ff00b6caad61b259b9c. Both verified. Now examine the diff and all new files.
+
+  Ran 13 shell commands 
+
+● Now run quality checks and CI verification in parallel.
+
+  Ran 9 shell commands 
+
+● Migrations 0001–0006 unchanged (diff = 0 bytes). Exactly migration 0007 added. All 15 packages pass with -race. Now verify the CI run and check missing coverage areas.
+
+  Ran 6 shell commands 
+
+● All 15 packages pass with -race. CI run 31912755470 confirmed completed/success at exact head. Now I have everything I need.
+
+  ---
+  PHASE 2H.4a FINAL INDEPENDENT ADVERSARIAL REVIEW
+
+  Exact head: a336ad374a403bd86b31a64d36055de6bf1dbfd5
+  Base: f806cb0ce73c2deeae768ff00b6caad61b259b9c
+  Verdict: APPROVE
+
+  ---
+  1. Target Verification
+
+  PR #18: open, merged=false, draft=false, mergeable=true. Base main @ f806cb0ce73c2deeae768ff00b6caad61b259b9c. Head phase2h4a-address-distribution-rollup @ a336ad374a403bd86b31a64d36055de6bf1dbfd5. PASS.
+
+  CI run 31912755470: status=completed, conclusion=success, head_sha=a336ad374a403bd86b31a64d36055de6bf1dbfd5. PASS.
+
+  ---
+  2. Diff / Phase Boundary
+
+  14 files changed:
+
+  Added (production): internal/store/distribution.go, internal/store/distribution_backfill.go, internal/store/distribution_preflight.go, migrations/0007_address_balance_distribution.up.sql, migrations/0007_address_balance_distribution.down.sql
+
+  Added (tests): internal/store/distribution_test.go, internal/store/distribution_backfill_test.go, internal/store/distribution_migration_test.go, internal/store/distribution_preflight_test.go
+
+  Modified: internal/store/apply.go (distribution wiring), internal/store/reorg.go (distribution wiring), cmd/qoge-explorer/main.go (backfill command + startup guard), internal/query/supply_test.go (regression adaptation), docs/ARCHITECTURE.md (§30 added)
+
+  Migrations 0001–0006: byte-for-byte identical to base (diff = 0 bytes confirmed). Exactly migration 0007 added, no 0008. PASS.
+
+  No new public API route, no new HTML page, no navigation link, no percentage/Gini/concentration/entity field anywhere in the diff. No change to consensus decoding, RPC semantics, mempool accounting, deployment semantics, P2QPK interpretation, or Phase 2H.2/2H.3 contracts. PASS.
+
+  ---
+  3. Bucket Mathematics
+
+  SatoshisPerQOGE = 100_000_000 (untyped integer constant). Bucket slice in ascending order:
+
+  ┌───────────┬─────────────────────────────────┬──────────────────────────────────────────┬───────────────────┐
+  │ bucket_id │          Go expression          │        Computed range (satoshis)         │       Spec        │
+  ├───────────┼─────────────────────────────────┼──────────────────────────────────────────┼───────────────────┤
+  │ lt_1      │ 1 .. 1*SQOGE-1                  │ 1 .. 99,999,999                          │ 1 .. 99,999,999 ✓ │
+  ├───────────┼─────────────────────────────────┼──────────────────────────────────────────┼───────────────────┤
+  │ 1_10      │ 1*SQOGE .. 10*SQOGE-1           │ 100,000,000 .. 999,999,999               │ ✓                 │
+  ├───────────┼─────────────────────────────────┼──────────────────────────────────────────┼───────────────────┤
+  │ 10_100    │ 10*SQOGE .. 100*SQOGE-1         │ 1,000,000,000 .. 9,999,999,999           │ ✓                 │
+  ├───────────┼─────────────────────────────────┼──────────────────────────────────────────┼───────────────────┤
+  │ 100_1k    │ 100*SQOGE .. 1000*SQOGE-1       │ 10,000,000,000 .. 99,999,999,999         │ ✓                 │
+  ├───────────┼─────────────────────────────────┼──────────────────────────────────────────┼───────────────────┤
+  │ 1k_10k    │ 1000*SQOGE .. 10000*SQOGE-1     │ 100,000,000,000 .. 999,999,999,999       │ ✓                 │
+  ├───────────┼─────────────────────────────────┼──────────────────────────────────────────┼───────────────────┤
+  │ 10k_100k  │ 10000*SQOGE .. 100000*SQOGE-1   │ 1,000,000,000,000 .. 9,999,999,999,999   │ ✓                 │
+  ├───────────┼─────────────────────────────────┼──────────────────────────────────────────┼───────────────────┤
+  │ 100k_1m   │ 100000*SQOGE .. 1000000*SQOGE-1 │ 10,000,000,000,000 .. 99,999,999,999,999 │ ✓                 │
+  ├───────────┼─────────────────────────────────┼──────────────────────────────────────────┼───────────────────┤
+  │ gte_1m    │ 1000000*SQOGE .. nil            │ ≥ 100,000,000,000,000                    │ ✓                 │
+  └───────────┴─────────────────────────────────┴──────────────────────────────────────────┴───────────────────┘
+
+  Continuity: Upper bound of each bounded bucket is exactly lower_bound_of_next - 1. No gap, no overlap. Open-ended top bucket covers all remaining positive int64 values. Partition is complete.
+
+  bucketForBalance logic:
+  - balance ≤ 0 → ("", false) immediately — zero and negative excluded
+  - Iterates ascending. If balance < b.minSatoshis: break early (no later bucket can match)
+  - If b.maxSatoshis == nil || balance <= *b.maxSatoshis: return this bucket
+
+  Attack on balance=1*SatoshisPerQOGE - 1 = 99,999,999: lt_1 max=99,999,999 → matches ✓. Attack on balance=1*SatoshisPerQOGE = 100,000,000: lt_1 max=99,999,999 → doesn't match, continues; 1_10 min=100,000,000 → matches ✓. Attack on balance=1,000,000*SatoshisPerQOGE: gte_1m maxSatoshis=nil → matches ✓.
+
+  No float arithmetic anywhere in distribution.go. chain package not imported. WholeQOGE() never called. PASS.
+
+  TestBucketForBalance_ExactBoundaries exercises: 0, 1, every lower boundary, every exact lower boundary, and int64-safe high values. TestDistributionBuckets_MatchMigrationSeed cross-checks Go constants against live seeded DB rows. PASS.
+
+  ---
+  4. Monetary Source
+
+  recomputeAddressTracked → currentAddressBalance reads SELECT balance_satoshis FROM addresses WHERE address = $1 — single PK point lookup. Then recomputeAddress recomputes from addr_utxos CTE (the existing path, not a second balance engine). The distribution delta is derived from the difference between these two reads.
+
+  BackfillAddressDistribution issues one aggregate query joining address_balance_distribution's bucket-definition rows against addresses.balance_satoshis — never touches transaction_outputs, output_addresses, output_participants, transaction_inputs, utxo_state. PASS.
+
+  ---
+  5. Hot-path Complexity
+
+  apply.go diff: one distributionDelta allocated per block. Inner loop: recomputeAddressTracked = one PK point lookup (currentAddressBalance) + one aggregate CTE (recomputeAddress) per touched address. Both are O(1) indexed lookups, unchanged from the pre-Phase-2H.4a hot path.
+
+  After the loop: applyDistributionDeltas — bucketsTouched() iterates the 8-element distributionBuckets slice (O(8) always), then issues at most one SELECT + one UPDATE per touched bucket. At most 8 round trips to PostgreSQL for the distribution update, regardless of how many addresses were touched.
+
+  setDistributionAnchor: one UPDATE on the singleton address_balance_distribution_state row.
+
+  No full addresses table scan in ApplyBlock or RollbackTo. Same pattern applied identically to reorg.go. Complexity is O(|touched_addresses| + |touched_buckets|) where |touched_buckets| ≤ 8. PASS.
+
+  ---
+  6. Transition Attacks
+
+  distributionDelta.observe(oldBalance, newBalance):
+
+  - zero → positive: bucketForBalance(0) = ("", false) → old side no-op; new side: count++ and balance+=new ✓
+  - positive → zero: old side: count-- and balance-=old; bucketForBalance(0) = ("", false) → new side no-op ✓
+  - same-bucket increase (e.g., 5→8 QOGE both in 1_10): old: count["1_10"]--, balance["1_10"]-=5; new: count["1_10"]++, balance["1_10"]+=8. Net: count delta=0, balance delta=+3 QOGE. bucketsTouched() checks count!=0 || balance!=0 → 1_10 included (balance delta ≠ 0) → single UPDATE adjusts balance only ✓
+  - same-bucket decrease: symmetric ✓
+  - cross-bucket increase (e.g., 5→49 QOGE: 1_10→10_100): old: count["1_10"]--, balance["1_10"]-=5; new: count["10_100"]++, balance["10_100"]+=49. Two separate bucket updates ✓
+  - cross-bucket decrease: symmetric ✓
+  - multiple changes to same address within one block: touched is map[string]struct{} — set semantics. Each address appears exactly once. recomputeAddressTracked is called once per unique address. The CTE inside recomputeAddress aggregates ALL UTXOs for that address atomically. The delta sees the net old→new transition, never duplicates ✓
+  - multiple addresses same bucket: observe accumulates per-bucket. Two addresses in 1_10 each contributing +1: count["1_10"] += 2. Single UPDATE applies the aggregate delta ✓
+
+  No double-count possible. PASS.
+
+  ---
+  7. Atomicity
+
+  All distribution writes — applyDistributionDeltas (bucket UPDATEs) and setDistributionAnchor (state UPDATE) — execute inside the same tx variable that ApplyBlock/RollbackTo use for UTXO, address-cache, supply-rollup, and sync_state writes. defer tx.Rollback(ctx) in the caller fires on any error before tx.Commit. If applyDistributionDeltas returns ErrDistributionInvariant, the rollback reverts UTXO state, addresses, AND distribution buckets atomically.
+
+  setDistributionAnchor updates address_balance_distribution_state which triggers address_balance_distribution_state_validate_checkpoint. The trigger SELECT from blocks WHERE hash = NEW.indexed_block_hash is safe: the block is inserted into blocks in the same transaction, at the start of ApplyBlock, before any of the distribution writes. PASS.
+
+  TestApplyBlock_Distribution_Nonnegativity confirms: a corrupted bucket causing a would-be-negative decrement fails the whole ApplyBlock call with ErrDistributionInvariant, and Tip() still returns the pre-block checkpoint. PASS.
+
+  ---
+  8. Anchor Consistency
+
+  setDistributionAnchor is placed outside the for addr := range touched loop in both apply.go and reorg.go. It executes unconditionally for every block, including blocks that touch no tracked addresses. A block with an empty touched set still calls setDistributionAnchor with its own hash (forward) or ancestorHash (backward). Anchor never diverges from sync_state due to a "quiet block." PASS.
+
+  The address_balance_distribution_state_validate_checkpoint trigger mirrors sync_state_validate_checkpoint exactly — it derives indexed_height mechanically from blocks.height, requires the hash to reference a canonical block, never trusts the caller's height value. PASS.
+
+  ---
+  9. Reorg Attack
+
+  TestRollbackTo_Distribution_NormalReorg (real PostgreSQL): G → A1 (orphan address qDistRBOrphan, 4 QOGE in 1_10) → RollbackTo(G) → verifies:
+  - qDistRBOrphan has zero addresses rows (was created by A1, deleted on rollback since txCount=0 after rollback)
+  - Bucket 1_10: count=1, balance=5 QOGE (qDistRBFund's original UTXO restored)
+  - Distribution state: height=100, hash=distRB0
+
+  No orphan leakage. requireBucketsSumToAddresses passes (global identity). PASS.
+
+  ---
+  10. Orphan Re-promotion
+
+  TestApplyBlock_Distribution_OrphanRePromotion (real PostgreSQL): G → A1 (qDistRPA: 4 QOGE) → RollbackTo(G) → B1 (qDistRPB: 2 QOGE) → RollbackTo(G) → re-apply EXACT SAME a1 variable (same in-memory struct, same hash hash64("distRPA1")).
+
+  After re-promotion: count=1, balance=4 QOGE (only A); distribution state height=101, hash=distRPA1; qDistRPB has zero addresses rows; requireBucketsSumToAddresses passes. No doubled counts. No B leakage. PASS.
+
+  ---
+  11. Attribution
+
+  No-address UTXO: TestApplyBlock_Distribution_NoAddressExcluded — coinbase with nullOut(0) plus one real output. Only the real output address appears in touched. No-address UTXO creates no output_addresses row → no addresses row → no bucket contribution. ✓
+
+  Bare multisig: TestApplyBlock_Distribution_BareMultisigExcluded — coinbase with multisigOut. Verifies no addresses rows for either participant (multisig participants live only in output_participants, not output_addresses). All 8 buckets remain (0,0). ✓
+
+  P2QPK: TestApplyBlock_Distribution_P2QPKParticipatesNormally — P2QPK output with address "qDistPQAddr" at 12 QOGE appears in bucket 10_100 (count=1, balance=12 QOGE). Treated identically to ordinary P2PKH. ✓
+
+  Multiple UTXOs same address: TestApplyBlock_Distribution_MultipleUTXOsSameAddress — two coinbase outputs to same address (50M + 40M sats). recomputeAddress CTE aggregates → one addresses row with 90M sats balance. Bucket lt_1: count=1, balance=90M sats. ✓
+
+  PASS.
+
+  ---
+  12. Nonnegativity / Overflow
+
+  Nonnegativity: applyDistributionDeltas computes newCount = curCount + countDelta and newBalance = curBalance + balanceDelta in Go before issuing any UPDATE. Checks if newCount < 0 || newBalance < 0 → returns ErrDistributionInvariant — the whole block transaction rolls back. The PostgreSQL CHECK constraints (address_balance_distribution_count_nonnegative, address_balance_distribution_balance_nonnegative) are a second-layer guard. Go check fires first; never clamps. PASS.
+
+  TestApplyBlock_Distribution_Nonnegativity directly exercises this: manually corrupts bucket to (0,0), then applies a spend that would produce count=-1 → ErrDistributionInvariant confirmed, tip unchanged (full rollback). PASS.
+
+  Overflow: The QOGE monetary base is Bitcoin-derived, bounded at 21,000,000 QOGE × 100,000,000 satoshis = 2.1 × 10¹⁵ satoshis maximum total supply. Even if all supply were in one bucket, balance_satoshis = 2.1 × 10¹⁵ is well within int64 max (9.22 × 10¹⁸). Similarly, address_count for one bucket can never exceed the number of UTXO outputs ever created — bounded by the blockchain itself, far below int64 overflow. Overflow is structurally impossible from valid QOGE chain data. Checked arithmetic is not required. PASS.
+
+  ---
+  13. Migration 0007
+
+  UP:
+  1. address_balance_distribution table — 8 fixed bucket IDs enforced by CHECK, PK, nonnegativity constraints
+  2. Seeds exactly 8 rows with correct boundary values
+  3. address_balance_distribution_immutable_bounds() function — RAISES on DELETE or bucket_id/min/max change
+  4. Trigger BEFORE UPDATE OR DELETE FOR EACH ROW on the table
+  5. address_balance_distribution_state table — singleton anchor with CHECK constraints mirroring sync_state
+  6. Seeds one 'main' row at -1/NULL
+  7. address_balance_distribution_state_validate_checkpoint() function — mirrors sync_state_validate_checkpoint
+  8. Trigger BEFORE INSERT OR UPDATE FOR EACH ROW on state table
+
+  DOWN (fix commit a336ad3 corrected this):
+  1. DROP TABLE address_balance_distribution_state — triggers auto-dropped
+  2. DROP FUNCTION address_balance_distribution_state_validate_checkpoint() — explicitly dropped (PostgreSQL does NOT drop a function when its owning table is dropped)
+  3. DROP TABLE address_balance_distribution — triggers auto-dropped
+  4. DROP FUNCTION address_balance_distribution_immutable_bounds() — explicitly dropped
+
+  The fix commit's rationale is documented and correct. TestMigrations_DistributionRoundTrip uses functionExists(t, ctx, pool, "address_balance_distribution_immutable_bounds()") and functionExists(t, ctx, pool, "address_balance_distribution_state_validate_checkpoint()") to verify both functions absent after DOWN and present after re-UP. ✓ PASS.
+
+  ---
+  14. Schema Attacks
+
+  Delete bucket row: BEFORE DELETE fires address_balance_distribution_immutable_bounds, RAISE EXCEPTION unconditionally. Blocked. ✓
+
+  Rename bucket (change bucket_id): BEFORE UPDATE trigger checks NEW.bucket_id <> OLD.bucket_id → RAISE EXCEPTION. Blocked. ✓
+
+  Change min or max: Same trigger checks NEW.min_balance_satoshis <> OLD.min_balance_satoshis and NEW.max_balance_satoshis IS DISTINCT FROM OLD.max_balance_satoshis → blocked. ✓
+
+  Insert ninth bucket: CHECK constraint bucket_id IN ('lt_1','1_10','10_100','100_1k','1k_10k','10k_100k','100k_1m','gte_1m') — any other value rejected at the SQL layer. Blocked. ✓
+
+  Duplicate bucket: PRIMARY KEY on bucket_id. Blocked. ✓
+
+  All of the above apply to every supported application write path. The only bypass is ALTER TABLE ... DISABLE TRIGGER — a privileged DBA operation that requires TABLE OWNER or SUPERUSER privilege. That is the correct trust boundary for defense-in-depth schema constraints. PASS.
+
+  ---
+  15. Backfill
+
+  BackfillAddressDistribution runs entirely within ONE PostgreSQL transaction:
+
+  1. Acquires pg_try_advisory_xact_lock(backfillDistributionAdvisoryLockNamespace=728341003, schemaKey) — distinct namespace from accounting (not shared with other backfill advisories)
+  2. Reads sync_state in same transaction
+  3. Rebuild query: LEFT JOIN address_balance_distribution bucket-definition rows against addresses by range — one (count, balance) pair per bucket, including (0,0) for empty buckets
+  4. Independent cross-check: distributionCrossCheckSQL uses literal satoshi boundary values (not joined from distribution table) — genuinely separate SQL formulation. Compares per-bucket AND global total
+  5. Direct global count/sum: third independent verification against addresses WHERE balance_satoshis > 0
+  6. Any disagreement → ErrDistributionCrossCheckFailed → whole transaction aborts, nothing published
+  7. Publishes 8 UPDATEs in deterministic bucket order
+  8. setDistributionAnchor anchors to sync_state's hash
+  9. Commits
+
+  Empty DB: all zeros, anchor stays -1/NULL. ✓ Idempotent rerun: TestBackfillAddressDistribution_PopulatedDatabase runs twice, verifies result2 == result. ✓ Cross-check failure: TestBackfillAddressDistribution_CrossCheckFailure corrupts the bucket definition (trigger disabled via ALTER TABLE in test), verifies ErrDistributionCrossCheckFailed and nothing published. ✓ Concurrent lock: TestBackfillAddressDistribution_ConcurrentLock verifies ErrDistributionBackfillAlreadyRunning when lock namespace/key is already held. ✓ No Core RPC dependency confirmed in runBackfillAddressDistribution — requires only QOGE_DATABASE_URL. PASS.
+
+  ---
+  16. Backfill / Live Indexer Race
+
+  The advisory lock pg_try_advisory_xact_lock(728341003, schemaKey) excludes a concurrent second BackfillAddressDistribution call. It does NOT and cannot serialize against the live indexer (Store.ApplyBlock/RollbackTo), which does not hold or contend for this advisory lock.
+
+  Correctness hole analysis: If the operator runs backfill-address-distribution while the indexer is running, the backfill transaction sees a consistent REPEATABLE READ snapshot of addresses at the moment it opens its transaction. Meanwhile, the live indexer continues committing incremental distribution deltas. After the backfill commits, the live indexer's deltas are relative changes on top of whatever was in the distribution table at commit time — they don't know the backfill just overwrote the base, so the bucket values will be inconsistent with the current addresses state.
+
+  Classification: This is an operational trust boundary — the same documented requirement as backfill-accounting and backfill-supply-rollup. The operator is instructed to stop the index process first. The advisory lock is honest: it prevents concurrent backfill, not live-indexer contention. The usage doc string in cmd/qoge-explorer/main.go and distribution_backfill.go's comment both state this requirement explicitly. This is acceptable as a precondition, consistent with existing conventions, not a code defect. NON-BLOCKING OPERATIONAL TRUST-BOUNDARY NOTE.
+
+  ---
+  17. Startup Guard
+
+  VerifyDistributionCoverage three-outcome logic:
+
+  1. syncHeight == -1: return nil immediately — fresh DB, nothing to verify ✓
+  2. to_regclass('address_balance_distribution_state') IS NOT NULL → false: return nil — migration 0007 not applied ✓
+  3. Otherwise: compare (distHeight, distHash) with (syncHeight, syncHash) exactly — any mismatch is ErrDistributionCoverageMissing ✓
+
+  ErrDistributionCoverageMissing: "store: address balance distribution state does not match sync_state; run \qoge-explorer backfill-address-distribution`"— the exact command is embedded in the sentinel error value, which surfaces inrunIndex's log.Error("address distribution coverage preflight failed", "error", err)`. Operator sees the actionable remediation. PASS.
+
+  Test coverage:
+  - TestVerifyDistributionCoverage_FreshDatabase: fresh pool → nil ✓
+  - TestVerifyDistributionCoverage_MigrationNotApplied: migrated through 0006 only + raw checkpoint → nil ✓
+  - TestVerifyDistributionCoverage_UpToDate: after real ApplyBlock (which keeps anchor in lockstep) → nil ✓
+  - TestVerifyDistributionCoverage_LegacyGapDetected: migrated through 0007 + raw sync_state checkpoint + distribution state still at -1/NULL → ErrDistributionCoverageMissing ✓
+
+  PASS.
+
+  ---
+  18. Direct Cross-check
+
+  distributionCrossCheckSQL in distribution_backfill.go:
+  - Uses literal satoshi boundaries: BETWEEN 1 AND 99999999, BETWEEN 100000000 AND 999999999, …, >= 100000000000000 — no join against address_balance_distribution rows
+  - Returns 18 columns: 2 (count, balance) per bucket × 8 + 2 global
+  - Column index mapping in Go: checkVals[i*2] = count, checkVals[i*2+1] = balance for bucket i; checkVals[16] = global count, checkVals[17] = global balance
+  - Mapping order matches DistributionBucketIDs() which returns the 8 IDs in the same ascending order as distributionBuckets
+
+  The literal boundaries match exactly those computed by the Go constants:
+  - 1 .. 99_999_999 = lt_1 ✓ (1 to 1*100_000_000-1)
+  - 100_000_000 .. 999_999_999 = 1_10 ✓
+  - All 8 buckets verified ✓
+
+  The global balance_satoshis > 0 filter matches what the rebuild query uses (a.balance_satoshis > 0 in the WHERE). The cross-check is genuinely independent: different SQL formulation, different data path, different computation method. PASS.
+
+  ---
+  19. Quality
+
+  gofmt -l .                → no output (CLEAN)
+  go vet ./...              → no output (CLEAN)
+  go build ./...            → no output (CLEAN)
+  go test -count=1 ./...    → all 15 packages PASS
+  go test -race -count=1 ./... → all 15 packages PASS, -race clean
+
+  PostgreSQL-backed tests genuinely executed: NO. PostgreSQL not available in this review environment. All DB-backed tests in internal/store (the primary new package) are skipped via conditional logic. Same situation as all prior phases. The CI run (31912755470) executed on GitHub Actions with PostgreSQL service and reported success at the exact head SHA. Not a code defect.
+
+  ---
+  20. Phase 2H.2 Regression Adaptation
+
+  TestSupplyOverview_PreMigration0005Schema change: store.Down(ctx, pool, migrations, 2) → steps := len(migrations) - 4. With 7 migrations (0001–0007), len(migrations) - 4 = 3. Rolling back 3 steps from the top removes 0007, 0006, 0005, leaving at 0004. The test needs to be at 0004 (no block_supply_rollup table). This is correct and forward-compatible (future migrations increment the step count automatically). ✓
+
+  ---
+  Blockers
+
+  None.
+
+  ---
+  Non-blocking Risks
+
+  recomputeAddress return-value contract change: recomputeAddress now returns (int64, error). All pre-existing callers in apply.go and reorg.go have been updated. No pre-existing callers in other files. The change is internal-package-only. PASS.
+
+  currentAddressBalance + recomputeAddress sequential reads within same transaction: The two reads are not a TOCTOU: both within the same tx, no concurrent modification possible (the sync_state row lock serializes concurrent ApplyBlock/RollbackTo calls — documented in applyDistributionDeltas's comment). Not a bug.
+
+  ---
+  Operational Trust-boundary Notes
+
+  1. Backfill / live indexer race: backfill-address-distribution advisory lock excludes concurrent backfill runs but cannot serialize against the live indexer. Running backfill while indexer is active produces inconsistent distribution state. Requires operator to stop the indexer — consistent with backfill-accounting and backfill-supply-rollup conventions. Documented clearly in both the Go function and the CLI usage text.
+  2. PostgreSQL-backed distribution tests not executed locally: All distribution-specific tests in internal/store require PostgreSQL. They are skipped in this environment. CI pass at the exact head confirms they execute correctly under CI's PostgreSQL service.
+
+  ---
+  No blocking distribution/anchor/reorg/backfill/migration discrepancy found. Phase 2H.4a is safe to merge at a336ad374a403bd86b31a64d36055de6bf1dbfd5.
+
+  Stop.
+
+✻ Worked for 7m 0s
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← for agents
