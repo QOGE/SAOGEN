@@ -1,0 +1,157 @@
+  Ran 3 shell commands 
+
+● Working tree clean, head matches, CI confirmed success. Let me re-query PR fields correctly and confirm base SHA.
+
+  Ran 5 shell commands 
+
+● All clean. Now running the full test suite and race suite.
+
+  Ran 1 shell command 
+
+● I'll wait for this to finish before starting the race run to avoid DB contention.
+
+  Ran 2 shell commands 
+
+● I'll wait for the background go test notification before continuing.
+
+✻ Worked for 30s
+
+● Background command "go test -count=1 ./... > /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/premerge_gotest.log 2>&1" completed (exit code 0)
+
+  Searched for 1 pattern 
+
+● All 12 packages pass, zero skips. Now the race run.
+
+  Ran 1 shell command 
+
+● Waiting for the race run to complete before running the targeted regression set.
+
+  Ran 2 shell commands 
+
+● Waiting for the background go test -race ./... run to complete before running the targeted regression subset.
+
+✻ Brewed for 12s
+
+● Background command "go test -race -count=1 ./... > /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/premerge_race.log 2>&1" completed (exit code 0)
+
+  Searched for 1 pattern 
+
+● All 12 packages pass under -race, zero races, zero skips. Now running the targeted Phase 2H.4a regression set by name.
+
+  Ran 1 shell command 
+
+● All pre-merge gates pass. Proceeding to merge PR #18 with a normal merge commit.
+
+  Ran 3 shell commands 
+
+● Merge commit 965d1194bed5ef892c57fee71c63dd3f30c25601, exactly two parents matching required order. Now syncing local main and waiting for the post-merge CI run.
+
+  Merged origin/main, ran 1 shell command 
+
+● Local main is fast-forwarded to 965d119, matching PR merge SHA. New push-triggered CI run 31924663867 is in progress. Waiting for it to complete.
+
+  Ran 1 shell command 
+
+● I'll wait for the post-merge CI run on main to complete.
+
+✻ Baked for 44s
+
+● Background command "until [ "$(gh run view 31924663867 --repo QOGE/qoge-explorer --json status -q .status)" = "completed" ]; do sleep 20; done; gh run view 31924663867 --repo QOGE/qoge-explorer --json status,conclusion,headSha" completed (exit code 0)
+
+  Read 1 file 
+
+● Post-merge CI on main succeeded for the exact merge SHA. Pulling the full job log to verify each step and check for DB skips.
+
+  Ran 2 shell commands 
+
+● All required steps individually succeeded, including PostgreSQL initialization/connectivity/schema/preflight. Checking for real failures and DB skips.
+
+  Ran 1 shell command 
+
+● Post-merge CI fully verified. Now running post-merge local verification against local main.
+
+  Ran 4 shell commands 
+
+● On main, clean tree, gofmt/vet/build all clean. Now running the full test suite and race suite.
+
+  Ran 1 shell command 
+
+● Waiting for this run to finish before starting the race suite.
+
+  Ran 1 shell command 
+
+● I'll wait for the background go test notification.
+
+✻ Worked for 29s
+
+● Background command "go test -count=1 ./... > /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/postmerge_gotest.log 2>&1" completed (exit code 0)
+
+  Searched for 1 pattern 
+
+● All pass, zero skips. Now the race suite.
+
+  Ran 1 shell command 
+
+● Waiting for the race run to complete.
+
+  Ran 1 shell command 
+
+● I'll wait for the background race-test notification before continuing.
+
+✻ Cogitated for 8s
+
+● Background command "go test -race -count=1 ./... > /tmp/claude-1000/-home-ion-qoge-explorer/4dc7e306-1100-4f43-a4c5-d1755461639a/scratchpad/postmerge_race.log 2>&1" completed (exit code 0)
+
+  Searched for 1 pattern 
+
+● All pass under -race, zero races, zero skips. Now running the targeted post-merge regression subset by name.
+
+  Ran 1 shell command 
+
+● All 26 targeted regression tests pass on post-merge main. Proceeding to branch cleanup.
+
+  Ran 2 shell commands 
+
+● Both local and remote branches deleted. All gates green throughout.
+
+  PHASE 2H.4a — MERGE + POST-MERGE VERIFICATION REPORT
+
+  Merge SHA: 965d1194bed5ef892c57fee71c63dd3f30c25601
+
+  Parents:
+  - first: f806cb0ce73c2deeae768ff00b6caad61b259b9c
+  - second: a336ad374a403bd86b31a64d36055de6bf1dbfd5
+
+  PR merged: yes (state: MERGED, normal merge commit, no squash/rebase)
+  Main HEAD: 965d1194bed5ef892c57fee71c63dd3f30c25601 (local main fast-forwarded to match)
+
+  Post-merge CI:
+  - run ID: 31924663867
+  - head SHA: 965d1194bed5ef892c57fee71c63dd3f30c25601
+  - conclusion: success (all 17 steps individually succeeded, including PostgreSQL initialization/connectivity, schema create/drop, preflight, gofmt, go vet, go test, go test -race, go build)
+
+  PostgreSQL:
+  - genuinely executed: yes (both in CI and locally; realistic non-trivial elapsed times throughout)
+  - DB skips: zero (pre-merge, post-merge CI, and post-merge local runs)
+
+  Critical regressions (rerun post-merge on local main, all pass):
+  - migration: TestMigrations_DistributionRoundTrip (0006→0007→0006→0007, tables + functions)
+  - transitions: all TestApplyBlock_Distribution_* incremental-maintenance tests, TestBucketForBalance_ExactBoundaries (all 8 boundary cases)
+  - reorg: TestRollbackTo_Distribution_NormalReorg
+  - re-promotion: TestApplyBlock_Distribution_OrphanRePromotion
+  - backfill: all TestBackfillAddressDistribution_* (empty DB, populated, cross-check failure, concurrent lock)
+  - startup guard: all TestVerifyDistributionCoverage_* (fresh DB, migration not applied, up to date, legacy gap detected)
+
+  Branch cleanup:
+  - local: deleted
+  - remote: deleted
+
+  Stop.
+  Do not begin Phase 2H.4b.
+
+✻ Cogitated for 37s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Kick off Phase 2H.4b
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
