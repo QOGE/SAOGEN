@@ -1,0 +1,79 @@
+● Repository state matches exactly. Verifying the migration files and CLI source.
+
+  Listed 1 directory 
+
+● Confirmed. Now identifying how Explorer services are currently run on this VM.
+
+  Ran 10 shell commands 
+
+● Repository/CLI checks (§1, §3) all passed, but the service-discovery step (§2) surfaced a fundamental mismatch with the runbook's premise: there is no deployed Explorer instance on this VM at all.
+
+  Findings:
+  - No qoge-explorer index or qoge-explorer serve process running (only qogecoind is active)
+  - No systemd unit for qoge-explorer (only qogecoind.service exists)
+  - No listening HTTP port for an Explorer web server
+  - No QOGE_DATABASE_URL configured anywhere (only QOGE_TEST_DATABASE_URL, pointing at the ephemeral test database)
+  - Only one PostgreSQL instance exists, containing only postgres/template0/template1 and qoge_explorer_test — and qoge_explorer_test currently has zero tables (no sync_state, no blocks, nothing indexed)
+  - No Docker/other supervisor, no other data directories referencing an Explorer deployment
+
+  There is no production Explorer database to upgrade, no indexer to stop, and no indexed chain data to backfill against. The runbook's own safety instructions require stopping rather than improvising when an invariant fails — and treating the ephemeral CI test database as if it were "the existing Explorer PostgreSQL database" would be exactly that kind of improvisation (it holds no real chain data, and mutating it under this pretense could also interfere with
+  the test suite). I stopped here without touching any database, running migrate up, or running the backfill.
+
+  ======================================================================
+
+  PHASE 2H.4a — EXPLORER VM DEPLOYMENT REPORT
+
+  REPOSITORY
+  - main SHA: 965d1194bed5ef892c57fee71c63dd3f30c25601 (matches expected exactly)
+  - working tree: clean
+
+  SERVICES
+  - index service/process: none found — no systemd unit, no running process
+  - serve service/process: none found — no systemd unit, no listening HTTP port
+  - index stopped successfully: N/A (nothing running to stop)
+  - index restarted successfully: N/A (not attempted)
+
+  PRE-MIGRATION
+  - indexed height: N/A — no production database exists (qoge_explorer_test has no sync_state table at all)
+  - indexed hash: N/A
+  - positive addresses: N/A
+  - attributed address balance sats: N/A
+
+  MIGRATION
+  - 0007 applied: not attempted — no production database to migrate
+  - distribution table: N/A
+  - distribution state table: N/A
+  - bucket rows: N/A
+
+  BACKFILL
+  - first run: not attempted
+  - second/idempotent run: not attempted
+  - positive addresses / attributed balance / anchor height / anchor hash: N/A
+
+  ANCHOR / GLOBAL CROSS-CHECK / BUCKET CROSS-CHECK / LIVE INDEXING / SMOKE TEST
+  - all N/A — not reached, no live deployment to verify
+
+  ERRORS
+  - distribution errors: none observed (nothing run against it)
+  - migration errors: none — migration was not attempted
+  - indexer errors: N/A
+
+  Build/CLI confirmation performed (safe, non-destructive):
+  - go build -o bin/qoge-explorer ./cmd/qoge-explorer — success
+  - ./bin/qoge-explorer --help confirms backfill-address-distribution and migrate up/migrate down/migrate version are present in the current-main binary, as the runbook expected
+
+  VERDICT
+  STOPPED — INVESTIGATION REQUIRED
+
+  This VM has qogecoind running but no deployed qoge-explorer indexer/server and no production PostgreSQL database — Phase 2H.4a's code is merged and CI-verified on main, but nothing here has actually been deployed yet. Before this runbook's remaining steps can be executed, a human needs to clarify: is there a different intended host for the "Explorer VM," or does this VM need an initial Explorer deployment (database creation + migrate up from scratch +
+  first-time index start) set up before any upgrade/backfill exercise makes sense? I have not created, migrated, or altered any database, and have not started any process.
+
+  Stop.
+  Do not begin Phase 2H.4b.
+
+✻ Cogitated for 1m 27s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ Set up a fresh Explorer deployment on this VM from scratch
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
