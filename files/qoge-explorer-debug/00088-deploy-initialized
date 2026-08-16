@@ -1,0 +1,194 @@
+● Starting the fresh deployment runbook at Section 1 — verifying the exact source baseline.
+
+  Ran 1 shell command 
+
+● Section 1 confirmed: branch=main, tree clean, HEAD=origin/main=965d1194bed5ef892c57fee71c63dd3f30c25601, migrations exactly 0001-0007 with no unexpected later migration.
+
+  Moving to Section 2 — identify the actual qogecoind service/config.
+
+  Ran 1 shell command 
+
+● qogecoind is running actively, syncing/synced. Now let me inspect the conf file (without printing rpcpassword) and check sync status via qogecoin-cli.
+
+  Ran 1 shell command 
+
+● RPC config confirmed: rpcuser=ion, rpcbind=127.0.0.1, rpcport=8332, txindex=1, [main] network section active — matches the expected mainnet default. Now checking sync status via qogecoin-cli.
+
+  Ran 2 shell commands 
+
+● Section 2 fully verified: Core is healthy — network=main, height=headers=2449408, IBD=false, pruned=false, txindex synced=true, 6 connections. No Core config changes needed. Proceeding to Section 3 — build the binary.
+
+  Ran 1 shell command 
+
+● Section 3 confirmed — binary builds cleanly, all expected commands present. Moving to Section 4 — create the production PostgreSQL role/database.
+
+  Ran 1 shell command 
+
+● The role qoge_explorer already exists (owns the test database). Reusing it for production and setting/changing its password risks breaking the test environment's authentication — which the runbook explicitly forbids disturbing. I'll use a distinct production role name instead, and reuse the preferred database name (which is free).
+
+  Ran 2 shell commands 
+
+● Role qoge_explorer_app and database qoge_explorer created successfully. Now verifying connection as the new role without printing the password.
+
+  Ran 1 shell command 
+
+● Section 4 verified. Moving to Section 5 — secure runtime environment files.
+
+  Ran 1 shell command 
+
+● Section 5 complete — env files created with correct separation (serve.env has no RPC credentials), root-owned, 640 permissions, not world-readable. Moving to Section 6 — RPC preflight.
+
+  Ran 1 shell command 
+
+● Section 6 confirmed: network=main, IBD=false, txindex synced=true. No secrets printed (password shown only as "set"). Moving to Section 7 — apply migrations to the new database.
+
+  Ran 1 shell command 
+
+● Confirmed empty. Now running migrate up.
+
+  Ran 1 shell command 
+
+● Migration succeeded, schema version 7. Verifying migration-created objects.
+
+  Ran 1 shell command 
+
+● Section 7 fully verified — all required tables present, 8 buckets, sync_state and distribution state both uninitialized (-1/NULL), all bucket counts/balances zero. No backfill run. Moving to Section 8 — foreground indexer validation.
+
+  Ran 1 shell command 
+
+● Startup checks passed cleanly, no coverage/migration/accounting errors, indexer began historical sync from genesis (2.4M blocks to go). Letting it run to prove forward progress with a checkpoint.
+
+  Ran 1 shell command 
+
+● First checkpoint: height 1059. Waiting to record a second checkpoint proving progress.
+
+  Ran 2 shell commands 
+
+● Forward progress confirmed (height 1059→1423, no errors). Now stopping the foreground indexer cleanly with SIGTERM.
+
+  Ran 1 shell command 
+
+● Clean shutdown confirmed ("indexer stopped" logged, no kill -9 needed). Section 8 complete. Moving to Section 9 — early distribution cross-check.
+
+  Ran 1 shell command 
+
+● Section 9 fully verified: anchor exact match (height 2036, hash matches), global count 27=27, global balance exact match, and independent per-bucket literal-boundary cross-check matches exactly in all 8 buckets. Proceeding to Section 10 — systemd index service.
+
+  Ran 1 shell command 
+
+● Index service active and running, correctly resumed from height 2037 (where the foreground test stopped). Section 10 complete. Moving to Section 11 — systemd serve service.
+
+  Ran 1 shell command 
+
+● Serve service active, listening on 127.0.0.1:8532 only — confirmed loopback-only (no 0.0.0.0 or [::] binding). Section 11 complete. Moving to Section 12 — local HTTP smoke test.
+
+  Ran 1 shell command 
+
+● All 7 endpoints returned HTTP 200 with correct content types, showing live progress (heights advancing: 6085→6086 across requests, confirming the systemd-managed indexer keeps advancing). Section 12 complete. Moving to Section 13 — verify continued indexing.
+
+  Ran 2 shell commands 
+
+● Section 13 verified: continued advancing (2036→7295), zero restarts, no errors, anchor still exact-matches. Moving to Section 14 — recording current sync state (no need to wait for full sync).
+
+  Ran 1 shell command 
+
+● Not fully synchronized — indexing continues in the background (as intended, per Section 14's instruction not to wait). Moving to Section 15 — reboot-survival check.
+
+  Ran 1 shell command 
+
+● Both units enabled, dependencies (postgresql, network-online) properly configured and themselves enabled; qogecoind enabled too. Both services should start normally on next boot — reboot not performed, per instruction. Section 15 complete. Moving to Section 16 — security/secret check.
+
+  Ran 1 shell command 
+
+● All security checks pass. Section 16 complete. Moving to Section 17 — repository cleanliness.
+
+  Ran 2 shell commands 
+
+● Both services still active, zero restarts, indexer continues advancing (now at height 11113). All 17 sections completed successfully.
+
+  ======================================================================
+
+  QOGE-EXPLORER — FRESH VM DEPLOYMENT REPORT
+
+  SOURCE
+  - main SHA: 965d1194bed5ef892c57fee71c63dd3f30c25601
+  - working tree: clean
+
+  CORE
+  - service: qogecoind.service (active/running, unmodified)
+  - network: main
+  - Core height: 2449415, headers: 2449415 (synced)
+  - IBD: false
+  - txindex: synced=true
+  - RPC check: success (via check-rpc, no secrets printed)
+
+  POSTGRESQL
+  - version: PostgreSQL 16.14
+  - production role: qoge_explorer_app — deviated from the suggested name qoge_explorer because that role already exists (owns qoge_explorer_test); reusing it and setting a password risked breaking test-suite authentication, which the runbook forbids disturbing. Used a distinct role instead.
+  - production database: qoge_explorer (preferred name, unused, created as instructed)
+  - test database preserved: yes — qoge_explorer_test verified empty/unchanged throughout
+  - production connection verified: yes (current_database=qoge_explorer, current_user=qoge_explorer_app)
+
+  MIGRATIONS
+  - version: 7
+  - 0007 present: yes
+  - distribution buckets: 8
+  - initial sync_state: (-1, NULL)
+  - initial distribution state: (-1, NULL)
+  - backfills run: none (correctly not run — fresh DB builds state incrementally)
+
+  FOREGROUND INDEX TEST
+  - starting height: 0 (genesis)
+  - ending height: ~2036 at clean stop
+  - progress: confirmed increasing across checkpoints (1059→1423→2036)
+  - clean stop: yes (SIGTERM → "indexer stopped" logged, no kill -9)
+  - distribution anchor match: exact (height 2036, hash match)
+  - global count cross-check: 27 = 27 exact
+  - global balance cross-check: 20360000000000 = 20360000000000 exact (also independently verified per-bucket against literal satoshi boundaries — exact match on all 8 buckets)
+
+  SYSTEMD
+  - index unit: qoge-explorer-index.service — active, enabled, 0 restarts
+  - serve unit: qoge-explorer-serve.service — active, enabled, 0 restarts
+
+  HTTP
+  - bind: 127.0.0.1:8532, loopback only: yes (confirmed no 0.0.0.0/[::] binding)
+  - /healthz 200, /readyz 200, / 200, /api/v1/supply 200, /supply 200, /api/v1/richlist 200, /richlist 200
+
+  CURRENT SYNC
+  - Explorer height: 11113 (and climbing)
+  - Core height: 2449415
+  - blocks remaining: ~2438302
+  - fully synchronized: no
+
+  DISTRIBUTION
+  - sync/distribution anchor re-verified mid-sync at height 7295: exact hash match; address-count and attributed-balance cross-checks exact at every check performed
+
+  SECURITY
+  - RPC secret protected: yes (never printed; logs show only password=set)
+  - DB secret protected: yes (generated via openssl rand -hex 32, stored root-only, never printed)
+  - env permissions: 640, owner root:ion, directory 750
+  - serve has no RPC credentials: confirmed (0 matches)
+  - HTTP public exposure: none
+  - PostgreSQL public exposure: none (loopback only, unchanged)
+  - Core configuration changed: no (conf file mtime unchanged)
+
+  ERRORS
+  - index errors: none
+  - serve errors: none
+  - database errors: none
+  - distribution errors: none
+
+  VERDICT
+  DEPLOYMENT INITIALIZED — SYNC IN PROGRESS
+
+  Both qoge-explorer-index and qoge-explorer-serve are left running and enabled for boot. No backfill was run. No code was modified, committed, or pushed.
+
+  Stop.
+  Do not begin Phase 2H.4b.
+
+✻ Crunched for 3m 32s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ accept edits on (shift+tab to cycle) · ← 1 agent
