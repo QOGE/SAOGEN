@@ -1,7 +1,6 @@
 | Project              | PQ cryptography                | Mainnet status                                                     |
 | -------------------- | ------------------------------ | ------------------------------------------------------------------ |
-| **Qogecoin (QOGE)**  | SLH-DSA (FIPS 205) + P2QPK     | ✅ PQ-enabled mainnet                                               |
-|   |     |  |
+| **Qogecoin (QOGE)**  | SLH-DSA (FIPS 205) + P2QPK     | ✅ PQ-enabled mainnet  🟡 PQ-pending SOLNET                         |
 | **QRL**              | XMSS                           | ✅ PQ-native mainnet                                                |
 | **Mochimo (MCM)**    | WOTS+                          | ✅ PQ-native mainnet                                                |
 | **Abelian (ABEL)**   | Lattice-based PQ signatures    | ✅ PQ-native mainnet                                                |
