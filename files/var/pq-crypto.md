@@ -1,7 +1,7 @@
 | Project              | PQ cryptography                | Status                                                              |
 | -------------------- | ------------------------------ | ------------------------------------------------------------------- |
-| **Qogecoin (QOGE)**  | SLH-DSA (FIPS 205) + P2QPK     | 🟢 PQ-enabled mainnet since 2026 ([QOGE][2])                         |
-| **SOLNET-1 (QOGE)**  | SLH-DSA (FIPS 205) + DT-BFT    | 🟣 PQ-native candidate 2030's ([QOGE][1])                          |
+| **Qogecoin (QOGE)**  | SLH-DSA (FIPS 205) + P2QPK     | 🟢 PQ-enabled mainnet since 2026 ([qoge.org][1])                         |
+| **SOLNET-1 (QOGE)**  | SLH-DSA (FIPS 205) + DT-BFT    | 🟣 PQ-native candidate 2030's ([qoge.org][2])                          |
 | **QRL**              | XMSS                           | 🟣 PQ-native since 2018 ([Nervos Network][3])                        |
 | **Mochimo (MCM)**    | WOTS+                          | 🟣 PQ-native since 2018 ([KuCoin][4])                                |
 | **Abelian (ABEL)**   | Lattice-based PQ signatures    | 🟣 PQ-native ([pqabelian.io][5])                                     |
