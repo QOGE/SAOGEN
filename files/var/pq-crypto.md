@@ -8,7 +8,7 @@
 | **Tidecoin (TDC)**   | Falcon-512 / FN-DSA family     | 🟣 PQ-native ([tidecoin.org][6])                                     |
 | **Cellframe (CELL)** | Dilithium + modular PQ schemes | 🟢 PQ-enabled mainnet ([cellframe.net][7])                           |
 | **Quranium**         | **SLH-DSA / SPHINCS+**         | 🟣 PQ-native Layer 1 ([quranium.org][8])                             |
-| **Quantus**          | **ML-DSA / Dilithium**         | 🟣 PQ Layer 1; PQ signatures on transactions ([Quantus][9])          |
+| **Quantus**          | **ML-DSA / Dilithium**         | 🟠 PQ Layer 1; PQ signatures on transactions ([Quantus][9])          |
 
 [1]: https://qoge.org/ "qoge.org"
 [2]: https://qoge.org/ "qoge.org"
