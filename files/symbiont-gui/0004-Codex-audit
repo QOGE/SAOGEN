@@ -1,0 +1,506 @@
+ I’ll conduct this as a strictly read-only audit and will not invoke any broadcast RPC. I’ll first locate the reference file and relevant source trees, then independently parse the bytes before consulting tests or node decoding.
+
+✔ You approved codex to always run commands that start with pwd; rg --files /home/ion 2>/dev/null | rg '(^|/)0004-hex$|symbiont-wallet/in...
+
+• Ran 2 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• No local 0004-hex exists, so I’ll retrieve the immutable GitHub blob at the specified commit for analysis. I’ll keep it in memory or /tmp only as needed, preserving the workspace unchanged.
+
+• Searching the web
+
+• Searched the web for https://raw.githubusercontent.com/QOGE/SAOGEN/e225280c35b725ca7c21dc0328e1174f74e94762/files/symbiont-gui/0004-hex
+
+✔ You approved codex to always run commands that start with curl -fsSL https://raw.githubusercontent.com/QOGE/SAOGEN/e225280c35b725ca7c21...
+
+✔ You approved codex to always run commands that start with wc -c /tmp/qoge-0004-hex
+
+• Ran 2 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The reference text is 34,529 bytes including one trailing newline; stripping whitespace yields the candidate 34,528 hex characters. I’m now parsing CompactSize and fixed-width fields directly, with boundary assertions that the parser finishes exactly at EOF.
+
+✔ You approved codex to always run commands that start with ruby -e "s=File.read(%q{/tmp/qoge-0004-hex}); h=s.gsub(/\\s/,%q{}); abort(%q{...
+
+• Ran ruby -e 's=File.read(%q{/tmp/qoge-0004-hex}); h=s.gsub(/\s/,%q{}); abort(%q{nonhex}) unless h.match?(/\A[0-9a-fA-F]*\z/) && h.size.even?; b=[h].pack(%q{H*}); o=0; get=lambda{|n| st=o;o+=n; [st,o,b.byteslice(st,n)]}; cs=lambda{ st=o; x=b.getbyte(o);o+=1; if x<253; [st,o,x,b.byteslice(st,1)]; elsif x==253; v=b.byteslice(o,2).unpack1(%q{v});o+=2;[st,o,v,b.byteslice(st,3)];elsif x==254;v=b.byteslice(o,4).unpack1(%q{V});o+=4;[st,o,v,b.byteslice(st,5)];else;v=b.byteslice(o,8).unpack1(%q{Q<});o+=8;[st,o,v,b.byteslice(st,9)];end}; show=lambda{|n,x| puts %Q{%-24s [%5d,%5d) len=%5d hex=%s} % [n,x[0],x[1],x[1]-x[0],x[2].unpack1(%q{H*})]}; x=get.call(4);show.call(%q{nVersion},x); show.call(%q{marker},get.call(1));show.call(%q{flag},get.call(1)); c=cs.call;show.call(%Q{vin count=#{c[2]}},[c[0],c[1],c[3]]); show.call(%q{input txid wire},get.call(32));show.call(%q{input vout},get.call(4));c=cs.call;show.call(%Q{scriptSig
+  │ size=#{c[2]}},[c[0],c[1],c[3]]);show.call(%q{scriptSig},get.call(c[2]));show.call(%q{nSequence},get.call(4));c=cs.call;show.call(%Q{vout count=#{c[2]}},[c[0],c[1],c[3]]);c[2].times{|i| x=get.call(8); puts %Q{output #{i} value=#{x[2].unpack1(%q{Q<})}};show.call(%Q{output #{i} value},x); z=cs.call;show.call(%Q{output #{i} script size=#{z[2]}},[z[0],z[1],z[3]]);show.call(%Q{output #{i} script},get.call(z[2]))}; c=cs.call;show.call(%Q{witness item count=#{c[2]}},[c[0],c[1],c[3]]);c[2].times{|i|z=cs.call;show.call(%Q{witness #{i} size=#{z[2]}},[z[0],z[1],z[3]]);x=get.call(z[2]); puts %Q{witness #{i} data [#{x[0]},#{x[1]}) len=#{x[1]-x[0]} sha256=#{require %q{digest};Digest::SHA256.hexdigest(x[2])}}};show.call(%q{nLockTime},get.call(4));puts %Q{hexchars=#{h.size} bytes=#{b.size} final=#{o} remaining=#{b.size-o}}; puts %Q{txid_display=#{b.byteslice(7,32).reverse.unpack1(%q{H*})}}'
+  └ /bin/bash: line 1: ruby: command not found
+
+✔ You approved codex to always run commands that start with command -v perl
+
+✔ You approved codex to always run commands that start with node -e "const fs=require(\"fs\"),crypto=require(\"crypto\");let h=fs.readFil...
+
+• Ran 2 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The independent parse reaches byte 17,264 exactly: vout=00000000, empty scriptSig, nSequence=ffffffff, then output count 02. The competing 00ffffff interpretation is incompatible with the preceding four-byte outpoint index and the mandatory CompactSize scriptSig field. Next I’ll query the local node read-only for the UTXO and decoder result, then use only testmempoolaccept (never sendrawtransaction).
+
+✔ You approved codex to always run commands that start with command -v qogecoin-cli; find /home/ion/qogecoin -type f -name qogecoin-cli -...
+
+✔ You approved codex to always run commands that start with QCLI=/home/ion/qogecoin/src/qogecoin-cli; RPC=(-rpcconnect=127.0.0.1 -rpcport...
+
+✔ You approved codex to always run commands that start with QCLI=/home/ion/qogecoin/src/qogecoin-cli; RPC=(-rpcconnect=127.0.0.1 -rpcport...
+
+• Ran 3 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The synced mainnet node reports the prevout unspent at 22 QOGE and accepts the transaction in testmempoolaccept with a 0.00010000 QOGE fee. That already exercises consensus signature checking, but I’ll still reconstruct the digest independently and call SLH-DSA verification directly so the cryptographic conclusion does not rest solely on mempool policy.
+
+✔ You approved codex to always run commands that start with sed -n '1,420p'
+
+✔ You approved codex to always run commands that start with nl -ba wallet/wallet.go | sed -n '560,760p'; nl -ba /home/ion/qogecoin/src/sc...
+
+✔ You approved codex to always run commands that start with sed -n '754,825p'
+
+✔ You approved codex to always run commands that start with node -e 'const fs=require("fs"),c=require("crypto");const H=x=>c.createHash("...
+
+✔ You approved codex to always run commands that start with find /usr/local /home/ion -type f \( -name 'liboqs.so*' -o -name 'liboqs.a' \...
+
+✔ You approved codex to always run commands that start with nm -D /usr/local/lib/liboqs.so.0.15.0
+
+✔ You approved codex to always run commands that start with python3 -c 'import ctypes,hashlib; h=open("/tmp/qoge-0004-hex").read().strip(...
+
+✔ You approved codex to always run commands that start with node -e 'for(const n of [0,4,5,6,7,39,43,44,48,49,57,58,92,100,101,135,136,13...
+
+• Ran 9 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• AUDIT RESULT: PASS
+
+  The exact transaction is structurally complete, consensus-compatible, cryptographically valid, and currently accepted by the local synced Qogecoin mainnet node’s testmempoolaccept.
+
+  No code, tests, repository files, node state, or wallet state were modified. The transaction was not broadcast, and sendrawtransaction was never called.
+
+  Audit basis:
+
+  - Reference blob: 0004-hex at commit e225280c
+  - Wallet source commit: 6b29a232607cf0ca80f8de4a40a59c1364eeb5c6
+  - Qogecoin Core source commit: 6485a49ce781aa02d1656efc2eae5889fc5efb50
+  - Whitespace-stripped transaction SHA-256: 691f9ac8467ea3bbb812ae10ad4fd92d3a58826ed87b74fd5a5e42134d08bc14
+
+  ## A. Exact transaction structure
+
+  Using half-open byte ranges [start,end):
+
+  nVersion
+  marker flag
+  vin count
+    prevout txid
+    prevout index
+    scriptSig length
+    scriptSig
+    nSequence
+  vout count
+    output 0 value
+    output 0 script length
+    output 0 script
+    output 1 value
+    output 1 script length
+    output 1 script
+  witness for input 0
+    item count
+    signature length
+    signature
+    public-key length
+    public key
+  nLockTime
+
+  Parsed values:
+
+  version:             2
+  marker/flag:         00 01
+  inputs:              1
+  prevout:
+    txid:              ba436f3ee58cbbc80b536af13a37d949de42008bec20cd8c35004f09be9e7dcb
+    vout:              0
+  scriptSig:           empty
+  sequence:            0xffffffff
+  outputs:             2
+  witness items:       2
+  locktime:            0
+  final position:      17,264 bytes exactly
+
+  This follows Qogecoin Core’s extended transaction serialization in /home/ion/qogecoin/src/primitives/transaction.h:191, including marker, flag, inputs, outputs, one witness stack per input, and locktime.
+
+  ## B. Exact byte offsets
+
+   Field                     Decimal range          Hex range    Raw encoding
+  ━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━
+   nVersion                          [0,4)    [0x0000,0x0004)    02000000
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   SegWit marker                     [4,5)    [0x0004,0x0005)    00
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   flag                              [5,6)    [0x0005,0x0006)    01
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   vin count                         [6,7)    [0x0006,0x0007)    01
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   input txid, wire order           [7,39)    [0x0007,0x0027)    cb7d…43ba
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   vout                            [39,43)    [0x0027,0x002b)    00000000
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   scriptSig CompactSize           [43,44)    [0x002b,0x002c)    00
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   scriptSig                       [44,44)                  —    empty
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   nSequence                       [44,48)    [0x002c,0x0030)    ffffffff
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   vout count                      [48,49)    [0x0030,0x0031)    02
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   output 0 value                  [49,57)    [0x0031,0x0039)    00e1f50500000000
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   output 0 script length          [57,58)    [0x0039,0x003a)    22
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   output 0 script                 [58,92)    [0x003a,0x005c)    34 bytes
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   output 1 value                 [92,100)    [0x005c,0x0064)    f04d2b7d00000000
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   output 1 script length        [100,101)    [0x0064,0x0065)    22
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   output 1 script               [101,135)    [0x0065,0x0087)    34 bytes
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   witness item count            [135,136)    [0x0087,0x0088)    02
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   signature CompactSize         [136,139)    [0x0088,0x008b)    fdc042
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   signature                   [139,17227)    [0x008b,0x434b)    17,088 bytes
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   public-key CompactSize    [17227,17228)    [0x434b,0x434c)    20
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   public key                [17228,17260)    [0x434c,0x436c)    32 bytes
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   nLockTime                 [17260,17264)    [0x436c,0x4370)    00000000
+  ────────────────────────  ───────────────  ─────────────────  ──────────────────
+   final position                    17264             0x4370    EOF
+
+  Signature inclusive byte positions are 139–17,226. Public-key inclusive positions are 17,228–17,259.
+
+  ### Disputed region
+
+  The relevant bytes parse as:
+
+  cb7d…43ba | 00000000 | 00 | ffffffff | 02
+  txid      | vout     | scriptSig len | sequence | output count
+
+  The outpoint serialization necessarily consumes 32 bytes of txid followed by exactly four bytes of output index. The next byte is then the CompactSize scriptSig length. Consequently:
+
+  - 00000000 is vout=0.
+  - 00 is the empty scriptSig length.
+  - ffffffff is the complete four-byte sequence.
+  - 02 is the output count.
+
+  00ffffff is not the sequence. That interpretation displaces the mandatory scriptSig CompactSize and contradicts both transaction serialization rules and Core’s successful decode.
+
+  ## C. Amounts and scripts
+
+  ### Output 0
+
+  Value bytes:    00 e1 f5 05 00 00 00 00
+  Integer:        100,000,000 satoshis
+  Amount:         1.00000000 QOGE
+
+  Script:
+  52 20 0c39cd3aed53f41a6b9a8e06075c291ce9f525737744c55c3c15248053af1e58
+
+  Decoded address:
+
+  bq1zpsuu6whd206p56u63crqwhpfrn5l2ftnwazv2hpuz5jgq5a0revqxm0jf2
+
+  ### Output 1
+
+  Value bytes:    f0 4d 2b 7d 00 00 00 00
+  Integer:        2,099,990,000 satoshis
+  Amount:         20.99990000 QOGE
+
+  Script:
+  52 20 7ec52fae33f306ff343322f1d37f3748397337e771929372460265086203d49e
+
+  Decoded address:
+
+  bq1z0mzjlt3n7vr07dpnytcaxlehfquhxdl8wxffxujxqfjsscsr6j0qrgh3s2
+
+  Both scripts are exactly:
+
+  OP_2 (52) | PUSH32 (20) | 32-byte program
+
+  This agrees with wallet construction in internal/txbuilder/txbuilder.go:134 and Core witness-program handling in /home/ion/qogecoin/src/script/interpreter.cpp:2032.
+
+  Totals:
+
+  Prevout:       22.00000000 QOGE
+  Outputs:       21.99990000 QOGE
+  Implied fee:    0.00010000 QOGE = 10,000 satoshis
+
+  ## D. Witness structure
+
+  The witness is exactly:
+
+  02                      item count = 2
+  fd c0 42                item 0 length = 0x42c0 = 17,088
+  <17,088 signature bytes>
+  20                      item 1 length = 32
+  <32 public-key bytes>
+
+  fd c0 42 is canonical CompactSize:
+
+  - fd selects a following little-endian uint16.
+  - c0 42 represents 0x42c0.
+  - 0x42c0 = 17,088.
+
+  The next item begins exactly at byte 17,227, after precisely 17,088 signature bytes. There is no truncation, overlap, padding, or intervening byte.
+
+  Public key:
+
+  623e96d39548d858d8df2fb7ecb568f2c4dd99245343bd5f6f7dacafbe71ecf7
+
+  Core requires two items, signature first and public key second, with exact sizes 17,088 and 32 bytes in /home/ion/qogecoin/src/script/interpreter.cpp:2036 and /home/ion/qogecoin/src/script/interpreter.h:250. The wallet writes that same order in internal/txbuilder/txbuilder.go:97.
+
+  ## E. P2QPK consensus compatibility
+
+  The spent UTXO was returned by the local synced mainnet node as:
+
+  txid:          ba436f3ee58cbbc80b536af13a37d949de42008bec20cd8c35004f09be9e7dcb
+  vout:          0
+  value:         22.00000000 QOGE
+  confirmations: 924
+  unspent:       yes
+
+  scriptPubKey:
+  522028b97dcffd5d692b1c910d606e85627d9e754e043a84aef6898d8bc2e3bb0f7c
+
+  address:
+  bq1z9zuhmnlat45jk8y3p4sxaptz0k082nsy82z2aa5f3k9u9campa7qzpy9hg
+
+  The wire-order input txid reverses exactly to the RPC txid above.
+
+  Core’s witness-v2 branch requires:
+
+  - non-P2SH witness version 2;
+  - 32-byte program;
+  - exactly two witness elements;
+  - 32-byte public key;
+  - 17,088-byte signature;
+  - HASH256(public key) == program;
+  - valid SLH-DSA signature.
+
+  All conditions hold.
+
+  Although generic script classification describes this as witness_unknown, active P2QPK policy explicitly recognizes version 2 with a 32-byte program in /home/ion/qogecoin/src/policy/policy.cpp:258. This is a display/classification detail, not a consensus defect.
+
+  ## F. Sighash comparison
+
+  Independent component hashes:
+
+  hashPrevouts:
+  7dd355634a44ad06990ba7bc38a52a61b38fcdf2b0708d6197cd042f12457c6b
+
+  hashAmounts:
+  a0ab93531c12a98c67f42322f02284714d6d0a931d91fdb3c9864c1b019a7775
+
+  hashScriptPubkeys:
+  56e8d7fb7dd6994d1c177a5f6f174360c488737822359165001e603093cc4142
+
+  hashSequences:
+  ad95131bc0b799c0b1af477fb14fcf26a6a9f76079e48bf090acb7e8367bfd0e
+
+  hashOutputs:
+  0fce9e8c6fe3443a0c411954d5a240c6f2e5e71970cd4bb5a16570977bf51895
+
+  The reconstructed preimage is 174 bytes and includes:
+
+  epoch=00
+  hash type=01
+  version=02000000
+  locktime=00000000
+  the five hashes above
+  input index=00000000
+
+  Applying TaggedHash("P2QPKSighash", preimage) gives:
+
+  9445c641c5e1008d92e94b149db973826716203c3343c3531314d5f408cfc640
+
+  The wallet implementation in wallet/wallet.go:692 and Core’s SignatureHashP2QPK in /home/ion/qogecoin/src/script/interpreter.cpp:1589 serialize exactly those fields in exactly that order and with the same single-SHA256 component hashes and tagged final hash.
+
+  Therefore the wallet and Core sighashes match exactly. Core’s successful mempool validation independently confirms that it computed a digest accepted by the included signature.
+
+  ## G. SLH-DSA signature verification
+
+  The public-key commitment independently computes as:
+
+  HASH256(
+    623e96d39548d858d8df2fb7ecb568f2c4dd99245343bd5f6f7dacafbe71ecf7
+  )
+  =
+  28b97dcffd5d692b1c910d606e85627d9e754e043a84aef6898d8bc2e3bb0f7c
+
+  That equals the spent output’s 32-byte witness program exactly.
+
+  I invoked the installed liboqs 0.15.0 function used by Core:
+
+  OQS_SIG_slh_dsa_pure_sha2_128f_verify(
+      message = 9445c641…08cfc640,
+      message length = 32,
+      signature length = 17,088,
+      public-key length = 32
+  )
+
+  Result:
+
+  OQS_STATUS = 0
+  OQS_SUCCESS = true
+
+  The signature cryptographically verifies independently.
+
+  ## H. decoderawtransaction result
+
+  The node accepted and decoded the serialization:
+
+  txid:     2a9d4577443954d69a26f4774514e847c64ab4ee80c2839902d4ae25d74c5eaa
+  wtxid:    bff797052d70c03b32975669fc52e08a2bafbe284c628a0fbc7cbcab711ff76b
+  version:  2
+  size:     17,264
+  vsize:    4,419
+  weight:   17,675
+  locktime: 0
+
+  It reported:
+
+  - one input with the expected txid and vout=0;
+  - empty scriptSig;
+  - sequence 4294967295;
+  - two witness elements;
+  - both expected outputs, amounts, scripts, and addresses.
+
+  No decoder error occurred.
+
+  ## I. testmempoolaccept result
+
+  The permitted non-broadcasting RPC returned:
+
+  {
+    "txid": "2a9d4577443954d69a26f4774514e847c64ab4ee80c2839902d4ae25d74c5eaa",
+    "wtxid": "bff797052d70c03b32975669fc52e08a2bafbe284c628a0fbc7cbcab711ff76b",
+    "allowed": true,
+    "vsize": 4419,
+    "fees": {
+      "base": 0.00010000
+    }
+  }
+
+  There was no reject reason, reject detail, or RPC error.
+
+  ## J. Existing-test adequacy
+
+  The serializer tests are useful but are not a sufficient audit of this real transaction.
+
+  Covered well:
+
+  - expected aggregate size of a synthetic transaction;
+  - version, marker, and flag;
+  - input vout;
+  - rejection of wrong signature and public-key lengths;
+  - exact fd c0 42 signature CompactSize;
+  - basic P2QPK script construction;
+  - locktime being in the last four bytes.
+
+  Important gaps:
+
+  - No golden-byte comparison against the real signed transaction.
+  - No complete independent parser/round trip.
+  - No explicit scriptSig-length or nSequence-offset assertion.
+  - No assertion of output amount little-endian bytes.
+  - No output count or complete output-script boundary assertions.
+  - No public-key CompactSize or public-key start-offset assertion.
+  - No non-uniform signature/public-key fixtures proving witness ordering.
+  - The synthetic signature and public key are zero-filled, weakening displacement/order detection.
+  - Locktime is zero and surrounding fixture data is heavily zero-filled, so some displacement errors could remain invisible.
+  - Aggregate length catches insertion/deletion, but not same-length swaps or field relocation.
+
+  Thus:
+
+   Error class                                    Existing tests
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   One-byte insertion/deletion                    Usually caught by total length
+  ─────────────────────────────────────────────  ────────────────────────────────
+   One-byte displacement with unchanged length    Not reliably caught
+  ─────────────────────────────────────────────  ────────────────────────────────
+   Wrong signature CompactSize                    Caught
+  ─────────────────────────────────────────────  ────────────────────────────────
+   Truncated signature supplied to serializer     Caught
+  ─────────────────────────────────────────────  ────────────────────────────────
+   Wrong public-key offset                        Not directly caught
+  ─────────────────────────────────────────────  ────────────────────────────────
+   Wrong witness ordering                         Not reliably caught
+  ─────────────────────────────────────────────  ────────────────────────────────
+   Wrong amount endianness                        Not caught
+  ─────────────────────────────────────────────  ────────────────────────────────
+   Wrong nSequence location/value                 Not directly caught
+  ─────────────────────────────────────────────  ────────────────────────────────
+   Extra/missing byte                             Usually caught
+  ─────────────────────────────────────────────  ────────────────────────────────
+   Wrong final locktime position                  Partially, weak zero fixture
+
+  ## K. Findings ranked
+
+  ### CRITICAL
+
+  None.
+
+  ### HIGH
+
+  None.
+
+  ### MEDIUM
+
+  None.
+
+  ### LOW
+
+  1. Serializer test coverage does not fully protect field boundaries and ordering.
+      - Evidence: tests check total size and selected fixed offsets but do not parse every field or use distinct non-zero witness fixtures.
+      - Source: internal/txbuilder/txbuilder_test.go:172.
+      - Impact: development regression risk; no defect found in this transaction and no present consensus-invalidity.
+
+  ### INFORMATIONAL
+
+  1. Reference text has one trailing newline.
+      - File bytes: 34,529.
+      - Transaction hex characters after whitespace removal: 34,528.
+      - Raw transaction bytes: 17,264.
+      - Impact: display/file formatting only. The newline is not transaction data.
+
+  2. Core RPC labels these version-2 outputs as witness_unknown.
+      - Evidence: decoder output and generic Solver behavior; active policy separately recognizes P2QPK.
+      - Impact: tooling/display only, not consensus validity.
+
+  3. The referenced UTXO was unspent at audit time.
+      - Evidence: gettxout returned the 22 QOGE output with 924 confirmations.
+      - Impact: current spendability; this is time-sensitive and should be rechecked before any later action.
+
+  ## Explicit answers
+
+  1. Is 0004-hex structurally complete? Yes. It ends exactly after the four-byte locktime at byte 17,264.
+  2. Does nSequence decode as ffffffff or 00ffffff? ffffffff.
+  3. Are there exactly two outputs? Yes.
+  4. Are their values exactly 1.00000000 and 20.99990000 QOGE? Yes.
+  5. Is the witness signature exactly 17,088 bytes? Yes.
+  6. Is the witness public key exactly 32 bytes? Yes.
+  7. Is the witness ordering correct for QOGE consensus? Yes: [signature, public key].
+  8. Does the public key commit correctly to the spent P2QPK program? Yes, exactly.
+  9. Does the wallet sighash exactly match Qogecoin Core’s sighash? Yes: 9445c641c5e1008d92e94b149db973826716203c3343c3531314d5f408cfc640.
+  10. Does the SLH-DSA signature cryptographically verify? Yes, directly through liboqs.
+  11. Does decoderawtransaction accept it? Yes.
+  12. Does testmempoolaccept accept it? Yes, allowed: true.
+  13. If not, what is the exact first failure? Not applicable; no failure occurred.
+  14. Is there any evidence of clipboard/file corruption? No. The only extra text-file byte is a normal trailing newline, removed before hex decoding.
+  15. Would I consider it safe to broadcast after a human separately confirms intended destination addresses and amounts? Technically yes, provided a human confirms both destination addresses, output roles, amounts, and the 0.00010000 QOGE fee, and the UTXO plus testmempoolaccept are rechecked immediately beforehand. This audit establishes technical validity; it does not establish payment intent.
+
+─ Worked for 6m 46s ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ 
+ 
+› Ask Codex to do anything
+
