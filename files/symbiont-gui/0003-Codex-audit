@@ -1,0 +1,144 @@
+ I’ll compare the current HEAD directly against 4bf3aef, trace the corrected values through the actual signing call, inspect every caller and boundary test, then run the focused and full suites. I’ll treat any remaining ambiguity in RPC monetary decoding as a release blocker unless the numeric bounds prove it safe.
+
+✔ You approved codex to always run commands that start with git log --oneline --decorate -5
+
+• Ran git status --short; git log --oneline --decorate -5; git diff --stat 4bf3aef..HEAD; git diff 4bf3aef..HEAD -- internal/txbuilder internal/rpcclient cmd/gui wallet
+  └  M cmd/gui/main.go
+     M internal/rpcclient/balance.go
+    … +8 lines (ctrl + t to view transcript)
+    b09d0dc feat: add minimal Fyne GUI for receive-side wallet operations
+    761e9c1 docs: clarify SIP governance documentation is not a license — code remains fully MIT
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Important repository-state finding: there is no correction commit after 4bf3aef in this checkout—HEAD is still 4bf3aef, and all claimed fixes are uncommitted working-tree modifications. I’ll still review the actual current files/diff, but the final verdict will distinguish the working tree from any nonexistent commit.
+
+✔ You approved codex to always run commands that start with git diff
+
+✔ You approved codex to always run commands that start with head -160
+
+• Ran 2 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The new overflow protection contains a genuine boundary bug: it protects the multiplication but not the subsequent fractional addition at the maximum permitted whole-QOGE value. I’m quantifying whether that is reachable through realistic QOGE values and separately evaluating the float64 precision bound rather than relying on example-based tests.
+
+✔ You approved codex to always run commands that start with nl -ba /home/ion/qogecoin/src/amount.h
+
+✔ You approved codex to always run commands that start with go test -run 'TestFloatQOGEToSatoshis_VsNaiveMultiply|TestQOGEToSatoshis_(Ove...
+
+• Ran 2 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Verdict: not yet. The current working tree fixes the script-binding and zero-change defects, and its float conversion is numerically sufficient for today’s realistic mainnet range. However, the claimed overflow fix is incomplete, the float regression test does not test what it claims, and—critically—there is no correction commit in this checkout: HEAD remains 4bf3aef; the fixes are uncommitted modifications.
+
+  ## 1. Float64 signing path — PASS, with qualification
+
+  The replacement is wired into both required locations:
+
+  - GUI Send conversion: cmd/gui/main.go:385, cmd/gui/main.go:390.
+  - AggregateBalances: internal/rpcclient/balance.go:102, internal/rpcclient/balance.go:107.
+  - Conversion formats to exactly eight decimals and then parses integer components: internal/rpcclient/balance.go:23, internal/rpcclient/balance.go:30.
+
+  The old Amount * 1e8 multiplication no longer exists in production code.
+
+  Direct float64 judgment: sufficient for current realistic mainnet amounts, but not safe over the full consensus-valid range.
+
+  The RPC still decodes through float64: internal/rpcclient/client.go:106, internal/rpcclient/client.go:112. Nevertheless, formatting with %.8f recovers the exact satoshi value while the float representation error remains below half a satoshi.
+
+  QOGE’s source says the current supply is below 21 million QOGE, while MAX_MONEY is 100 million QOGE: /home/ion/qogecoin/src/consensus/amount.h:17. At 21 million—and for any individual current UTXO, necessarily no larger than total supply—a binary64 representation is substantially closer than half a satoshi. Therefore, %.8f will round back to the correct eight-decimal RPC amount. For the contemplated real transaction, there is no realistic float-induced one-satoshi failure.
+
+  However, this is not true over the full consensus-valid 100-million-QOGE range. Above roughly (2^{26}) QOGE, about 67.1 million, adjacent float64 values are more than one satoshi apart. Some valid eight-decimal values can then decode to the wrong side of a satoshi boundary before Sprintf sees them.
+
+  Using json.Number or json.RawMessage and parsing the original JSON decimal is meaningfully safer:
+
+  - It removes the need for a supply-dependent precision proof.
+  - It remains exact across the whole consensus range.
+  - It preserves the amount exactly as the node returned it.
+
+  So: the current mitigation is genuinely sufficient for today’s real mainnet UTXO range, but exact JSON-decimal parsing remains the defensively correct design.
+
+  Small additional issue: parseQOGEDecimal has the same unguarded final-add overflow described under item 4: internal/rpcclient/balance.go:39, internal/rpcclient/balance.go:48. That is unreachable for realistic mainnet amounts but is still a correctness defect.
+
+  ## 2. Real UTXO script binding — PASS
+
+  This is genuinely fixed.
+
+  - The GUI reads the actual selected ScanUnspent.ScriptPubKey returned by RPC and hex-decodes it: cmd/gui/main.go:385, cmd/gui/main.go:403, cmd/gui/main.go:407.
+  - Those exact fetched bytes populate SpentUTXOs[0].Script: cmd/gui/main.go:505, cmd/gui/main.go:512.
+  - The resulting parameters are passed directly to the real signing call: cmd/gui/main.go:519.
+  - SignP2QPKInput derives the expected script independently from FromAddr and compares it against the fetched bytes: wallet/wallet.go:602, wallet/wallet.go:611, wallet/wallet.go:615.
+  - A mismatch fails with ErrFromAddrScriptMismatch before signing: wallet/wallet.go:615.
+
+  This is no longer tautological.
+
+  The existing mismatch unit test exercises the wallet check itself: wallet/wallet_test.go:817, wallet/wallet_test.go:838. There is still no GUI-level integration test proving that an RPC-returned mismatching script reaches this error, but the actual production wiring is correct and direct.
+
+  ## 3. Zero-value change output — PASS
+
+  The exact-balance path now constructs a single-output transaction:
+
+  - CalcChange == 0 leaves changeAddr empty and does not reserve an address: cmd/gui/main.go:413, cmd/gui/main.go:416.
+  - Recipient output is always created first: cmd/gui/main.go:491.
+  - A change output is appended only when changeSats > 0: cmd/gui/main.go:495, cmd/gui/main.go:501.
+  - The same conditional output lists are used for both the sighash parameters and final serialization: cmd/gui/main.go:512, cmd/gui/main.go:525.
+
+  The signer handles the sentinel correctly:
+
+  - Nonempty ChangeAddr retains the old FRESH-address and matching-output validation: wallet/wallet.go:619.
+  - Empty ChangeAddr requires exactly one output: wallet/wallet.go:648.
+  - MarkPending is skipped when there is no change address: wallet/wallet.go:681.
+
+  No existing production caller is silently broken. The GUI is the only non-test caller. Existing change-bearing tests continue to pass through the nonempty branch, including the state transition test at wallet/wallet_test.go:719.
+
+  The new no-change signing test checks signature generation and that no address changes state: wallet/wallet_test.go:1270. The multiple-output rejection is also covered: wallet/wallet_test.go:1338.
+
+  Test limitation: it does not serialize and decode the final GUI transaction to prove it contains exactly one output. The production construction itself is nevertheless clear and correct.
+
+  ## 4. Overflow checks — FAIL
+
+  CalcChange is correctly guarded:
+
+  - Negative fees are rejected before arithmetic: internal/txbuilder/txbuilder.go:201.
+  - sendSats + feeSats is checked before the sum/subtractions: internal/txbuilder/txbuilder.go:204.
+  - Only after those checks is change calculated: internal/txbuilder/txbuilder.go:208.
+
+  QOGEToSatoshis is not fully guarded:
+
+  - The multiplication check is correctly before multiplication: internal/txbuilder/txbuilder.go:164, internal/txbuilder/txbuilder.go:169.
+  - But there is no actual check before adding the fractional value: internal/txbuilder/txbuilder.go:183, internal/txbuilder/txbuilder.go:187.
+  - The comment’s proof is arithmetically wrong: it changes the permitted maximum from 92,233,720,368 to 92,233,720, dropping three digits: internal/txbuilder/txbuilder.go:184.
+
+  Concrete failing input:
+
+  92233720368.54775808
+
+  The whole-part multiplication fits, but adding 54,775,808 exceeds math.MaxInt64 by one and wraps. The correct guard must be before addition, for example:
+
+  if fracVal > math.MaxInt64-sats {
+      return 0, ...
+  }
+
+  parseQOGEDecimal repeats this defect: it checks only the whole-part multiplication and performs the fractional addition unchecked: internal/rpcclient/balance.go:39, internal/rpcclient/balance.go:48.
+
+  ## Test-quality assessment
+
+  - TestQOGEToSatoshis_OverflowWhole correctly exercises multiplication overflow: internal/txbuilder/txbuilder_test.go:80.
+  - TestQOGEToSatoshis_MaxSafe tests only the maximum whole value with no fractional component: internal/txbuilder/txbuilder_test.go:88. It misses the actual remaining fractional-add boundary.
+  - TestCalcChange_OverflowSendPlusFee correctly crosses the exact addition-overflow boundary: internal/txbuilder/txbuilder_test.go:155.
+  - TestCalcChange_NegativeFeeRejected correctly tests the new negative-fee guard: internal/txbuilder/txbuilder_test.go:165.
+  - TestCalcChange_ZeroResult is correct but duplicates the pre-existing exact-balance test almost exactly: internal/txbuilder/txbuilder_test.go:125, internal/txbuilder/txbuilder_test.go:143.
+  - TestFloatQOGEToSatoshis_VsNaiveMultiply does not demonstrate its claimed discrepancy. It uses 1.005, for which the old +0.5 conversion returns the expected integer in this environment, and any discrepancy is merely logged rather than asserted: internal/rpcclient/balance_test.go:275, internal/rpcclient/balance_test.go:291. The test passed without emitting its discrepancy log.
+  - The other float tests verify several ordinary small values but do not test the real precision boundary near (2^{26}) QOGE or the consensus maximum: internal/rpcclient/balance_test.go:218, internal/rpcclient/balance_test.go:243.
+
+  All go test ./... tests pass, but the gaps above explain why.
+
+  Final verdict: the contemplated ordinary-size mainnet transaction is no longer exposed to the original float, script-binding, or zero-change defects. I still would not sign yet from this checkout: the fixes are uncommitted, one claimed fix is objectively incomplete, and the monetary RPC boundary should preferably be made exact with json.Number/raw decimal parsing before first-use mainnet signing.
+
+─ Worked for 3m 03s ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ 
+ 
+› Ask Codex to do anything
+ 
+  gpt-5.6-sol default · ~/symbiont-wallet
