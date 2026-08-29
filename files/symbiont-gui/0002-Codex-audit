@@ -1,0 +1,49 @@
+
+• Do not use commit 4bf3aef for the real mainnet spend yet. Serialization is correct, but the monetary input path and UTXO binding have safety-relevant failures.
+
+  - PASS — SerializeBIP144
+      - nVersion is first, little-endian; marker/flag immediately follow as 00 01: internal/txbuilder/txbuilder.go:76.
+      - Inputs and outputs precede witnesses; nLockTime is last: internal/txbuilder/txbuilder.go:79, internal/txbuilder/txbuilder.go:88, internal/txbuilder/txbuilder.go:96, internal/txbuilder/txbuilder.go:109.
+      - Witness serialization is [signature, pubkey]: internal/txbuilder/txbuilder.go:99. This matches the actual interpreter, which pops the pubkey first and signature second: /home/ion/qogecoin/src/script/interpreter.cpp:2032, /home/ion/qogecoin/src/script/interpreter.cpp:2037.
+      - Signature length 17,088 is 0x42c0, correctly encoded as CompactSize fd c0 42; pubkey length 32 is one byte 20: internal/txbuilder/txbuilder.go:100, internal/txbuilder/txbuilder.go:102, internal/txbuilder/txbuilder.go:210.
+      - Exact signature/pubkey lengths are enforced: internal/txbuilder/txbuilder.go:67.
+      - Small limitation: the serializer always attaches the nonempty witness to input zero, irrespective of a signing index. That is safe for the current one-input GUI transaction but makes the general multi-input API misleading: internal/txbuilder/txbuilder.go:96.
+
+  - FAIL — QOGEToSatoshis and the complete amount path
+      - Ordinary inputs with 0–8 fractional digits are converted correctly using decimal padding and integer parsing. Fewer digits and trailing zeroes within eight places work: internal/txbuilder/txbuilder.go:150.
+      - More than eight digits are rejected even if the extras are only zeroes: internal/txbuilder/txbuilder.go:166.
+      - Malformed alphabetic or multi-dot fractions are rejected, but malformed "." is accepted as zero, and leading + is accepted by strconv.ParseInt. The GUI subsequently rejects zero, but the parser’s stated contract does not: internal/txbuilder/txbuilder.go:155, cmd/gui/main.go:357.
+      - Critical defensive gap: whole * 100_000_000 and the fractional addition have no overflow checks. Large accepted integers can wrap to an incorrect int64: internal/txbuilder/txbuilder.go:159, internal/txbuilder/txbuilder.go:163.
+      - There is no float inside QOGEToSatoshis, but there absolutely is float64 in the real signing path. RPC amounts decode as float64: internal/rpcclient/client.go:106, then the GUI performs float multiplication and rounding: cmd/gui/main.go:385. This violates the “no float64 anywhere in this path”
+        requirement.
+
+  - FAIL — CalcChange
+      - For normal nonnegative in-range values, arithmetic is exact satoshi arithmetic: utxo - send - fee: internal/txbuilder/txbuilder.go:183.
+      - One-satoshi insufficiency correctly produces change == -1 and is rejected. Exact equality produces zero and is accepted: internal/txbuilder/txbuilder.go:187.
+      - However, the subtraction and the send + fee error calculation are unchecked for integer overflow. Negative utxoSats and negative feeSats are also not explicitly rejected.
+      - At exact balance, the GUI does not omit change. It constructs and signs a second output with amount zero: cmd/gui/main.go:486, cmd/gui/main.go:507. That transaction is likely nonstandard/dust-rejected even though CalcChange itself returns zero intentionally. It also unnecessarily marks the zero-valued
+        change address PENDING.
+
+  - FAIL — GUI SignP2QPKInput integration
+      - Inputs, InputIndex, txid byte order, vout, and sequence are internally consistent for the single fetched UTXO: cmd/gui/main.go:451, cmd/gui/main.go:480, cmd/gui/main.go:490.
+      - Outputs passed to the signer exactly match those serialized afterward: cmd/gui/main.go:486, cmd/gui/main.go:501.
+      - FromAddr comes from the address used in scantxoutset; ChangeAddr is wallet-selected and checked by the signer as FRESH: cmd/gui/main.go:346, cmd/gui/main.go:370, cmd/gui/main.go:395, wallet/wallet.go:612.
+      - Failure: SpentUTXOs.Script is not populated from the fetched UTXO’s ScriptPubKey. The RPC returns that field at internal/rpcclient/client.go:110, but the GUI ignores it and independently derives a script from FromAddr: cmd/gui/main.go:458, cmd/gui/main.go:483. Consequently, the wallet’s script-
+        consistency check compares two locally derived copies—not the actual fetched UTXO script: wallet/wallet.go:595.
+
+      - Failure: SpentUTXOs.Amount likewise originates from the lossy float64 conversion rather than an exact decimal/integer decoding of fetched data.
+      - Thus the signature’s committed amount and spent script are not defensively bound to the exact RPC response.
+
+  - PASS, with blocking caveat — fixed-fee accounting
+      - FixedFeeSats is 10,000 sat: internal/txbuilder/txbuilder.go:22.
+      - It is passed once to CalcChange: cmd/gui/main.go:388.
+      - The outputs are sendSats and utxoSats-sendSats-feeSats; no fee output exists and there is no second subtraction: cmd/gui/main.go:486.
+      - Therefore the intended fee is exactly 10,000 sat relative to the wallet’s computed utxoSats. Because that input amount came through float64, it is not yet safe to assert that the fee relative to the actual on-chain input is exactly 10,000 sat.
+
+  All repository tests pass, including go test ./..., but they do not cover the float RPC-to-signing path, binding against the returned ScriptPubKey, parser overflow, or exact-balance zero-output behavior. The worktree is clean.
+
+─ Worked for 1m 59s ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ 
+ 
+› Ask Codex to do anything
+ 
