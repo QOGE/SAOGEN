@@ -1,0 +1,1 @@
+~/qogecoin/src/qogecoin-cli -rpcconnect=127.0.0.1 -rpcport=18332 -rpcuser=qogecoin -rpcpassword=qP8fvsiJaaabGtVgw1F6xCUw81ya4G1MAd getrawtransaction 2a9d4577443954d69a26f4774514e847c64ab4ee80c2839902d4ae25d74c5eaa true
