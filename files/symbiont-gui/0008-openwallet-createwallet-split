@@ -1,0 +1,30 @@
+
+• Implemented and held for review. Nothing was committed or pushed.
+
+  Root cause:
+
+  - wallet.New() does successfully create a missing database when its parent directory already exists; the five-state schema stamping is not the failure.
+  - The GUI’s combined button always called wallet.New(walletDBPath(), seed). Since the database path is fixed rather than derived from the seed, an existing database was silently opened regardless of whether the user intended creation.
+  - When the canonical parent directory did not exist, bbolt could create the database file but not its parent directory, causing the genuine create-from-nothing path to fail.
+  - Existing-wallet opening also lacked seed authentication before address-pool processing.
+
+  Changes:
+
+  - Added race-safe CreateNew, using parent-directory creation and O_EXCL so an existing database is never overwritten: wallet/wallet.go:171
+  - Added OpenExisting, which refuses missing files and authenticates the seed before pool mutation: wallet/wallet.go:204
+  - Added encrypted-record seed validation using AES-GCM authentication: keystore/keystore.go:425
+  - Replaced the combined GUI control with “Open Existing Wallet” and “Create New Wallet”: cmd/gui/main.go:59
+  - Updated the CLI’s already-separate choices to use the same explicit APIs.
+  - Added tests covering successful create/open, create-again rejection, missing-wallet rejection without creating anything, and wrong-seed rejection: wallet/wallet_test.go:108
+
+  Verification:
+
+  - go test -count=1 ./... passes.
+  - go test -race -count=1 ./... passes.
+  - git diff --check passes.
+  - Only five intended files are modified; no commit or push performed.
+
+─ Worked for 6m 31s ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ 
+ 
+› Ask Codex to do anything
