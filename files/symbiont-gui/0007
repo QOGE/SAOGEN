@@ -1,0 +1,55 @@
+ All requested coverage passes, including the race detector. I made one final consistency adjustment so both transaction-signing entry points expose the same non-FRESH sentinel while reserving the new error specifically for FRESH + Reserved; I’m rerunning verification after that last diagnostic-only change.
+
+✔ You approved codex to always run commands that start with gofmt -w wallet/wallet.go
+
+• Ran gofmt -w wallet/wallet.go; go test ./...; go test -race ./keystore ./wallet ./internal/rpcclient; git diff --check; git status --short
+  └ ok      github.com/saogen/qoge-sphincs-wallet/address    (cached)
+    ?       github.com/saogen/qoge-sphincs-wallet/cmd    [no test files]
+    … +10 lines (ctrl + t to view transcript)
+     M wallet/wallet.go
+     M wallet/wallet_test.go
+
+• Updated Plan
+  └ Added all requested regression coverage, introduced stable source-state and reserved-change error sentinels, cleaned stale test terminology, and verified normal and race suites.
+    ✔ Inspect current signing fixtures, errors, and stale test terminology
+    ✔ Add lifecycle-gate, ObserveFunding reservation, and P2QPK concurrency tests
+    ✔ Distinguish reserved-change errors and rename stale tests/messages
+    ✔ Run full suite, race detector, and diff review
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Closed all identified coverage gaps.
+
+  Added regression tests for:
+
+  - SignP2QPKInput rejecting sources in FRESH, SPEND_PENDING, SPENT, and RETIRED.
+  - OnConfirmation specifically rejecting a FUNDED address without changing its state.
+  - Reserved change reaching FUNDED through ObserveFunding, with Reserved cleared.
+  - Concurrent SignP2QPKInput calls producing exactly one success and one clean rejection.
+  - Distinguishing a non-FRESH change address from a FRESH-but-reserved address.
+
+  Also added stable errors:
+
+  - ErrFromAddressNotFunded
+  - ErrChangeAddressReserved
+
+  Both transaction-signing paths now consistently use ErrChangeAddressNotFresh for lifecycle-state failures and ErrChangeAddressReserved for reservation conflicts.
+
+  Renamed stale tests, variables, comments, and assertions referencing the former PENDING/receipt-marking model.
+
+  Verification:
+
+  - go test ./... passes.
+  - go test -race ./keystore ./wallet ./internal/rpcclient passes.
+  - git diff --check passes.
+  - Only three intended files are modified:
+      - wallet/wallet.go
+      - wallet/wallet_test.go
+      - keystore/keystore_test.go
+
+  No commit or push was performed.
+
+─ Worked for 6m 47s ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ 
+ 
+› Ask Codex to do anything
