@@ -1,0 +1,32 @@
+• Design review found one material contradiction that should be resolved before extensive code.
+
+  Planned design:
+
+  - Add the five persisted states and named FundingMinConfirmations = 20.
+  - Replace MarkPaymentReceived with an automatic MarkFunded transition.
+  - On Addresses-tab Refresh, scan all addresses once, calculate confirmations as scanHeight - utxo.Height + 1, and transition qualifying FRESH addresses to FUNDED.
+  - Permit transaction signing only from FUNDED.
+  - After successful signing, transition the source FUNDED → SPEND_PENDING.
+  - Keep OnConfirmation as SPEND_PENDING → SPENT.
+  - Keep manual purge as SPENT → RETIRED.
+  - Remove the receipt field/button and update the Send dropdown to list FUNDED.
+  - Reject old databases explicitly because enum values and meanings change. No migration or mapping. The existing qoge_wallet.db must be deleted, and a new wallet created with a new seed.
+  - Update lifecycle tests, GUI wording, and documentation. No commit or push.
+
+  The open issue is change-address handling. The instruction says change addresses should move directly from FRESH to SPEND_PENDING, but SPEND_PENDING is also defined as an address whose own key has signed a spend. A change address:
+
+  - Has not signed anything.
+  - Has not exposed its public key.
+  - Must become spendable after its received change matures.
+  - Cannot safely remain FRESH, because it could be selected again before confirmation.
+
+  If it moves to SPEND_PENDING, the five-state machine has no valid route back to FUNDED; OnConfirmation would instead move it to SPENT, making its new change balance unspendable.
+
+  My recommendation is to keep the five lifecycle states but add an orthogonal persisted Reserved flag for change addresses:
+
+  Source: FUNDED → SPEND_PENDING → SPENT
+  Change: FRESH + Reserved → FUNDED after 20 confirmations
+
+  NextReceiveAddress and change selection would exclude reserved records. This preserves all five state meanings, prevents change-address reuse, and makes confirmed change spendable.
+
+  Should I proceed with that Reserved flag design, or do you intend SPEND_PENDING to have a broader meaning that permits a change address to transition backward to FUNDED after confirmation?
