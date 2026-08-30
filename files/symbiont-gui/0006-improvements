@@ -1,0 +1,52 @@
+ Updated Plan
+  └ Implemented and verified the five-state lifecycle, reserved change tracking, automatic 20-confirmation funding detection, GUI cleanup, database incompatibility guard, and focused regressions.
+    ✔ Add versioned five-state keystore and reserved-change invariants
+    ✔ Update wallet signing, funding detection API, and confirmation flow
+    ✔ Integrate scantxoutset auto-detection and remove manual GUI flow
+    ✔ Update tests and documentation
+    ✔ Run formatting, tests, race checks, and review diff
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Implemented the five-state lifecycle with reserved change-address tracking.
+
+  Key results:
+
+  - FRESH → FUNDED → SPEND_PENDING → SPENT → RETIRED
+  - Added FundingMinConfirmations = 20.
+  - Addresses automatically become FUNDED during GUI Refresh when:
+      - Balance is positive.
+      - The shallowest detected UTXO has at least 20 confirmations.
+
+  - Removed the “Mark Payment Received” field and button.
+  - Send From dropdown now lists only FUNDED addresses.
+  - Successful signing immediately moves the source to SPEND_PENDING.
+  - Source transition and change reservation occur atomically.
+  - Reserved change addresses:
+      - Remain cryptographically FRESH.
+      - Are excluded from receive/change selection.
+      - Display as FRESH/RESERVED.
+      - Become ordinary FUNDED addresses after their balance reaches 20 confirmations.
+
+  - Signing operations are serialized so concurrent attempts cannot both sign from the same source.
+  - OnConfirmation now requires SPEND_PENDING and transitions it to SPENT.
+  - Manual key purging remains SPENT → RETIRED.
+
+  Database compatibility is intentionally strict: old four-state databases are rejected with ErrIncompatibleDB. Delete the existing qoge_wallet.db and create a new wallet with a new seed. No migration or state mapping was added.
+
+  Verification completed:
+
+  - go test ./... passes.
+  - Race tests pass for keystore, wallet, and RPC balance logic.
+  - git diff --check passes.
+  - No commit or push was performed.
+
+  Ten files are modified, including the wallet, keystore, GUI, RPC balance analysis, tests, README, and project documentation.
+
+─ Worked for 29m 36s ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ 
+ 
+› Ask Codex to do anything
+ 
+  gpt-5.6-sol default · ~/symbiont-wallet
+
