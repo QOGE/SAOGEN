@@ -1,0 +1,171 @@
+ I’ll first map the existing destination path end-to-end—UI selection, address decoding, script construction, preview, and signing boundary—then verify Qogecoin’s actual mainnet prefixes and HRP from source. I’ll report the concrete UI and decoder design before making substantial changes; if destination support would require touching source signing logic, I’ll stop as requested.
+
+✔ You approved codex to always run commands that start with grep -n "func.*Classify\|WitnessVersion\|pubKeyHash\|scriptHash\|bech32_hrp" ...
+
+• Ran grep -n "func.*Classify\|WitnessVersion\|pubKeyHash\|scriptHash\|bech32_hrp" address/*.go || true; grep -rn "base58Prefixes\|bech32_hrp" /home/ion/qogecoin/src/chainparams.cpp; rg -n "sendToSelect|To address|P2QPKScript|toAddr|spendOutputs|txOutputs|Refresh Address Lists|populateSendDropdowns|previewText" cmd/gui/main.go; rg -n "func .*Address|Decode|Encode|Bech32|Base58|P2QPKScript|Script" address internal/txbuilder --glob '*.go'; sed -n '620,850p' cmd/gui/main.go; nl -ba address/address.go; nl -ba internal/txbuilder/txbuilder.go | sed -n '1,240p'; nl -ba /home/ion/qogecoin/src/chainparams.cpp | sed -n '120,175p;225,275p;320,370p'
+  └ address/address.go:86:// WitnessVersion is the SegWit witness version for P2QPK addresses.
+    address/address.go:92:const WitnessVersion = 2
+    … +1037 lines (ctrl + t to view transcript)
+       369    public:
+       370        explicit CRegTestParams(const ArgsManager& args) {
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Investigation findings before implementation:
+
+  - address/ does not have a general destination decoder. Its current decoder is deliberately P2QPK-only: it accepts witness v2/32-byte bq1z…, rejects v0 and Taproot, and has no Base58Check path.
+  - Qogecoin mainnet values from chainparams.cpp are:
+      - P2PKH version byte: 120 (0x78)
+      - P2SH version byte: 102 (0x66)
+      - SegWit HRP: bq
+
+  - Testnet differs (65, 105, HRP bqt), giving concrete mixed-network rejection cases.
+  - The Send flow currently derives the destination script only inside the confirmation callback via P2QPKScript(toAddr). SignP2QPKInput receives already-built output scripts and does not decode or constrain the recipient type. Therefore source signing and key logic need no changes.
+
+  Chosen UI design: retain “Wallet address” as the default mode with the existing FRESH dropdown, and add an explicit “External address” mode using a separate text entry that is hidden/disabled outside that mode. Preview will resolve one mode only, strictly decode the selected destination into {type, scriptPubKey}, and display both the exact address and decoded type before signing. The decoder will live in the address/transaction-output layer, not the signer, covering Qogecoin-mainnet P2PKH, P2SH, P2WPKH, P2WSH, P2TR, plus existing P2QPK. Refresh will move above both destination controls without changing its handler.
+
+✔ You approved codex to always run commands that start with cat go.mod; sed -n '1,240p' address/bech32m.go; rg -n "func CheckDecode|func ...
+
+✔ You approved codex to always run commands that start with head -20 address/address_test.go
+
+✔ You approved codex to always run commands that start with gofmt -w address/address.go
+
+• Ran 3 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The decoder boundary is now implemented independently of signing: it returns only a classified destination and canonical scriptPubKey. Existing P2QPK source signing remains untouched. Before wiring the GUI, I’m pinning the decoder with generated, checksum-valid vectors for all six output forms (five requested external types plus existing P2QPK), exact scripts, checksum tampering, and testnet rejection.
+
+✔ You approved codex to always run commands that start with gofmt -w address/address_test.go
+
+✔ You approved codex to always run commands that start with tail -180 address/address_test.go
+
+• Ran 4 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Self-review of the wired path confirms the high-stakes boundary is clean: the destination is decoded and its script frozen before UTXO lookup and before the confirmation dialog; the confirmed {address, type, script} is what the signing callback captures. Editing the external field after Preview cannot alter that pending confirmation. SignP2QPKInput itself remains unchanged and continues to validate only the source and wallet-owned change output.
+
+  I found two presentation cleanups to make before the full run: update stale Send-flow comments to describe destination modes, and include P2QPK in the external-field hint because an external address may also use Qogecoin’s new type. Then I’ll add mode-isolation tests.
+
+• Ran 3 commands · ctrl + t to view transcript
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The focused tests pass. Before the full suite, I’m doing the high-stakes source cross-check now: matching each generated script template against Qogecoin Core’s own destination decoder/script builder, and reviewing the wallet sighash/output validation to ensure arbitrary recipient scripts are signed as intended without relaxing change-address enforcement.
+
+• Ran rg -n -C 8 "PKHash|ScriptHash|WitnessV0KeyHash|WitnessV0ScriptHash|WitnessV1Taproot|GetScriptForDestination|DecodeDestination" /home/ion/qogecoin/src/key_io.cpp /home/ion/qogecoin/src/script/standard.cpp /home/ion/qogecoin/src/script/standard.h; nl -ba wallet/wallet.go | sed -n '740,855p'; rg -n "func SignatureHash|Outputs|Script" wallet --glob '*.go' | head -80; git diff --name-only; git diff -- wallet keystore signer
+  └ /home/ion/qogecoin/src/script/standard.h-14-#include <map>
+    /home/ion/qogecoin/src/script/standard.h-15-#include <string>
+    … +668 lines (ctrl + t to view transcript)
+    cmd/gui/main.go
+    cmd/gui/main_test.go
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The Qogecoin source cross-check matches every emitted script byte-for-byte:
+
+  - P2PKH: OP_DUP OP_HASH160 PUSH20 … OP_EQUALVERIFY OP_CHECKSIG
+  - P2SH: OP_HASH160 PUSH20 … OP_EQUAL
+  - v0 key/script hash: OP_0 PUSH20/32
+  - Taproot: OP_1 PUSH32
+  - P2QPK/unknown v2: OP_2 PUSH32
+
+  The signer audit also confirms recipient scripts are included generically in the sighash; only the source script and wallet-owned change script are constrained. No wallet/signing files have changed. I’m adding explicit wrong-Bech32-variant tests (v0 encoded as Bech32m and v1 encoded as Bech32), then running the complete normal and race suites.
+
+• Ran perl -0pi -e 's#\nfunc TestDecodeMainnetDestinationRejectsOtherNetworks#\nfunc TestDecodeMainnetDestinationEnforcesWitnessChecksumVariant(t *testing.T) {\n\tprogram := bytes.Repeat([]byte{0x44}, 32)\n\tconverted, err := bech32.ConvertBits(program, 8, 5, true)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\n\tv0WithBech32m, err := encodeGeneric(HRP, append([]byte{0}, converted...), bech32mConst)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\tif _, err := DecodeMainnetDestination(v0WithBech32m); err == nil {\n\t\tt.Fatal("witness v0 encoded with Bech32m was accepted")\n\t}\n\n\tv1WithBech32, err := encodeGeneric(HRP, append([]byte{1}, converted...), bech32Const)\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\tif _, err := DecodeMainnetDestination(v1WithBech32); err == nil {\n\t\tt.Fatal("witness v1 encoded with Bech32 was accepted")\n\t}\n}\n\nfunc TestDecodeMainnetDestinationRejectsOtherNetworks#' address/address_test.go
+  │ gofmt -w address/address_test.go
+  │ git diff --check
+  │ … +2 lines
+  └ ?       github.com/saogen/qoge-sphincs-wallet/cmd    [no test files]
+    ok      github.com/saogen/qoge-sphincs-wallet/address    0.023s
+    … +12 lines (ctrl + t to view transcript)
+    ok      github.com/saogen/qoge-sphincs-wallet/signer    (cached)
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    13.680s
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Both suites completed through the signing packages; I’m rerunning the race suite once more with a dedicated completion check because the prior captured output omitted the final wallet line despite returning without a displayed failure. I’m also doing the final diff/scope audit and checking Send’s minimum layout so the new explicit controls remain reachable at the existing window size.
+
+• Ran go test -race ./...; git diff --check; git status --short; git diff --stat; git diff --name-only; git diff -- wallet keystore signer internal/txbuilder; rg -n "Refresh Address Lists|Destination mode|Wallet-owned To|External mainnet|Type:" cmd/gui/main.go
+  └ ok      github.com/saogen/qoge-sphincs-wallet/address    (cached)
+    ?       github.com/saogen/qoge-sphincs-wallet/cmd    [no test files]
+    … +22 lines (ctrl + t to view transcript)
+    1034:    refreshSendBtn := widget.NewButton("Refresh Address Lists", func() {
+    1049:            widget.NewLabel("Destination mode:"),
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Implemented and held for independent review. Nothing committed or pushed.
+
+  Design and findings:
+
+  - Existing address/ supported only P2QPK witness-v2 addresses.
+  - Verified Qogecoin mainnet parameters directly from chainparams.cpp:
+      - P2PKH prefix: 120 / 0x78
+      - P2SH prefix: 102 / 0x66
+      - SegWit HRP: bq
+
+  - Testnet uses different prefixes and bqt.
+  - SignP2QPKInput remains completely unchanged. It already signs generic output scripts while independently enforcing the P2QPK source and wallet-owned change output.
+
+  Send UI:
+
+  - “Refresh Address Lists” now appears above the From and destination controls.
+  - Wallet-owned destination remains the default mode and retains the FRESH-address dropdown.
+  - “External address” is a separate, explicit mode with its own text field.
+  - The inactive destination input is hidden, preventing the two modes from being blended.
+  - External addresses receive immediate validation feedback while editing.
+  - Preview revalidates the selected destination and captures its decoded script before showing confirmation.
+  - Preview displays both:
+      - Exact destination address
+      - Decoded destination type
+
+  - Editing the external field after Preview cannot change the destination captured by the confirmation dialog.
+
+  Supported destinations:
+
+  - Legacy P2PKH
+  - Legacy P2SH
+  - P2WPKH
+  - P2WSH
+  - P2TR
+  - P2QPK, including external P2QPK addresses
+
+  Validation includes:
+
+  - Base58Check checksum and exact 20-byte legacy payload.
+  - Exact Qogecoin mainnet version bytes.
+  - Bech32/Bech32m checksum validation.
+  - BIP350 witness-version/checksum binding.
+  - Exact bq mainnet HRP.
+  - Correct program lengths for each supported witness type.
+  - Rejection of surrounding whitespace, malformed inputs, unsupported witness forms, and mixed-network addresses.
+
+  Script construction was cross-checked against Qogecoin’s GetScriptForDestination implementation for every supported type.
+
+  Tests added:
+
+  - Exact decoded type and scriptPubKey for all six destination types.
+  - Checksum-tampered rejection for every type.
+  - Wrong Bech32/Bech32m variant rejection for witness v0 and v1.
+  - Testnet Base58 and bqt SegWit rejection.
+  - Strict separation between Wallet and External UI modes.
+  - No fallback from one destination field to the other.
+
+  Verification:
+
+  - go test ./... passes.
+  - go test -race ./... passes.
+  - git diff --check passes.
+  - Modified files:
+      - address/address.go
+      - address/address_test.go
+      - cmd/gui/main.go
+      - cmd/gui/main_test.go
+
+  - No wallet, keystore, signer, or transaction-sighash code changed.
+
+  This is ready for the requested Grok Build independent review before commit.
+
+─ Worked for 8m 03s ─
