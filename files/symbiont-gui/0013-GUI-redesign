@@ -1,0 +1,109 @@
+• I’ll inspect the current post-restructure widget ownership, My Addresses layout, and tab-order/click tests first. I’ll preserve the uncommitted broadcast work and limit this change to moving the existing Receive widgets and updating tab assembly/gating tests.
+
+✔ You approved codex to always run commands that start with grep -n "Generate New Address\|addrDisplay\|copyAddrBtn\|5,000,000 QOGE\|Addr...
+
+• Ran grep -n "Generate New Address\|addrDisplay\|copyAddrBtn\|5,000,000 QOGE\|Addresses tab\|addressList\|refreshBtn\|Refresh Address" cmd/gui/main.go; grep -n "Items\[.*\]\.Text\|len(tabs\|\"Receive\"\|\"Addresses\"" cmd/gui/main_test.go; sed -n '245,390p' cmd/gui/main.go; sed -n '570,675p' cmd/gui/main.go; sed -n '1125,1185p' cmd/gui/main.go; sed -n '105,190p' cmd/gui/main_test.go; git status --short
+  └ 241:    addrDisplay := widget.NewEntry()
+    242:    addrDisplay.Disable()
+    … +402 lines (ctrl + t to view transcript)
+     M internal/rpcclient/client.go
+     M internal/rpcclient/transaction_test.go
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Current structure is confirmed:
+
+  - Receive contains exactly the four requested address-generation elements.
+  - My Addresses’ current content is Refresh, filter toggle, address list, separator, and summary.
+  - wlt remains shared at main scope.
+  - Tests explicitly assert five tabs and both old labels, and the canvas click test includes Receive.
+  - Current tab order is Wallet, Receive, Network, Addresses, Send—not the requested new order.
+
+  I’ll change the tab factory to exactly Wallet, My Addresses, Send, Network; gate only My Addresses and Send; enable those two after wallet load; and append the existing Receive widgets after the address list/summary block.
+
+✔ You approved codex to run perl -0pi -e 's/Five tabs: Wallet lifecycle, Receive address generation, Netw... this time
+
+• Ran 2 commands · ctrl + t to view transcript
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The production move is complete: Receive no longer exists, My Addresses is wallet-gated and contains the list/summary first followed by the unchanged generation/display/copy/warning widgets. Wallet and Network remain ungated; Send remains gated.
+
+  I’m updating both structural and real-canvas click tests to the exact four-tab order Wallet, My Addresses, Send, Network.
+
+✔ You approved codex to run perl -0pi -e 's#func TestMainTabsPutWalletFirstAndGateWalletDependentTabs\(t ... this time
+
+• Ran perl -0pi -e 's#func TestMainTabsPutWalletFirstAndGateWalletDependentTabs\(t \*testing\.T\) \{.*?\n\}\n\nfunc TestMainTabsHeadlessClickGating#func TestMainTabsPutWalletFirstAndGateWalletDependentTabs(t *testing.T) {\n\twalletTab := container.NewTabItem("Wallet", widget.NewLabel("wallet"))\n\taddressesTab := container.NewTabItem("My Addresses", widget.NewLabel("addresses"))\n\tsendTab := container.NewTabItem("Send", widget.NewLabel("send"))\n\tnetworkTab := container.NewTabItem("Network", widget.NewLabel("network"))\n\n\ttabs := newMainTabs(walletTab, addressesTab, sendTab, networkTab)\n\twantOrder :=
+  │ []string{"Wallet", "My Addresses", "Send", "Network"}\n\tif len(tabs.Items) != len(wantOrder) {\n\t\tt.Fatalf("tab count = %d, want %d", len(tabs.Items), len(wantOrder))\n\t}\n\tfor i, want := range wantOrder {\n\t\tif tabs.Items[i].Text != want {\n\t\t\tt.Fatalf("tab %d = %q, want %q", i, tabs.Items[i].Text, want)\n\t\t}\n\t}\n\tif walletTab.Disabled() || networkTab.Disabled() {\n\t\tt.Fatal("Wallet and Network must be available before a wallet is loaded")\n\t}\n\tfor _, item := range []*container.TabItem{addressesTab, sendTab} {\n\t\tif !item.Disabled() {\n\t\t\tt.Fatalf("%s tab enabled before wallet
+  │ load", item.Text)\n\t\t}\n\t\ttabs.EnableItem(item)\n\t\tif item.Disabled() {\n\t\t\tt.Fatalf("%s tab remained disabled after wallet load", item.Text)\n\t\t}\n\t}\n}\n\nfunc TestMainTabsHeadlessClickGating#s' cmd/gui/main_test.go
+  │ … +6 lines
+  └ ok      github.com/saogen/qoge-sphincs-wallet/cmd/gui    0.208s
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The focused GUI suite and real canvas click test pass: clicking disabled My Addresses leaves Wallet selected, while Network remains selectable before wallet load. I’m running both complete suites and a final reference/scope audit now, including confirming no Receive tab constructor or five-tab assertion remains.
+
+✔ You approved codex to always run commands that start with go test ./...; go test -race ./...; git diff --check; git status --short; git...
+
+• Ran go test ./...; go test -race ./...; git diff --check; git status --short; git diff --stat; rg -n "NewTabItem\(\"Receive\"|receiveTab|Five tabs|\"Addresses\"|\"My Addresses\"|newMainTabs|EnableItem" cmd/gui/main.go cmd/gui/main_test.go; git diff --name-only; git diff -- wallet keystore signer address internal/txbuilder
+  └ ok      github.com/saogen/qoge-sphincs-wallet/address    (cached)
+    ?       github.com/saogen/qoge-sphincs-wallet/cmd    [no test files]
+    … +36 lines (ctrl + t to view transcript)
+    internal/rpcclient/client.go
+    internal/rpcclient/transaction_test.go
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Implemented and held for review. Nothing committed or pushed.
+
+  Changes:
+
+  - Removed the Receive tab entirely.
+  - Renamed Addresses to My Addresses.
+  - Moved the existing Receive controls below the address list and summary:
+      - Generate New Address
+      - P2QPK address display
+      - Copy Address
+      - 5,000,000 QOGE concentration warning
+
+  - No widget behavior or wallet logic changed.
+
+  New tab order:
+
+  1. Wallet
+  2. My Addresses
+  3. Send
+  4. Network
+
+  Gating:
+
+  - Wallet: enabled at launch
+  - Network: enabled at launch
+  - My Addresses: disabled until wallet load
+  - Send: disabled until wallet load
+  - My Addresses and Send enable together after successful open/create.
+
+  Tests updated:
+
+  - Four-tab count and exact order.
+  - New “My Addresses” label.
+  - Wallet/Network initial availability.
+  - My Addresses/Send wallet-loaded gating.
+  - Headless Fyne canvas click test confirms:
+      - Disabled My Addresses cannot be selected.
+      - Ungated Network remains selectable.
+
+  Verification:
+
+  - go test ./... passes.
+  - go test -race ./... passes.
+  - git diff --check passes.
+  - No Receive tab constructor, receiveTab state, or five-tab assertion remains.
+  - No wallet, signing, keystore, address, or transaction-building logic changed.
+
+  The working tree also still contains the preceding reviewed Broadcast Transaction work in the GUI and RPC client; this reorganization itself only changed the GUI/tab structure and related tests.
+
+─ Worked for 2m 10s ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ 
+ 
+› Ask Codex to do anything
