@@ -1,0 +1,82 @@
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Proposed Symbiont Wallet layout: left icon sidebar, balance summary across the top, and an address ledger with colour-coded lifecycle chips.</h2>
+<div style="background: var(--surface-1); border-radius: 12px; padding: 12px;">
+<div style="display: grid; grid-template-columns: 132px minmax(0,1fr); background: var(--surface-2); border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden;">
+
+<div style="border-right: 0.5px solid var(--border); padding: 12px 8px;">
+<div style="font-size: 12px; color: var(--text-muted); padding: 0 8px 10px;">Symbiont</div>
+<div style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:var(--radius); font-size:13px; color:var(--text-secondary);"><i class="ti ti-layout-dashboard" style="font-size:16px" aria-hidden="true"></i>Overview</div>
+<div style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:var(--radius); font-size:13px; color:var(--text-secondary);"><i class="ti ti-arrow-down-circle" style="font-size:16px" aria-hidden="true"></i>Receive</div>
+<div style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:var(--radius); font-size:13px; color:var(--text-secondary);"><i class="ti ti-arrow-up-circle" style="font-size:16px" aria-hidden="true"></i>Send</div>
+<div style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:var(--radius); font-size:13px; background:var(--bg-accent); color:var(--text-accent);"><i class="ti ti-list" style="font-size:16px" aria-hidden="true"></i>Addresses</div>
+<div style="display:flex; align-items:center; gap:8px; padding:8px; border-radius:var(--radius); font-size:13px; color:var(--text-secondary);"><i class="ti ti-settings" style="font-size:16px" aria-hidden="true"></i>Settings</div>
+</div>
+
+<div style="padding: 14px 16px; min-width: 0;">
+
+<div style="display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:10px; margin-bottom:14px;">
+<div style="background:var(--surface-1); border-radius:var(--radius); padding:10px 12px;">
+<div style="font-size:11px; color:var(--text-muted);">Spendable</div>
+<div style="font-size:20px; font-weight:500; font-family:var(--font-mono);">0.5399</div>
+</div>
+<div style="background:var(--surface-1); border-radius:var(--radius); padding:10px 12px;">
+<div style="font-size:11px; color:var(--text-muted);">Pending</div>
+<div style="font-size:20px; font-weight:500; font-family:var(--font-mono); color:var(--text-secondary);">0.0000</div>
+</div>
+<div style="background:var(--surface-1); border-radius:var(--radius); padding:10px 12px;">
+<div style="font-size:11px; color:var(--text-muted);">Addresses</div>
+<div style="font-size:20px; font-weight:500; font-family:var(--font-mono); color:var(--text-secondary);">25</div>
+</div>
+</div>
+
+<div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
+<span style="font-size:11px; padding:3px 9px; border-radius:11px; background:var(--bg-accent); color:var(--text-accent);">All</span>
+<span style="font-size:11px; padding:3px 9px; border-radius:11px; border:0.5px solid var(--border); color:var(--text-secondary);">Fresh 20</span>
+<span style="font-size:11px; padding:3px 9px; border-radius:11px; border:0.5px solid var(--border); color:var(--text-secondary);">Funded 1</span>
+<span style="font-size:11px; padding:3px 9px; border-radius:11px; border:0.5px solid var(--border); color:var(--text-secondary);">Pending 0</span>
+<span style="font-size:11px; padding:3px 9px; border-radius:11px; border:0.5px solid var(--border); color:var(--text-secondary);">Spent 4</span>
+</div>
+
+<div style="border-top:0.5px solid var(--border);">
+
+<div style="display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:0.5px solid var(--border);">
+<span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); width:22px;">#4</span>
+<span style="font-size:10px; padding:2px 7px; border-radius:9px; background:var(--bg-success); color:var(--text-success); white-space:nowrap;">Funded</span>
+<span style="font-family:var(--font-mono); font-size:12px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">bq1z8v6p mj0ll0v9 … xq9v37dg</span>
+<span style="font-family:var(--font-mono); font-size:12px; font-weight:500;">0.5399</span>
+<i class="ti ti-copy" style="font-size:15px; color:var(--text-muted);" aria-hidden="true"></i>
+</div>
+
+<div style="display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:0.5px solid var(--border);">
+<span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); width:22px;">#5</span>
+<span style="font-size:10px; padding:2px 7px; border-radius:9px; background:var(--bg-accent); color:var(--text-accent); white-space:nowrap;">Fresh</span>
+<span style="font-family:var(--font-mono); font-size:12px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-secondary);">bq1z0a76 xqk4p0n6 … qcazrnr</span>
+<span style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted);">—</span>
+<i class="ti ti-copy" style="font-size:15px; color:var(--text-muted);" aria-hidden="true"></i>
+</div>
+
+<div style="display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:0.5px solid var(--border);">
+<span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); width:22px;">#3</span>
+<span style="font-size:10px; padding:2px 7px; border-radius:9px; background:var(--bg-warning); color:var(--text-warning); white-space:nowrap;">Pending</span>
+<span style="font-family:var(--font-mono); font-size:12px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-secondary);">bq1zp7j7 ry4xc843 … rf77f6</span>
+<span style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted);">1.2000</span>
+<i class="ti ti-copy" style="font-size:15px; color:var(--text-muted);" aria-hidden="true"></i>
+</div>
+
+<div style="display:flex; align-items:center; gap:10px; padding:9px 2px;">
+<span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); width:22px;">#2</span>
+<span style="font-size:10px; padding:2px 7px; border-radius:9px; border:0.5px solid var(--border); color:var(--text-muted); white-space:nowrap;">Spent</span>
+<span style="font-family:var(--font-mono); font-size:12px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted);">bq1ze34d w2wpk95g … sz6jnl0</span>
+<span style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted);">—</span>
+<i class="ti ti-copy" style="font-size:15px; color:var(--text-muted);" aria-hidden="true"></i>
+</div>
+
+</div>
+
+<div style="display:flex; align-items:center; gap:6px; margin-top:12px; padding-top:9px; border-top:0.5px solid var(--border); font-size:11px; color:var(--text-muted);">
+<i class="ti ti-circle-check" style="font-size:13px; color:var(--text-success);" aria-hidden="true"></i>
+<span>127.0.0.1:8332 · height 2,461,008 · P2QPK active</span>
+</div>
+
+</div>
+</div>
+</div>
