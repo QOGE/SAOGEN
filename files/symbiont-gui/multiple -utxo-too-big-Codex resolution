@@ -1,0 +1,147 @@
+ I’ll verify Qogecoin’s actual standardness limit from the local source, then calculate exact P2QPK transaction vsizes across input counts using the wallet’s current sizing function and compare that with a conservative threshold. I’ll report the recommended guard and whether automatic splitting belongs in this change before touching code.
+
+✔ You approved codex to always run commands that start with grep -rn
+
+• Explored
+  └ Search MAX_STANDARD_TX_WEIGHT\|MAX_STANDARD_TX_SIZE in policy.h
+    Read txbuilder.go
+
+• Explored
+  └ Read policy.cpp, txbuilder.go
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The real source confirms Qogecoin retained MAX_STANDARD_TX_WEIGHT = 400000, and policy rejects only when GetTransactionWeight(tx) > 400000, returning exactly tx-size. The wallet’s current formula also reproduces the live 58-input result exactly: 250,744 vbytes for a one-output 34-byte destination, which strongly validates the sizing model for this guard. I’m calculating the boundary and margin for both one-output Withdraw All and ordinary two-output sends now.
+
+✔ You approved codex to always run commands that start with awk "BEGIN { for (n=20;n<=24;n++) { w1=214+17289*n; w2=386+17289*n; printf \"...
+
+• Explored
+  └ Search P2QPKVirtualSize\(|PlanP2QPKWithdrawAll|prepareSpendInputs|ScanTxOutSet in main.go
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• ## Verdict
+
+  A proactive size check is straightforward and should be added before showing Preview.
+
+  Automatic splitting is feasible in principle, but is not a reasonable part of this change. It conflicts with several one-transaction assumptions in the wallet lifecycle and deserves a separate, high-stakes design.
+
+  No files were changed.
+
+  ## Real Qogecoin limit
+
+  Qogecoin defines:
+
+  static const unsigned int MAX_STANDARD_TX_WEIGHT = 400000;
+
+  IsStandardTx calculates GetTransactionWeight(tx) and returns tx-size when weight is greater than 400,000.
+
+  Therefore:
+
+  - Maximum standard weight: 400,000 WU
+  - Corresponding maximum vsize: 100,000 vbytes
+  - This is relay/mining policy, not a consensus block-validity limit.
+  - Qogecoin currently matches Bitcoin’s value, but this was confirmed directly from Qogecoin source rather than assumed.
+
+  ## Exact P2QPK input cost
+
+  The wallet’s sizing implementation uses:
+
+  - Signature: 17,088 bytes
+  - Public key: 32 bytes
+  - Witness framing: 5 bytes
+  - Total witness per input: 17,125 bytes
+  - Non-witness input: 41 bytes
+
+  The resulting weight increase is:
+
+  17,125 + (41 × 4) = 17,289 WU per input
+
+  For a one-output Withdraw All transaction with a 34-byte destination script:
+
+  weight = 214 + 17,289 × input_count
+  vsize  = ceil(weight / 4)
+
+  This exactly reproduces the real transaction:
+
+  58 inputs:
+  weight = 1,002,976 WU
+  vsize  = 250,744 vbytes
+
+  That exact match is strong evidence that the existing wallet formula describes the live rejected transaction correctly.
+
+  ## Practical ceiling
+
+   Inputs    One-output vsize    Two-output vsize    Margin below 400,000 WU
+  ━━━━━━━━  ━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━
+       21              90,821              90,864                 about 9.1%
+  ────────  ──────────────────  ──────────────────  ─────────────────────────
+       22              95,143              95,186                 about 4.8%
+  ────────  ──────────────────  ──────────────────  ─────────────────────────
+       23              99,466              99,509                 about 0.5%
+  ────────  ──────────────────  ──────────────────  ─────────────────────────
+       24             103,788             103,831              exceeds limit
+
+  The theoretical maximum is 23 inputs for every currently supported destination type, with or without P2QPK change.
+
+  However, 23 sits only about 0.5% below the policy boundary. The recommended safe maximum is therefore:
+
+  22 P2QPK inputs
+
+  That leaves approximately 4.8% weight headroom. All currently supported destination scripts are covered, including the largest 34-byte P2WSH, P2TR, and P2QPK outputs.
+
+  ## Recommended proactive guard
+
+  Add a named constant, not a magic number:
+
+  P2QPKSafeMaxInputs = 22
+
+  The check should run inside Preview immediately after:
+
+  1. scantxoutset returns.
+  2. prepareSpendInputs validates and aggregates the UTXOs.
+
+  It should run before:
+
+  - Fee planning
+  - Change-address selection
+  - Preview dialog construction
+  - Any SLH-DSA signing
+
+  For 23 or more inputs, block with a clear message such as:
+
+  > This address has too many deposits to spend in one standard transaction.
+  > 58 inputs found; the safe maximum is 22. No transaction was signed.
+
+  The message should also explain that testmempoolaccept remains the final authoritative policy check. The proactive limit is an early wallet-side guard, not a replacement for daemon validation.
+
+  I recommend combining the input-count guard with an exact calculated-vsize check. The count provides the understandable user message; the exact vsize protects against future changes to supported output shapes or serialization.
+
+  ## Why automatic splitting should be separate
+
+  Splitting 58 UTXOs would require at least three transactions. The current wallet architecture assumes one outgoing spend operation:
+
+  - One source lifecycle transition
+  - One persisted SpendTxID
+  - One optional reserved change address
+  - One Preview/signing context
+  - One mempool authorization
+  - One broadcast confirmation
+  - One outgoing-history record
+
+  Naively signing transaction one would move the source to SPEND_PENDING, preventing transactions two and three. Signing multiple transactions before transition would require a new atomic multi-transaction signing API, multiple tracked txids, coordinated broadcast behavior, failure handling when only some transactions enter the mempool, and revised confirmation/lifecycle rules.
+
+  That is substantially more complex than dividing the UTXO list into chunks. It should not be patched into this guard.
+
+  ## Recommendation
+
+  Implement the early 22-input block now, with both:
+
+  - Named safe-input limit
+  - Exact projected-vsize verification
+
+  Keep testmempoolaccept mandatory afterward.
+
+  Design automatic splitting separately. The existing safety net prevented loss, but the early guard will prevent another expensive, doomed SLH-DSA signing attempt and explain the limitation before the person reaches Preview.
+
+─ Worked for 2m 36s 
