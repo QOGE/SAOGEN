@@ -1,0 +1,186 @@
+ I’ll trace both Preview branches, the UTXO metadata available from scantxoutset, and the exact recovery authorization behavior after the first partial spend confirms. The main design question is fee-aware subset selection, because adding another P2QPK input materially increases the fee and can make “smallest first” counterproductive unless the algorithm evaluates that increment explicitly.
+
+✔ You approved codex to always run commands that start with rg -n "prepareSpendInputs|ScanTxOutSet|PlanP2QPKFee|PlanP2QPKWithdrawAll|Vali...
+
+• Ran rg -n "prepareSpendInputs|ScanTxOutSet|PlanP2QPKFee|PlanP2QPKWithdrawAll|ValidateP2QPK|Withdraw All|withdrawAll|ObserveRecoverable|StateSpent|AnalyzeFunding" cmd/gui/main.go internal/txbuilder/txbuilder.go wallet/wallet.go keystore/keystore.go internal/rpcclient/*.go
+  └ internal/rpcclient/balance.go:139:// AnalyzeFunding maps scantxoutset results to wallet addresses and computes
+    internal/rpcclient/balance.go:141:func AnalyzeFunding(result ScanResult, addrs []string) (map[string]FundingStatus, error) {
+    … +76 lines (ctrl + t to view transcript)
+    cmd/gui/main.go:1772:            withdrawAllLine, amountLabel,
+    cmd/gui/main.go:1873:            container.NewHBox(widget.NewLabel("Amount (QOGE):"), withdrawAllCheck),
+
+• Explored
+  └ Read main.go, txbuilder.go, client.go, keystore.go, wallet.go
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The confirmed scope is broader than a Send-only selector: ordinary Send always passes every scanned UTXO into prepareSpendInputs, and the size guard runs only afterward. More importantly, the current recovery signer requires the submitted recovery outpoints to equal the entire persisted recoverable set exactly. Therefore an 83-UTXO source reduced by 22 would leave 61 UTXOs that Recover from Spent can detect—but it still could not sign a 22-input subset. The recovery lifecycle can remain unchanged, but its authorization check must be narrowed from “exact full-set equality” to “exact authorized subset” for batched recovery to work.
+
+• Ran nl -ba cmd/gui/main.go | sed -n '326,375p;1685,1712p'; nl -ba wallet/wallet.go | sed -n '825,880p'; nl -ba keystore/keystore.go | sed -n '451,490p'; git status --short
+  └    326    func prepareSpendInputs(unspents []rpcclient.ScanUnspent) (preparedSpendInputs, error) {
+       327        if len(unspents) == 0 {
+    … +170 lines (ctrl + t to view transcript)
+       489            if change != nil {
+       490                change.Reserved = true
+
+• Context compacted · 53s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• ## Verdict
+
+  This is feasible, but it is a general coin-selection change—not a Withdraw-All-specific patch.
+
+  The current Send flow always aggregates every UTXO belonging to the selected source address. Therefore, an 83-UTXO address produces an 83-input candidate transaction even when sending only 0.001 QOGE, and the 22-input safety guard correctly blocks it.
+
+  No code was changed during this investigation.
+
+  ## What the current code does
+
+  The GUI currently:
+
+  1. Calls scantxoutset for the selected source.
+  2. Passes the complete Unspents collection to prepareSpendInputs.
+  3. prepareSpendInputs sorts and converts every UTXO into transaction and signing inputs while summing their full value.
+  4. Only afterward does the standard-size check reject input counts above P2QPKSafeMaxInputs.
+
+  There is no coin-selection step based on the requested amount.
+
+  The existing fee planner is already suitable for selection:
+
+  - PlanP2QPKFee calculates the exact fee for a given input count, destination script, and optional change output.
+  - PlanP2QPKWithdrawAll calculates the one-output/no-change shape.
+  - Consequently, selection can repeatedly test candidate input sets using the real projected vsize and Core-compatible fee calculation.
+
+  ## Recommended selection algorithm
+
+  ### Ordinary sends: largest-value-first
+
+  Sort candidates by:
+
+  1. Value descending.
+  2. Confirmation depth descending—older UTXOs first when values match.
+  3. Transaction ID lexicographically.
+  4. Output index ascending.
+
+  Then add candidates one at a time, up to 22. After each addition, call PlanP2QPKFee with the accumulated value, actual destination script, requested amount, fee rate, and current input count. Stop at the first candidate set that covers the amount plus its real calculated fee.
+
+  Largest-first is preferable to smallest-first for ordinary payments because every P2QPK input adds roughly 4,300 vbytes and another SLH-DSA signature. At the default fee rate, small inputs can consume transaction capacity and add more fee than they contribute. Largest-first minimizes:
+
+  - Number of signatures.
+  - Transaction size.
+  - Fee.
+  - Likelihood of hitting the 22-input ceiling.
+
+  If the largest 22 UTXOs cannot cover the requested amount plus fee, no other set of at most 22 can. The GUI should then return a clear error explaining that the amount is too large for one standard transaction.
+
+  A separate “consolidate small UTXOs” strategy could be useful later, but should not be the default payment algorithm.
+
+  ### Maximum withdrawal
+
+  Select the largest min(total UTXOs, 22) using the same deterministic ordering, then call PlanP2QPKWithdrawAll using only that selected value.
+
+  For 22 or fewer UTXOs, this spends everything. For more than 22, it sends the maximum practical value available in one standard transaction while leaving the remainder behind.
+
+  ## Recommended label
+
+  Replace “Withdraw All” with:
+
+  > Withdraw maximum possible (up to 22 UTXOs)
+
+  Adjacent helper text:
+
+  > Uses every UTXO when the address has 22 or fewer. If it has more, this pass spends the 22 highest-value UTXOs; the remainder becomes recoverable after confirmation.
+
+  “Consolidate & Withdraw” is less precise because the destination may be external and the transaction is not necessarily a consolidation.
+
+  ## Preview requirements
+
+  Preview should always show:
+
+  - Total UTXOs found.
+  - UTXOs selected for this transaction.
+  - UTXOs left behind.
+  - Total selected input value.
+  - Total unselected value.
+  - Every selected txid/vout/amount.
+  - Projected vsize.
+  - Calculated fee.
+  - Destination amount.
+  - Change amount or none.
+
+  When inputs are left behind, add a prominent warning such as:
+
+  > PARTIAL SOURCE SPEND: 61 UTXOs totaling X QOGE are not included. After this transaction confirms, the source becomes SPENT and the remaining balance must be handled through Recover from Spent.
+
+  For maximum withdrawal specifically:
+
+  > This is the maximum withdrawal for this pass, not a complete withdrawal of the address.
+
+  Selection and fee results should be frozen when Preview opens, just like the existing destination and amount information.
+
+  ## Recover from Spent interaction
+
+  There is one important finding: the handoff does not work completely unchanged.
+
+  The lifecycle portion already works conceptually:
+
+  1. A subset of up to 22 inputs is spent.
+  2. The source eventually transitions to SPENT.
+  3. Unselected UTXOs remain on that address.
+  4. Refresh detects them as recoverable after the existing confirmation threshold.
+
+  However, the current recovery-signing API requires the submitted recovery outpoints to equal the entire persisted recoverable set exactly. If 61 UTXOs remain, selecting only 22 for recovery would fail that equality check. Aggregating all 61 would still fail the size guard.
+
+  Therefore, staged recovery requires a narrow authorization adjustment:
+
+  - Accept a nonempty, duplicate-free subset of the persisted authorized outpoints.
+  - Require every submitted txid:vout:amount to match an entry in that authorized set exactly.
+  - Reject foreign, mutated, or duplicate inputs.
+  - Persist the pending lock for only the selected subset.
+  - Once that selected subset leaves the UTXO set, Refresh can re-arm recovery for the remaining balance.
+
+  The dedicated recovery signer remains separate, and ordinary SignP2QPKInputs remains strictly FUNDED-only.
+
+  ## Implementation shape
+
+  I recommend putting selection in a pure, independently-tested helper rather than embedding it in GUI code, with conceptually separate entry points:
+
+  - SelectP2QPKForAmount(...)
+  - SelectP2QPKMaximum(...)
+
+  The resulting flow would be:
+
+  1. Scan and validate all UTXOs.
+  2. Deterministically select a subset.
+  3. Convert only that subset with prepareSpendInputs.
+  4. Calculate the exact fee.
+  5. Freeze and display Preview.
+  6. Sign through the existing batch signer.
+  7. Retain the signer’s internal input-count/vsize guard.
+  8. Retain testmempoolaccept as the final authoritative check.
+
+  Automatic splitting into several transactions is not recommended. Partial broadcast failures and lifecycle transitions make that substantially more complex. One deliberate transaction per pass, followed by explicit recovery after confirmation, is safer and easier to understand.
+
+  ## Required future tests
+
+  The implementation should cover:
+
+  - A tiny payment from an 83-UTXO address selecting only enough inputs.
+  - Deterministic largest-first ordering and tie-breaking.
+  - Fee-aware selection continuing when value covers the nominal amount but not its fee.
+  - Clear rejection when the largest 22 cannot cover amount plus fee.
+  - Maximum withdrawal with 22 or fewer inputs selecting all.
+  - Maximum withdrawal with more than 22 selecting exactly 22 and reporting leftovers.
+  - Selection with 2, 3+, and 83 UTXOs.
+  - Frozen Preview selection despite later GUI changes.
+  - Existing signer-level rejection of 23+ inputs.
+  - Valid recovery subsets accepted.
+  - Foreign, changed, duplicate, or unauthorized recovery inputs rejected.
+  - Selected recovery inputs locked against replay.
+  - Remaining recovery inputs re-armed after the pending subset disappears.
+  - Concurrent recovery attempts allowing exactly one success.
+
+  Because this changes input choice, fee calculation inputs, and recovery authorization, it should receive the same independent review tier as the original multi-UTXO and Recover-from-Spent work.
+
+─ Worked for 3m 08s
