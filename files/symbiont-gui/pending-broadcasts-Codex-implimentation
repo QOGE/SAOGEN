@@ -1,0 +1,592 @@
+I’ll move serialization into the signing call before its bbolt commit, then add the pending record to that same transaction for both normal spends and recovery. After that I’ll wire the tab and all three broadcast paths, test the atomicity and staleness cases, and hold the changes for review without committing.
+
+✔ You approved codex to always run commands that start with git status --short; rg -n 'signedTxHex|recoverySignedHex|MarkSpendPendingAndR...
+
+• Ran git status --short; rg -n 'signedTxHex|recoverySignedHex|MarkSpendPendingAndReserveChange|MarkRecoveryPendingAndReserveChange|SerializeBIP144|type P2QPKSpendParams|type signedBroadcastContext|func broadcastAndRecord|type RawTransactionInfo' cmd/gui/main.go wallet/wallet.go keystore/keystore.go internal/txbuilder/txbuilder.go internal/rpcclient/*.go
+  └ internal/txbuilder/txbuilder.go:217:// SerializeBIP144 encodes tx in Bitcoin BIP144 extended serialization format:
+    internal/txbuilder/txbuilder.go:222:func SerializeBIP144(tx SignedP2QPKTx) ([]byte, error) {
+    … +41 lines (ctrl + t to view transcript)
+    wallet/wallet.go:954:        if err := w.index.MarkRecoveryPendingAndReserveChange(params.FromAddr, params.ChangeAddr, spendTxID, recoveryOutpoints); err != nil {
+    wallet/wallet.go:957:    } else if err := w.index.MarkSpendPendingAndReserveChange(params.FromAddr, params.ChangeAddr, spendTxID); err != nil {
+
+• Explored
+  └ Read wallet.go, main.go, client.go, keystore.go
+    Search func .*TxID|writeCompact|writeLE32|SignedP2QPKTx in txbuilder.go
+    Read wallet.go
+    Read wallet.go
+    Read wallet.go
+    Read keystore.go
+    Read keystore.go
+
+✔ You approved codex to run git apply <<'PATCH' ... this time
+
+• Ran git apply <<'PATCH'
+  │ *** Begin Patch
+  │ *** Update File: keystore/keystore.go
+  │ … +5 lines
+  └ error: No valid patches in input (allow with "--allow-empty")
+
+• Explored
+  └ Search signP2QPKInputs\( in wallet
+
+✔ You approved codex to run git apply <<'PATCH' ... this time
+
+• Ran git apply <<'PATCH'
+  │ diff --git a/keystore/keystore.go b/keystore/keystore.go
+  │ --- a/keystore/keystore.go
+  │ … +5 lines
+  └ error: patch failed: keystore/keystore.go:147
+    error: keystore/keystore.go: patch does not apply
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The current boundary is confirmed: both GUI paths serialize only after the wallet has committed the signing lock, so merely saving the GUI’s hex afterward would leave the crash window open. I’m moving serialization before that commit and attaching a pending record to the existing atomic keystore transition. I also confirmed the recovery path needs the same treatment, despite using a different pending-state mechanism.
+
+✔ You approved codex to run ed -s keystore/pending.go <<'ED' ... this time
+
+• Ran ed -s keystore/pending.go <<'ED'
+  │ a
+  │ package keystore
+  │ … +75 lines
+  └ keystore/pending.go: No such file or directory
+
+✔ You approved codex to always run commands that start with ls keystore/pending.go
+
+• Ran git status --short; rg -n 'bucketPendingBroadcasts' keystore/keystore.go; ls keystore/pending.go
+  └  M keystore/keystore.go
+    ?? keystore/pending.go
+    147:        for _, bkt := range [][]byte{bucketAddresses, bucketMeta, bucketTransactions, bucketPendingBroadcasts} {
+    keystore/pending.go
+
+• Explored
+  └ Read keystore.go
+
+✔ You approved codex to run ed -s keystore/pending.go <<'ED' ... this time
+
+• Ran ed -s keystore/pending.go <<'ED'
+  │ /^func (ki \*KeyIndex) ListPendingBroadcasts/i
+  │ func putPendingForTransition(tx *bolt.Tx, txid, source, kind string, pending []PendingBroadcast) error {
+  │ … +29 lines
+  └ ok      github.com/saogen/qoge-sphincs-wallet/keystore    0.751s
+
+✔ You approved codex to run ed -s internal/txbuilder/txbuilder.go <<'ED' ... this time
+
+• Ran ed -s internal/txbuilder/txbuilder.go <<'ED'
+  │ /^\t"encoding\/binary"/a
+  │ 	"crypto/sha256"
+  │ … +37 lines
+  └ # github.com/saogen/qoge-sphincs-wallet/internal/txbuilder [github.com/saogen/qoge-sphincs-wallet/internal/txbuilder.test]
+    internal/txbuilder/txbuilder.go:307:11: undefined: sha256
+    internal/txbuilder/txbuilder.go:308:12: undefined: sha256
+    FAIL    github.com/saogen/qoge-sphincs-wallet/internal/txbuilder [build failed]
+    FAIL
+
+• Explored
+  └ Read txbuilder.go
+    Search TxIDFromSigned in txbuilder.go
+
+✔ You approved codex to run ed -s internal/txbuilder/txbuilder.go <<'ED' ... this time
+
+• Ran ed -s internal/txbuilder/txbuilder.go <<'ED'
+  │ /^\t"bytes"$/a
+  │ 	"crypto/sha256"
+  │ … +6 lines
+  └ # github.com/saogen/qoge-sphincs-wallet/internal/txbuilder [github.com/saogen/qoge-sphincs-wallet/internal/txbuilder.test]
+    internal/txbuilder/txbuilder.go:307:11: undefined: sha256
+    internal/txbuilder/txbuilder.go:308:12: undefined: sha256
+    FAIL    github.com/saogen/qoge-sphincs-wallet/internal/txbuilder [build failed]
+    FAIL
+
+• Explored
+  └ Read txbuilder.go
+
+✔ You approved codex to run ed -s internal/txbuilder/txbuilder.go <<'ED' ... this time
+
+• Ran ed -s internal/txbuilder/txbuilder.go <<'ED'
+  │ 9a
+  │ 	"crypto/sha256"
+  │ … +6 lines
+  └ ok      github.com/saogen/qoge-sphincs-wallet/internal/txbuilder    0.004s
+
+• Explored
+  └ Read wallet.go
+
+✔ You approved codex to run perl -0pi -e 's/"sync"\n/"sync"\n\t"time"\n/; s/return w\.signP2QPKInputs\(pa... this time
+
+• Ran perl -0pi -e 's/"sync"\n/"sync"\n\t"time"\n/; s/return w\.signP2QPKInputs\(params, false\)/return w.signP2QPKInputs(params, false, nil, nil)/; s/return w\.signP2QPKInputs\(params, true\)/return w.signP2QPKInputs(params, true, nil, nil)/; s/func \(w \*Wallet\) signP2QPKInputs\(params P2QPKSpendParams, recovery bool\)/func (w *Wallet) signP2QPKInputs(params P2QPKSpendParams, recovery bool, details *PendingBroadcastDetails, rawOut *[]byte)/' wallet/wallet.go
+  │ ed -s wallet/wallet.go <<'ED'
+  │ /^\/\/ signP2QPKInputs signs/i
+  │ … +35 lines
+  └ # github.com/saogen/qoge-sphincs-wallet/wallet [github.com/saogen/qoge-sphincs-wallet/wallet.test]
+    wallet/wallet.go:37:2: "time" imported and not used
+    FAIL    github.com/saogen/qoge-sphincs-wallet/wallet [build failed]
+    FAIL
+
+• Explored
+  └ Read wallet.go
+
+✔ You approved codex to run ed -s wallet/wallet.go <<'ED' ... this time
+
+• Ran ed -s wallet/wallet.go <<'ED'
+  │ 982,991c
+  │ 	// Construct the final BIP144 bytes before any lifecycle or recovery-lock
+  │ … +72 lines
+  └ --- FAIL: TestRecoveryCanRearmForLaterIndependentDeposit (0.28s)
+        wallet_test.go:2080: wallet: outputs exceed inputs
+    … +7 lines (ctrl + t to view transcript)
+    FAIL    github.com/saogen/qoge-sphincs-wallet/wallet    20.598s
+    FAIL
+
+• Explored
+  └ Search totalOutput > totalInput|metadata := PendingBroadcastDetails|FeeSats != metadata in wallet.go
+    Read wallet.go
+
+✔ You approved codex to run ed -s wallet/wallet.go <<'ED' ... this time
+
+• Ran ed -s wallet/wallet.go <<'ED'
+  │ 1017,1021c
+  │ 	feeSats := int64(0)
+  │ … +14 lines
+  └ ok      github.com/saogen/qoge-sphincs-wallet/wallet    20.415s
+
+• Explored
+  └ Read main.go
+
+✔ You approved codex to run ed -s cmd/gui/main.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main.go <<'ED'
+  │ 1886,1904c
+  │ 			raw, err := wlt.SignAndStoreP2QPKInputs(params, wallet.PendingBroadcastDetails{Destination: toAddr, DestinationType: string(toDestination.Type), AmountSats: sendSats, FeeSats: amounts.FeeSats})
+  │ … +18 lines
+  └ 1781:        txOutputs := []txbuilder.TxOutput{{Amount: sendSats, Script: toScript}}
+    1798:            txOutputs = append(txOutputs, txbuilder.TxOutput{Amount: amounts.ChangeSats, Script: changeScript})
+
+✔ You approved codex to run ed -s cmd/gui/main.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main.go <<'ED'
+  │ 1798d
+  │ 1781d
+  │ … +5 lines
+  └ ok      github.com/saogen/qoge-sphincs-wallet/cmd/gui    0.443s
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    (cached)
+    ok      github.com/saogen/qoge-sphincs-wallet/keystore    (cached)
+
+✔ You approved codex to run ed -s cmd/gui/main.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main.go <<'ED'
+  │ /^func newMainTabs/i
+  │ // broadcastAndSettlePending treats a successful RPC send as irreversible:
+  │ … +14 lines
+  └ 463:func broadcastAndRecord(send func() (string, error), record func(string) error) (txid string, historyErr error, err error) {
+    1332:            txid, historyErr, err := broadcastAndRecord(
+    1582:            txid, historyErr, err := broadcastAndRecord(
+
+• Explored
+  └ Read main.go
+
+✔ You approved codex to run ed -s cmd/gui/main.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main.go <<'ED'
+  │ 1582s/txid, historyErr, err := broadcastAndRecord(/txid, historyErr, clearErr, err := broadcastAndSettlePending(/
+  │ 1587i
+  │ … +10 lines
+  └ 471:// broadcastAndSettlePending treats a successful RPC send as irreversible:
+    473:func broadcastAndSettlePending(send func() (string, error), record func(string) error, clear func(string) error) (string, error, error, error) {
+    … +2 lines (ctrl + t to view transcript)
+    1332:            txid, historyErr, clearErr, err := broadcastAndSettlePending(
+    1583:            txid, historyErr, clearErr, err := broadcastAndSettlePending(
+
+• Explored
+  └ Read main.go
+
+✔ You approved codex to run ed -s cmd/gui/main.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main.go <<'ED'
+  │ 1602a
+  │ 			if clearErr != nil { sendStatusLabel.SetText(sendStatusLabel.Text + fmt.Sprintf("\nWARNING: pending-broadcast cleanup failed: %v", clearErr)) }
+  │ … +14 lines
+  └ FAIL    github.com/saogen/qoge-sphincs-wallet/cmd/gui [build failed]
+    # github.com/saogen/qoge-sphincs-wallet/cmd/gui [github.com/saogen/qoge-sphincs-wallet/cmd/gui.test]
+    … +3 lines (ctrl + t to view transcript)
+    cmd/gui/main.go:1615:5: undefined: renderPending
+    FAIL
+
+• Explored
+  └ Search var renderTransactions|renderPending in main.go
+    Read main.go
+
+✔ You approved codex to run ed -s cmd/gui/main.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main.go <<'ED'
+  │ 585a
+  │ 	var renderPending func()
+  │ … +6 lines
+  └ ok      github.com/saogen/qoge-sphincs-wallet/cmd/gui    0.257s
+
+✔ You approved codex to always run commands that start with head -70
+
+• Explored
+  └ Search refreshAddresses|refresh.*Address|ObserveRecoverableBalance|scan.*Confirmations|FundingMinConfirmations in main.go
+    Read main.go
+    Read wallet.go
+    Search newMainTabs\(|len\(tabs.Items\)|Items\[[0-9]\]|"Transactions"|"Recover from Spent" in main_test.go
+    Read main.go
+    Read main.go
+    Read main.go
+
+✔ You approved codex to run ed -s cmd/gui/main.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main.go <<'ED'
+  │ /^func newMainTabs/i
+  │ // inspectPendingBroadcast distinguishes unknown, unrelayed, mempool, and
+  │ … +17 lines
+  └ ok      github.com/saogen/qoge-sphincs-wallet/cmd/gui    0.266s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The atomic signing path is in place: the wallet now serializes the final transaction and checks its txid before the keystore transaction persists the raw hex with the source state and any change reservation. Both existing GUI sign flows now use that path; the old post-commit GUI serialization blocks are gone. I’m wiring the dedicated tab and its chain-status checks next.
+
+• Explored
+  └ Search Recover from Spent tab|var addressesTab|newMainTabs\(|pages :=|sidebarNavigation :=|selectPage :=|tabs.EnableItem\(transactionsTab\) in main.go
+
+✔ You approved codex to run ed -s cmd/gui/main.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main.go <<'ED'
+  │ 1267i
+  │ 	// ── Pending Broadcasts tab ──────────────────────────────────────────────
+  │ … +110 lines
+  └ (no output)
+
+• Ran perl -0pi -e 's/func newMainTabs\(walletTab, addressesTab, transactionsTab, recoveryTab, sendTab, networkTab \*container\.TabItem\)/func newMainTabs(walletTab, addressesTab, transactionsTab, pendingTab, recoveryTab, sendTab, networkTab *container.TabItem)/; s/container\.NewAppTabs\(walletTab, addressesTab, transactionsTab, recoveryTab, sendTab, networkTab\)/container.NewAppTabs(walletTab, addressesTab, transactionsTab, pendingTab, recoveryTab, sendTab, networkTab)/; s/tabs\.DisableItem\(transactionsTab\)\n/tabs.DisableItem(transactionsTab)\n\ttabs.DisableItem(pendingTab)\n/; s/var addressesTab, transactionsTab, recoveryTab, sendTab \*container\.TabItem/var addressesTab, transactionsTab, pendingTab, recoveryTab, sendTab *container.TabItem/; s/var addressesNavBtn, transactionsNavBtn, recoveryNavBtn, sendNavBtn \*widget\.Button/var addressesNavBtn, transactionsNavBtn, pendingNavBtn, recoveryNavBtn, sendNavBtn
+  │ *widget.Button/; s/tabs\.EnableItem\(transactionsTab\)\n/tabs.EnableItem(transactionsTab)\n\t\t\ttabs.EnableItem(pendingTab)\n/; s/if transactionsNavBtn != nil \{\n\t\t\ttransactionsNavBtn\.Enable\(\)\n\t\t\}/if transactionsNavBtn != nil {\n\t\t\ttransactionsNavBtn.Enable()\n\t\t}\n\t\tif pendingNavBtn != nil { pendingNavBtn.Enable() }/; s/newMainTabs\(walletTab, addressesTab, transactionsTab, recoveryTab, sendTab, networkTab\)/newMainTabs(walletTab, addressesTab, transactionsTab, pendingTab, recoveryTab, sendTab, networkTab)/; s/transactionsNavBtn = widget.NewButtonWithIcon\("Transactions", theme.HistoryIcon\(\), nil\)/transactionsNavBtn = widget.NewButtonWithIcon("Transactions", theme.HistoryIcon(), nil)\n\tpendingNavBtn = widget.NewButtonWithIcon("Pending Broadcasts", theme.WarningIcon(), nil)/; s/\[\]\*widget.Button\{walletNavBtn, addressesNavBtn, transactionsNavBtn, recoveryNavBtn, sendNavBtn,
+  │ networkNavBtn\}/[]*widget.Button{walletNavBtn, addressesNavBtn, transactionsNavBtn, pendingNavBtn, recoveryNavBtn, sendNavBtn, networkNavBtn}/; s/transactionsNavBtn\.Disable\(\)\n/transactionsNavBtn.Disable()\n\tpendingNavBtn.Disable()\n/; s/\[\]\*container.TabItem\{walletTab, addressesTab, transactionsTab, recoveryTab, sendTab, networkTab\}/[]*container.TabItem{walletTab, addressesTab, transactionsTab, pendingTab, recoveryTab, sendTab, networkTab}/g; s/container\.NewStack\(walletTab.Content, addressesTab.Content, transactionsTab.Content, recoveryTab.Content, sendTab.Content, networkTab.Content\)/container.NewStack(walletTab.Content, addressesTab.Content, transactionsTab.Content, pendingTab.Content, recoveryTab.Content, sendTab.Content, networkTab.Content)/; s/transactionsNavBtn.OnTapped = func\(\) \{ selectPage\(transactionsTab, transactionsNavBtn\) \}/transactionsNavBtn.OnTapped = func()
+  │ … +3 lines
+  └ # github.com/saogen/qoge-sphincs-wallet/cmd/gui [github.com/saogen/qoge-sphincs-wallet/cmd/gui.test]
+    cmd/gui/main_test.go:391:86: not enough arguments in call to newMainTabs
+    … +5 lines (ctrl + t to view transcript)
+    FAIL    github.com/saogen/qoge-sphincs-wallet/cmd/gui [build failed]
+    FAIL
+
+✔ You approved codex to always run commands that start with tail -30
+
+• Explored
+  └ Read main_test.go
+    Search pendingTab|pendingNavBtn|newMainTabs\( in main.go
+
+• Ran perl -0pi -e 's/transactionsTab := container.NewTabItem\("Transactions", widget.NewLabel\("transactions"\)\)\n/transactionsTab := container.NewTabItem("Transactions", widget.NewLabel("transactions"))\n\tpendingTab := container.NewTabItem("Pending Broadcasts", widget.NewLabel("pending"))\n/g; s/newMainTabs\(walletTab, addressesTab, transactionsTab, recoveryTab, sendTab, networkTab\)/newMainTabs(walletTab, addressesTab, transactionsTab, pendingTab, recoveryTab, sendTab, networkTab)/g; s/\{"Wallet", "My Addresses", "Transactions", "Recover from Spent", "Send", "Network"\}/\{"Wallet", "My Addresses", "Transactions", "Pending Broadcasts", "Recover from Spent", "Send", "Network"\}/; s/\[\]\*container.TabItem\{addressesTab, transactionsTab, recoveryTab, sendTab\}/[]*container.TabItem{addressesTab, transactionsTab, pendingTab, recoveryTab, sendTab}/; s/fyne.NewPos\(560, 10\)/fyne.NewPos(780, 10)/' cmd/gui/
+  │ main_test.go
+  │ gofmt -w cmd/gui/main_test.go
+  │ … +1 lines
+  └ 2026/09/16 22:43:56 Fyne error:  Error parsing user locale C
+    2026/09/16 22:43:56   Cause: language: tag is not well-formed
+    … +4 lines (ctrl + t to view transcript)
+    FAIL    github.com/saogen/qoge-sphincs-wallet/cmd/gui    0.266s
+    FAIL
+
+✔ You approved codex to always run commands that start with sed -i 's/fyne.NewPos(780, 10)/fyne.NewPos(1100, 10)/' cmd/gui/main_test.go
+
+• Ran sed -i 's/fyne.NewPos(780, 10)/fyne.NewPos(1100, 10)/' cmd/gui/main_test.go
+  │ go test ./cmd/gui -run TestMainTabsHeadlessClickGating -count=1 -v
+  └ 2026/09/16 22:44:15 Fyne error:  Error parsing user locale C
+    2026/09/16 22:44:15   Cause: language: tag is not well-formed
+    … +5 lines (ctrl + t to view transcript)
+    FAIL    github.com/saogen/qoge-sphincs-wallet/cmd/gui    0.144s
+    FAIL
+
+✔ You approved codex to always run commands that start with sed -i 's/fyne.NewPos(1100, 10)/fyne.NewPos(680, 10)/' cmd/gui/main_test.go
+
+• Ran sed -i 's/fyne.NewPos(1100, 10)/fyne.NewPos(680, 10)/' cmd/gui/main_test.go
+  │ go test ./cmd/gui -run TestMainTabsHeadlessClickGating -count=1 -v
+  └ 2026/09/16 22:44:37 Fyne error:  Error parsing user locale C
+    2026/09/16 22:44:37   Cause: language: tag is not well-formed
+    … +3 lines (ctrl + t to view transcript)
+    PASS
+    ok      github.com/saogen/qoge-sphincs-wallet/cmd/gui    0.202s
+
+• Explored
+  └ Read txbuilder.go
+
+✔ You approved codex to run ed -s internal/txbuilder/txbuilder.go <<'ED' ... this time
+
+• Ran ed -s internal/txbuilder/txbuilder.go <<'ED'
+  │ 283,314c
+  │ // TxIDFromBIP144 parses the actual signed bytes and hashes only their
+  │ … +69 lines
+  └ ok      github.com/saogen/qoge-sphincs-wallet/internal/txbuilder    0.005s
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    19.845s
+
+• Explored
+  └ Search skip\(length \+ 4\) in txbuilder.go
+    Read txbuilder.go
+    Read txbuilder.go
+
+✔ You approved codex to run ed -s internal/txbuilder/txbuilder.go <<'ED' ... this time
+
+• Ran ed -s internal/txbuilder/txbuilder.go <<'ED'
+  │ 342,344c
+  │ 		if err := skip(length); err != nil { return "", err }
+  │ … +6 lines
+  └ (no output)
+
+• Explored
+  └ Search func makeMultiInputSpendParams|func newTestWallet|func testFundAddress in wallet_test.go
+    Read wallet_test.go
+    Read main_test.go
+    Search func TestBroadcastAndRecord in main_test.go
+    Read wallet_test.go, main_test.go, keystore.go
+
+✔ You approved codex to run ed -s wallet/wallet_test.go <<'ED' ... this time
+
+• Ran ed -s wallet/wallet_test.go <<'ED'
+  │ $a
+  │
+  │ … +43 lines
+  └ === RUN   TestSignAndStorePendingBroadcastsAreAtomicAndIndependent
+    --- PASS: TestSignAndStorePendingBroadcastsAreAtomicAndIndependent (0.41s)
+    … +2 lines (ctrl + t to view transcript)
+    PASS
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    0.773s
+
+✔ You approved codex to run ed -s cmd/gui/main_test.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main_test.go <<'ED'
+  │ $a
+  │
+  │ … +51 lines
+  └ 2026/09/16 22:48:17 Fyne error:  Error parsing user locale C
+    2026/09/16 22:48:17   Cause: language: tag is not well-formed
+    … +19 lines (ctrl + t to view transcript)
+    PASS
+    ok      github.com/saogen/qoge-sphincs-wallet/cmd/gui    0.187s
+
+✔ You approved codex to run ed -s wallet/wallet_test.go <<'ED' ... this time
+
+• Ran ed -s wallet/wallet_test.go <<'ED'
+  │ $a
+  │
+  │ … +25 lines
+  └ === RUN   TestSignAndStorePendingBroadcastsAreAtomicAndIndependent
+    --- PASS: TestSignAndStorePendingBroadcastsAreAtomicAndIndependent (0.50s)
+    … +4 lines (ctrl + t to view transcript)
+    PASS
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    1.194s
+
+✔ You approved codex to run ed -s wallet/wallet_test.go <<'ED' ... this time
+
+• Ran ed -s wallet/wallet_test.go <<'ED'
+  │ $a
+  │
+  │ … +26 lines
+  └ === RUN   TestPendingBroadcastSurvivesWalletRestart
+    --- PASS: TestPendingBroadcastSurvivesWalletRestart (0.32s)
+    PASS
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    0.341s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The focused tests now cover the failure that matters most: a real bbolt conflict after signing and serialization rolls back the source transition, and a separate close/reopen test recovers the exact signed hex from the wallet database. The tab has distinct not-found, unconfirmed, confirmed, and lookup-error behavior. I’m reviewing the full diff for mismatches between those paths and the existing GUI now.
+
+• Ran git diff --check; git status --short; git diff --stat; git diff -- cmd/gui/main.go wallet/wallet.go keystore/keystore.go internal/txbuilder/txbuilder.go; sed -n '220,270p' keystore/pending.go
+  └  M cmd/gui/main.go
+     M cmd/gui/main_test.go
+    … +739 lines (ctrl + t to view transcript)
+     }
+
+
+• Explored
+  └ Read keystore.go
+
+✔ You approved codex to run ed -s keystore/keystore.go <<'ED' ... this time
+
+• Ran ed -s keystore/keystore.go <<'ED'
+  │ 483,485d
+  │ 489i
+  │ … +9 lines
+  └    478                change, changeKey, err = findRecord(tx, changeAddr)
+       479                if err != nil {
+    … +13 lines (ctrl + t to view transcript)
+       493                    remaining = append(remaining, outpoint)
+       494                }
+
+✔ You approved codex to run ed -s keystore/keystore.go <<'ED' ... this time
+
+• Ran ed -s keystore/keystore.go <<'ED'
+  │ 489,491d
+  │ 486i
+  │ … +9 lines
+  └    482                if change.State != StateFresh || change.Reserved {
+       483                    return ErrAddressNotFresh
+    … +13 lines (ctrl + t to view transcript)
+       497            from.HasRecoverableBalance = len(remaining) > 0
+       498            from.RecoveryPendingOutpoints = append([]RecoveryOutpoint(nil), outpoints...)
+
+✔ You approved codex to run ed -s wallet/wallet_test.go <<'ED' ... this time
+
+• Running ed -s wallet/wallet_test.go <<'ED'
+  │ $a
+  │
+  │ … +19 lines
+
+⚠ Heads up, you have less than 50% of your 5h limit left. Run /status for a breakdown.
+
+• Ran ed -s wallet/wallet_test.go <<'ED'
+  │ $a
+  │
+  │ … +19 lines
+  └ === RUN   TestPendingBroadcastCommitConflictRollsBackSecondSource
+    --- PASS: TestPendingBroadcastCommitConflictRollsBackSecondSource (0.41s)
+    … +2 lines (ctrl + t to view transcript)
+    PASS
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    0.727s
+
+✔ You approved codex to always run commands that start with head -45
+
+• Ran rg -n 'refreshBtn :=|renderAddresses|Address list|balanceErr' cmd/gui/main.go | head -45; sed -n '1120,1180p' cmd/gui/main.go; git diff --check; go vet ./...
+  └ (no output)
+
+• Explored
+  └ Read main.go
+
+✔ You approved codex to run ed -s cmd/gui/main.go <<'ED' ... this time
+
+• Ran ed -s cmd/gui/main.go <<'ED'
+  │ 1294c
+  │ 			decoded, decodeErr := hex.DecodeString(rec.RawHex)
+  │ … +13 lines
+  └ ok      github.com/saogen/qoge-sphincs-wallet/cmd/gui    0.269s
+
+✔ You approved codex to run ed -s internal/txbuilder/txbuilder_test.go <<'ED' ... this time
+
+• Ran ed -s internal/txbuilder/txbuilder_test.go <<'ED'
+  │ $a
+  │
+  │ … +22 lines
+  └ === RUN   TestTxIDFromBIP144HashesActualNonWitnessBytes
+    --- PASS: TestTxIDFromBIP144HashesActualNonWitnessBytes (0.00s)
+    PASS
+    ok      github.com/saogen/qoge-sphincs-wallet/internal/txbuilder    0.011s
+
+• Explored
+  └ Search MarkSpendPendingAndReserveChange\(|MarkRecoveryPendingAndReserveChange\(
+
+• Context compacted · 37s
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The implementation is in place. I’m finishing verification now, with one final pass over the atomic write and the three broadcast-clearing paths before I report it for review.
+
+• Ran git status --short
+  └  M cmd/gui/main.go
+     M cmd/gui/main_test.go
+    … +4 lines (ctrl + t to view transcript)
+     M wallet/wallet_test.go
+    ?? keystore/pending.go
+
+• Ran go vet ./... && go build ./cmd/gui && go test ./... && go test -race ./... && git diff --check && git status --short
+  └ ok      github.com/saogen/qoge-sphincs-wallet/address    (cached)
+    ?       github.com/saogen/qoge-sphincs-wallet/cmd    [no test files]
+    … +20 lines (ctrl + t to view transcript)
+     M wallet/wallet_test.go
+    ?? keystore/pending.go
+
+• Ran git diff --check
+  └ (no output)
+
+• Ran go vet ./...
+  └ (no output)
+
+• Ran go build ./cmd/gui
+  └ (no output)
+
+• Ran go test ./...
+  └ ok      github.com/saogen/qoge-sphincs-wallet/address    (cached)
+    ?       github.com/saogen/qoge-sphincs-wallet/cmd    [no test files]
+    … +4 lines (ctrl + t to view transcript)
+    ok      github.com/saogen/qoge-sphincs-wallet/signer    (cached)
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    (cached)
+
+• Ran go test -race ./...
+  └ ok      github.com/saogen/qoge-sphincs-wallet/address    (cached)
+    ?       github.com/saogen/qoge-sphincs-wallet/cmd    [no test files]
+    … +4 lines (ctrl + t to view transcript)
+    ok      github.com/saogen/qoge-sphincs-wallet/signer    (cached)
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    (cached)
+
+• Ran git diff --stat
+  └  cmd/gui/main.go                      | 267 ++++++++++++++++++++++++++++++-----
+     cmd/gui/main_test.go                 |  77 +++++++++-
+    … +4 lines (ctrl + t to view transcript)
+     wallet/wallet_test.go                | 157 ++++++++++++++++++++
+     7 files changed, 699 insertions(+), 52 deletions(-)
+
+• Explored
+  └ Search broadcastAndSettlePending|inspectPendingBroadcast|SignAndStore|putPendingForTransition|pending_broadcasts|renderPending|TxIDFromBIP144 in main.go
+    Read pending.go
+
+• Ran sed -n '790,840p;955,1045p' wallet/wallet.go
+  └     return pubKey, signatures[params.InputIndex], nil
+    }
+    … +138 lines (ctrl + t to view transcript)
+            *rawOut = raw
+        }
+
+• Ran sed -n '465,510p;1250,1435p' cmd/gui/main.go
+  └     if err != nil {
+            return "", nil, err
+    … +228 lines (ctrl + t to view transcript)
+        recoveryFeeRate.SetText(txbuilder.DefaultFeeRateQOGE)
+        recoveryStatus := widget.NewLabel("Refresh My Addresses to detect mature recoverable balances.")
+
+• Ran sed -n '350,410p;435,495p' keystore/keystore.go
+  └
+    // ─── State transitions ────────────────────────────────────────────────────────
+    … +118 lines (ctrl + t to view transcript)
+                }
+            }
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• The full suite and race detector pass. The final code review confirms the signed bytes are serialized and txid-checked before the database transition, with the record written in that same transaction. I’m checking the saved-entry and broadcast edge cases once more so the review handoff names any remaining caveats accurately.
+
+• Waited for background terminal · go test -count=1 ./...
+
+• Ran go test -count=1 ./...
+  └ ?       github.com/saogen/qoge-sphincs-wallet/cmd    [no test files]
+    ok      github.com/saogen/qoge-sphincs-wallet/address    0.006s
+    … +4 lines (ctrl + t to view transcript)
+    ok      github.com/saogen/qoge-sphincs-wallet/signer    0.796s
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    20.690s
+
+• Waited for background terminal · go test -race -count=1 ./...
+
+• Explored
+  └ Search Test.*Pending|Test.*Broadcast|Test.*TxIDFrom in wallet_test.go
+    Search func .*TransactionConfirmations|func .*SendRawTransaction in rpcclient
+    Read client.go
+
+• Ran go test -race -count=1 ./...
+  └ ?       github.com/saogen/qoge-sphincs-wallet/cmd    [no test files]
+    ok      github.com/saogen/qoge-sphincs-wallet/address    1.057s
+    … +4 lines (ctrl + t to view transcript)
+    ok      github.com/saogen/qoge-sphincs-wallet/signer    1.801s
+    ok      github.com/saogen/qoge-sphincs-wallet/wallet    23.484s
+
+✔ You approved codex to always run commands that start with gofmt -l cmd/gui/main.go cmd/gui/main_test.go internal/txbuilder/txbuilder.go...
+
+• Ran gofmt -l cmd/gui/main.go cmd/gui/main_test.go internal/txbuilder/txbuilder.go internal/txbuilder/txbuilder_test.go keystore/keystore.go keystore/pending.go wallet/wallet.go wallet/wallet_test.go
+  └ (no output)
+
+• Explored
+  └ Search MarkSpendPendingAndReserveChange\(
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Pending Broadcasts is implemented and held for review. No commit or push was made.
+
+  The signed BIP144 transaction is now serialized and its txid checked inside the signing call, before any state change. One bbolt transaction then saves the raw hex alongside the source’s pending transition or recovery lock and any change reservation. The new wallet-gated tab supports multiple saved transactions, displays their details without a node connection, and distinguishes not-found, unconfirmed, confirmed, and lookup-error results. Confirmed entries reconcile the wallet before deletion; all three GUI broadcast paths clear their saved entry independently of the history write.
+
+  Tests cover atomic rollback, restart persistence, multiple entries, all four lookup outcomes, and broadcast cleanup when history writing fails. go vet ./..., go build ./cmd/gui, uncached go test ./..., uncached go test -race ./..., formatting, and git diff --check pass.
+
+  One boundary deserves explicit attention in the focused review: the older low-level keystore transition remains callable without a saved record for legacy non-P2QPK paths. The GUI’s P2QPK signing paths always supply one. I have not performed a live broadcast or an independent review; the requested sign/serialize/persist atomicity and three-path clearing review remains the next gate.
+
+─ Worked for 2h 11m 17s 
